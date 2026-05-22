@@ -24,26 +24,51 @@ function openDetails(book) {
   sheet.classList.add('open');
 }
 
-  // Clear existing content
+// Helper to fetch covers from Google Books API
+async function getCoverUrl(isbn) {
+  if (!isbn) return 'https://via.placeholder.com/150x200?text=No+Cover';
+  try {
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const data = await response.json();
+    if (data.totalItems > 0) {
+      return data.items[0].volumeInfo.imageLinks?.thumbnail || 'https://via.placeholder.com/150x200?text=No+Cover';
+    }
+  } catch (e) {
+    console.error("Cover fetch failed", e);
+  }
+  return 'https://via.placeholder.com/150x200?text=No+Cover';
+}
+
+// Main function to fetch and render
+async function loadBooks() {
+  const { data: books, error } = await supabase
+    .from('books')
+    .select('*')
+    .order('title', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching books:', error);
+    return;
+  }
+
   bookGrid.innerHTML = '';
 
-  // Generate cards
-  books.forEach(book => {
+  // Use for...of to handle the async/await inside the loop correctly
+  for (const book of books) {
     const bookDiv = document.createElement('div');
     bookDiv.className = 'book-cover';
+    
+    const coverUrl = await getCoverUrl(book.isbn);
+    
     bookDiv.innerHTML = `
+      <img src="${coverUrl}" alt="${book.title}" class="cover-image">
       <h3 class="cover-title">${book.title}</h3>
       <p class="cover-author">${book.author}</p>
     `;
     
     bookDiv.addEventListener('click', () => openDetails(book));
-    bookDiv.addEventListener('click', () => {
-      console.log('Clicked:', book.title);
-      // We will trigger the bottom sheet here in the next step
-    });
-
     bookGrid.appendChild(bookDiv);
-  });
+  }
 }
 
 // Run on load
