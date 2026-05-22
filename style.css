@@ -32,6 +32,48 @@ body {
   padding-bottom: 80px; /* Space for the bottom nav */
 }
 
+/* Bookshelf Grid Layout */
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding-top: 20px;
+}
+
+/* Physical Book Cover Styling */
+.book-cover {
+  background-color: #e0dcd3; 
+  border-radius: 4px 12px 12px 4px; 
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.15); 
+  aspect-ratio: 2 / 3; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+/* A subtle press effect for mobile taps */
+.book-cover:active {
+  transform: scale(0.95);
+}
+
+.cover-title {
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.cover-author {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: var(--sage-green);
+}
+
 /* Bottom Navigation */
 .bottom-nav {
   position: fixed;
