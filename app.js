@@ -5,16 +5,19 @@ const supabaseKey = 'sb_publishable_H2EPwvAaziQVz8T4yExdEw_bQrB5f3V';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const bookGrid = document.getElementById('book-grid');
+const sheet = document.querySelector('.bottom-sheet');
+const sheetHandle = document.querySelector('.sheet-handle');
+
+// 1. Close logic: Slide the sheet down when the handle is tapped
+sheetHandle.addEventListener('click', () => {
+  sheet.classList.remove('open');
+});
 
 function openDetails(book) {
-  console.log("Opening details for:", book.title); // Debug log
-  const sheet = document.querySelector('.bottom-sheet');
   const titleEl = document.querySelector('.book-title');
   const authorEl = document.querySelector('.book-author');
   const catEl = document.querySelector('.metadata[data-field="category"]');
   const ratingEl = document.querySelector('.metadata[data-field="rating"]');
-
-  if (!titleEl) { console.error("Could not find .book-title in HTML!"); return; }
 
   titleEl.textContent = book.title;
   authorEl.textContent = book.author;
@@ -24,22 +27,22 @@ function openDetails(book) {
   sheet.classList.add('open');
 }
 
+// 2. Updated to a more reliable placeholder service
 async function getCoverUrl(isbn) {
-  if (!isbn) return 'https://via.placeholder.com/150x200?text=No+Cover';
+  if (!isbn) return 'https://placehold.co/150x200?text=No+Cover';
   
-  // Clean the ISBN: remove dashes and spaces
   const cleanIsbn = isbn.toString().replace(/[-\s]/g, '');
   
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`);
     const data = await response.json();
-    if (data.totalItems > 0) {
-      return data.items[0].volumeInfo.imageLinks?.thumbnail || 'https://via.placeholder.com/150x200?text=No+Cover';
+    if (data.totalItems > 0 && data.items[0].volumeInfo.imageLinks?.thumbnail) {
+      return data.items[0].volumeInfo.imageLinks.thumbnail;
     }
   } catch (e) {
-    console.error("Cover fetch failed for ISBN:", cleanIsbn, e);
+    console.error("Cover fetch failed:", e);
   }
-  return 'https://via.placeholder.com/150x200?text=No+Cover';
+  return 'https://placehold.co/150x200?text=No+Cover';
 }
 
 async function loadBooks() {
@@ -48,10 +51,7 @@ async function loadBooks() {
     .select('*')
     .order('title', { ascending: true });
 
-  if (error) {
-    console.error('Database Error:', error);
-    return;
-  }
+  if (error) { console.error(error); return; }
 
   bookGrid.innerHTML = '';
 
@@ -59,7 +59,7 @@ async function loadBooks() {
     const bookDiv = document.createElement('div');
     bookDiv.className = 'book-cover';
     
-    // We don't 'await' here to speed up loading; the images will pop in as they arrive
+    // We fetch the URL first, then inject
     const coverUrl = await getCoverUrl(book.isbn);
     
     bookDiv.innerHTML = `
