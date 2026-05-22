@@ -1,1 +1,8 @@
-
+{
+  "name": "Book Tracker",
+  "short_name": "Books",
+  "start_url": "/Book-Tracker/",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#2c3e50"
+}
