@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Import Utility</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+    #status { margin-top: 20px; font-family: monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Book Import Utility</h1>
+  <input type="file" id="fileInput" multiple accept=".book">
+  <button id="uploadBtn">Process and Upload</button>
+  <div id="status"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabaseUrl = 'https://jvsjzlvabtffhsnvmcto.supabase.co';
+    const supabaseKey = 'sb_publishable_H2EPwvAaziQVz8T4yExdEw_bQrB5f3V';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusDiv = document.getElementById('status');
+
+    uploadBtn.addEventListener('click', async () => {
+      const files = Array.from(fileInput.files);
+      statusDiv.textContent = 'Starting upload...\n';
+
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const json = JSON.parse(text);
+
+          // Map the JSON backup to match our Supabase schema
+          const bookEntry = {
+            uuid: json.uuid,
+            title: json.title,
+            author: json.author,
+            category: json.category || 'Uncategorized',
+            pages: json.pages,
+            rating: json.rating,
+            activities: json.activities // Supabase jsonb handles this automatically
+          };
+
+          const { error } = await supabase.from('books').upsert([bookEntry]);
+          
+          if (error) throw error;
+          statusDiv.textContent += `Successfully uploaded: ${json.title}\n`;
+        } catch (err) {
+          statusDiv.textContent += `Error uploading ${file.name}: ${err.message}\n`;
+        }
+      }
+      statusDiv.textContent += '\nImport complete!';
+    });
+  </script>
+</body>
+</html>
