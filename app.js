@@ -22,7 +22,12 @@ function formatDate(isoString) {
   return `${m}-${d}-${y}`;
 }
 
-function openDetails(book) {
+// Updated to accept clickedElement for smooth scrolling
+function openDetails(book, clickedElement) {
+  if (clickedElement) {
+    clickedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   const titleEl = document.querySelector('.book-title');
   const authorEl = document.querySelector('.book-author');
   const catEl = document.querySelector('.metadata[data-field="category"]');
@@ -115,55 +120,26 @@ async function loadBooks() {
   lazyCovers.forEach(img => observer.observe(img));
 }
 
-  // 1. Find and inject the "Currently Reading" book (assuming status 0 is reading)
-  const activeBook = books.find(b => b.status === 0) || books.find(b => b.status !== 1);
-  if (activeBook) {
-    const activeCoverUrl = await getCoverUrl(activeBook.isbn);
-    const activeDiv = document.querySelector('.active-read');
-    if (activeDiv) {
-      activeDiv.innerHTML = `<img src="${activeCoverUrl}" alt="${activeBook.title}" class="cover-image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px 12px 12px 4px;">`;
-      activeDiv.addEventListener('click', () => openDetails(activeBook));
-    }
-  }
-
-  // 2. Load the rest of the library grid
-  for (const book of books) {
-    const bookDiv = document.createElement('div');
-    bookDiv.className = 'book-cover';
-    
-    const coverUrl = await getCoverUrl(book.isbn);
-    
-    bookDiv.innerHTML = `
-      <img src="${coverUrl}" alt="${book.title}" class="cover-image">
-      <h3 class="cover-title">${book.title}</h3>
-      <p class="cover-author">${book.author}</p>
-    `;
-    
-    bookDiv.addEventListener('click', () => openDetails(book));
-    bookGrid.appendChild(bookDiv);
-  }
-
 // Back to Top FAB Logic
 const topFab = document.getElementById('top-fab');
-
-// Listen for scrolling to show/hide the button
-window.addEventListener('scroll', () => {
-  // If scrolled down more than 300 pixels, show the button
-  if (window.scrollY > 300) {
-    topFab.classList.add('visible');
-  } else {
-    topFab.classList.remove('visible');
-  }
-});
-
-// Smooth scroll to top when clicked
-topFab.addEventListener('click', () => {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
+if (topFab) {
+  window.addEventListener('scroll', () => {
+    // If scrolled down more than 300 pixels, show the button
+    if (window.scrollY > 300) {
+      topFab.classList.add('visible');
+    } else {
+      topFab.classList.remove('visible');
+    }
   });
-});
 
+  // Smooth scroll to top when clicked
+  topFab.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
 }
 
+// Run on load
 loadBooks();
