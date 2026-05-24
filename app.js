@@ -140,6 +140,3 @@ if (topFab) {
     });
   });
 }
-
-// Run on load
-loadBooks();
