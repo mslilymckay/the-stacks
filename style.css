@@ -10,8 +10,6 @@
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
@@ -27,11 +25,11 @@ body {
 /* Main Bookshelf Area */
 .bookshelf {
   flex-grow: 1;
-  padding: 20px;
+  padding: 20px 0; /* Changed to only pad top/bottom to prevent horizontal spill */
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  padding-bottom: 80px; /* Space for the bottom nav */
+  padding-bottom: 80px; 
 }
 
 /* Bookshelf Grid Layout */
