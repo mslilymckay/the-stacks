@@ -176,6 +176,53 @@ body {
   bottom: 0; 
 }
 
+/* Card Split Layout */
+.card-split {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Override previous centering to fit the new layout */
+.card-right .book-title,
+.card-right .book-author {
+  text-align: left;
+}
+
+/* The Vintage Stamp */
+.vintage-stamp {
+  display: none; /* Hidden by default via JS */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #a34e4e; /* Faded red ink */
+  color: #a34e4e;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  padding: 8px;
+  border-radius: 4px;
+  transform: rotate(-12deg);
+  opacity: 0.75;
+  margin-top: 15px;
+}
+
+.vintage-stamp.visible {
+  display: flex;
+}
+
+.stamp-text {
+  font-size: 14px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid #a34e4e;
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.stamp-date {
+  font-size: 12px;
+}
+
 .sheet-handle {
   width: 40px;
   height: 4px;
