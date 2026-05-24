@@ -13,6 +13,7 @@
   <div class="botanical-frame top-right"></div>
 
   <main class="bookshelf">
+    
     <div class="hero-wrapper">
       <h2 class="section-label">Current Read</h2>
       <div class="current-read-section" id="current-read-section">
@@ -25,41 +26,36 @@
       </div>
     </div>
   
-  <h2 class="section-label" style="padding: 0 15px;">Library</h2>
-  <div class="book-grid" id="book-grid">
-    </div>
-  </main>
-</div>
+    <hr class="shelf-divider">
+    
+    <h2 class="section-label" style="padding: 0 15px;">Library</h2>
+    <div class="book-grid" id="book-grid">
+      </div>
 
-<hr class="shelf-divider">
-    <div class="book-grid" id="book-grid"></div>
-  </main>
-
-  <div class="bottom-sheet">
+  </main> <div class="bottom-sheet">
     <div class="sheet-handle"></div>
     <div class="card-content">
-  <div class="card-hole"></div>
-  
-  <div class="card-split">
-    <div class="card-left">
-      <div class="vintage-stamp" id="completion-stamp">
-        <span class="stamp-text">FINISHED</span>
-        <span class="stamp-date" id="stamp-date"></span>
+      <div class="card-hole"></div>
+      
+      <div class="card-split">
+        <div class="card-left">
+          <div class="vintage-stamp" id="completion-stamp">
+            <span class="stamp-text">FINISHED</span>
+            <span class="stamp-date" id="stamp-date"></span>
+          </div>
+        </div>
+        
+        <div class="card-right">
+          <h2 class="book-title"></h2>
+          <p class="book-author"></p>
+          <div class="red-line"></div>
+          <div class="blue-lines">
+            <p class="metadata" data-field="category"></p>
+            <p class="metadata" data-field="rating"></p>
+            <p class="metadata" data-field="isbn"></p>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div class="card-right">
-      <h2 class="book-title"></h2>
-      <p class="book-author"></p>
-      <div class="red-line"></div>
-      <div class="blue-lines">
-        <p class="metadata" data-field="category"></p>
-        <p class="metadata" data-field="rating"></p>
-        <p class="metadata" data-field="isbn"></p>
-      </div>
-    </div>
-  </div>
-</div>
     </div>
   </div>
 
@@ -70,5 +66,6 @@
     <button class="nav-item">Search</button>
     <button class="nav-item">Focus</button>
   </nav>
+
 </body>
 </html>
