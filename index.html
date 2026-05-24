@@ -13,14 +13,16 @@
   <div class="botanical-frame top-right"></div>
 
   <main class="bookshelf">
-    <div class="current-read-section" id="current-read-section">
-  <div class="book-cover active-read">
-    <img src="https://placehold.co/150x200?text=Loading..." alt="Current Read" class="cover-image">
-  </div>
+    <div class="hero-wrapper">
+      <h2 class="section-label">Current Read</h2>
+      <div class="current-read-section" id="current-read-section">
+        </div>
+    </div>
   
-  <div class="reader-animation">
-    <img src="focus.gif" alt="Reading peacefully" class="reader-gif">
-  </div>
+  <h2 class="section-label" style="padding: 0 15px;">Library</h2>
+  <div class="book-grid" id="book-grid">
+    </div>
+  </main>
 </div>
 
 <hr class="shelf-divider">
@@ -55,6 +57,8 @@
     </div>
   </div>
 
+  <button class="fab" id="top-fab">↑</button>
+  
   <nav class="bottom-nav">
     <button class="nav-item active">Library</button>
     <button class="nav-item">Search</button>
