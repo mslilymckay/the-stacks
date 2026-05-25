@@ -151,3 +151,31 @@ if (topFab) {
   });
 }
 loadBooks();
+
+// --- NAVIGATION LOGIC --- //
+const navItems = document.querySelectorAll('.nav-item');
+const pageViews = document.querySelectorAll('.page-view');
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    // 1. Remove 'active' from all buttons, add to the clicked one
+    navItems.forEach(btn => btn.classList.remove('active'));
+    item.classList.add('active');
+
+    // 2. Hide all pages, show the target page
+    const targetId = item.getAttribute('data-target');
+    pageViews.forEach(view => view.classList.remove('active'));
+    document.getElementById(targetId).classList.add('active');
+
+    // 3. Reset the scroll position and hide the FAB
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (topFab) {
+      topFab.classList.remove('visible');
+    }
+    
+    // 4. Force close the bottom sheet if it's open
+    if (sheet.classList.contains('open')) {
+      sheet.classList.remove('open');
+    }
+  });
+});
