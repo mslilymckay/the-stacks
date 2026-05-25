@@ -76,10 +76,15 @@ async function loadBooks() {
   // 1. Hero Book (With a fallback to the first book if none are active)
   const activeBook = books.find(b => b.status === 0) || books.find(b => b.status !== 1) || books[0];
   if (activeBook) {
-    const activeCoverUrl = await getCoverUrl(activeBook.isbn);
+    const activeCoverUrl = getCoverUrl(activeBook.isbn); // Note: Removed 'await' since getCoverUrl is now synchronous!
     const activeDiv = document.querySelector('.active-read');
     if (activeDiv) {
-      activeDiv.innerHTML = `<img src="${activeCoverUrl}" alt="${activeBook.title}" class="cover-image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px 12px 12px 4px;">`;
+      // Inject the image, title, and author to match the library cards exactly
+      activeDiv.innerHTML = `
+        <img src="${activeCoverUrl}" alt="${activeBook.title}" class="cover-image">
+        <h3 class="cover-title">${activeBook.title}</h3>
+        <p class="cover-author">${activeBook.author}</p>
+      `;
       activeDiv.addEventListener('click', () => openDetails(activeBook, activeDiv));
     }
   }
