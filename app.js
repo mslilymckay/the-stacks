@@ -256,24 +256,40 @@ async function searchGoogleBooks(query) {
       searchResultsContainer.appendChild(card);
     });
 
-    // 4. Wire up the fake "Add" buttons for Part A testing
+    // 4. Wire up the Add buttons to Supabase
     document.querySelectorAll('.add-book-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const button = e.target;
         
-        button.textContent = "Saving...";
-        button.style.backgroundColor = "var(--terracotta)";
+        // Provide immediate visual feedback and prevent double-clicks
+        button.textContent = 'Saving...';
+        button.style.backgroundColor = 'var(--terracotta)';
+        button.disabled = true;
         
-        console.log("Ready to push to database:", {
-            title: button.dataset.title,
-            author: button.dataset.author,
-            isbn: button.dataset.isbn
-        });
-        
-        setTimeout(() => {
-            button.textContent = "Saved!";
-            button.disabled = true;
-        }, 1000);
+        // Push the new book to your database
+        const { error } = await supabase
+          .from('books')
+          .insert([
+            {
+              title: button.dataset.title,
+              author: button.dataset.author,
+              isbn: button.dataset.isbn,
+              status: 0 
+            }
+          ]);
+
+        // Handle the response
+        if (error) {
+          console.error("Database save failed:", error);
+          button.textContent = 'Error';
+          button.style.backgroundColor = '#a34e4e'; // Faded red ink color
+          button.disabled = false; // Let the user try again
+        } else {
+          button.textContent = 'Saved!';
+          
+          // Refresh the library grid in the background so the new book is there when you switch tabs
+          loadBooks(); 
+        }
       });
     });
 
