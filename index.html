@@ -43,7 +43,11 @@
       <div class="hero-wrapper">
         <h2 class="section-label">Find a Book</h2>
         <div class="search-bar-container">
-          <input type="text" id="search-input" placeholder="Search by title, author, or ISBN...">
+          <select id="search-type">
+            <option value="intitle:">Title</option>
+            <option value="inauthor:">Author</option>
+          </select>
+          <input type="text" id="search-input" placeholder="Search...">
           <button id="search-btn">Search</button>
         </div>
       </div>
