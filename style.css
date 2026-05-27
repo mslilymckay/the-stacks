@@ -488,3 +488,18 @@ body {
   font-family: 'Courier New', Courier, monospace;
   transition: background-color 0.2s;
 }
+
+#search-type {
+  padding: 12px;
+  border: 1px solid var(--line-blue);
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+#search-type:focus {
+  outline: 2px solid var(--terracotta);
+}
