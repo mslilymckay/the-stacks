@@ -144,7 +144,7 @@ if (readerToggle) {
 const navItems = document.querySelectorAll('.nav-item');
 const pageViews = document.querySelectorAll('.page-view');
 const topFab = document.getElementById('top-fab');
-const bookshelfContainer = document.querySelector('.bookshelf'); // The element that actually scrolls
+const bookshelfContainer = document.querySelector('.bookshelf'); 
 
 // 1. Navigation Clicks
 navItems.forEach(item => {
@@ -156,7 +156,7 @@ navItems.forEach(item => {
     pageViews.forEach(view => view.classList.remove('active'));
     document.getElementById(targetId).classList.add('active');
 
-    // Reset scroll on the bookshelf div, not the window
+    // Reset scroll on the bookshelf div
     if (bookshelfContainer) {
       bookshelfContainer.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -165,7 +165,7 @@ navItems.forEach(item => {
       topFab.classList.remove('visible');
     }
     
-    if (sheet.classList.contains('open')) {
+    if (sheet && sheet.classList.contains('open')) {
       sheet.classList.remove('open');
     }
   });
