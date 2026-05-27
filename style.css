@@ -398,15 +398,37 @@ body {
     transform: translateY(0); 
   }
 }
+
 /* --- BATCH 4: SEARCH PAGE STYLES --- */
-.search-bar-container {
+.search-form-container {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.search-radio-group {
+  display: flex;
+  gap: 20px;
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--sage-green);
+  font-size: 14px;
+}
+
+.search-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+/* Make the radio button itself match the earthy aesthetic */
+.search-radio-group input[type="radio"] {
+  accent-color: var(--terracotta);
 }
 
 #search-input {
-  flex-grow: 1;
+  width: 100%;
   padding: 12px;
   border: 1px solid var(--line-blue);
   border-radius: 4px;
@@ -414,6 +436,7 @@ body {
   font-size: 16px;
   background-color: var(--card-bg);
   color: var(--text-dark);
+  box-sizing: border-box; /* Prevents padding from pushing it off screen */
 }
 
 #search-input:focus {
@@ -421,6 +444,7 @@ body {
 }
 
 #search-btn {
+  width: 100%;
   padding: 12px 20px;
   background-color: var(--terracotta);
   color: #fff;
@@ -487,19 +511,4 @@ body {
   cursor: pointer;
   font-family: 'Courier New', Courier, monospace;
   transition: background-color 0.2s;
-}
-
-#search-type {
-  padding: 12px;
-  border: 1px solid var(--line-blue);
-  border-radius: 4px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 16px;
-  background-color: var(--card-bg);
-  color: var(--text-dark);
-  cursor: pointer;
-}
-
-#search-type:focus {
-  outline: 2px solid var(--terracotta);
 }
