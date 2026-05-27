@@ -200,11 +200,26 @@ async function searchGoogleBooks(query) {
   searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
 
   try {
-    // 1. Paste your new, secure API key right here
-    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+    const apiKey = 'YOUR_NEW_API_KEY_HERE';
+    const searchType = document.getElementById('search-type').value;
     
-    // 2. Fetch data from Google Books using the key
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`);
+    // Clean the query to check if it is just numbers and hyphens
+    const cleanQuery = query.replace(/[-\s]/g, '');
+    
+    // A regular expression that checks if the string is exactly 10 or 13 digits
+    const isIsbn = /^\d{10}(\d{3})?$/.test(cleanQuery);
+    
+    let finalQuery = '';
+    if (isIsbn) {
+      // If it is an ISBN, ignore the dropdown and use the isbn: prefix
+      finalQuery = `isbn:${cleanQuery}`;
+    } else {
+      // Otherwise, use the prefix selected in the dropdown
+      finalQuery = `${searchType}${query}`;
+    }
+    
+    // Fetch data using our smart finalQuery
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(finalQuery)}&maxResults=10&key=${apiKey}`);
     const data = await response.json();
 
     searchResultsContainer.innerHTML = ''; 
