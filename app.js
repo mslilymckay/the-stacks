@@ -130,26 +130,6 @@ async function loadBooks() {
   lazyCovers.forEach(img => observer.observe(img));
 }
 
-// Back to Top FAB Logic
-const topFab = document.getElementById('top-fab');
-if (topFab) {
-  window.addEventListener('scroll', () => {
-    // If scrolled down more than 300 pixels, show the button
-    if (window.scrollY > 300) {
-      topFab.classList.add('visible');
-    } else {
-      topFab.classList.remove('visible');
-    }
-  });
-
-  // Smooth scroll to top when clicked
-  topFab.addEventListener('click', () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  });
-}
 loadBooks();
 
 // --- FIX: Focus Mode Toggle --- //
