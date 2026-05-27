@@ -193,46 +193,42 @@ const searchInput = document.getElementById('search-input');
 const searchBtn = document.getElementById('search-btn');
 const searchResultsContainer = document.getElementById('search-results-container');
 
-async function searchGoogleBooks(query) {
+async function searchBooks(query) {
   if (!query) return;
 
-  // 1. Show a loading state
   searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
 
   try {
-    // 2. Fetch data from Google Books
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`);
+    // Fetch data from Open Library instead of Google
+    const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`);
     const data = await response.json();
 
-    searchResultsContainer.innerHTML = ''; // Clear the loading text
+    searchResultsContainer.innerHTML = ''; 
 
-    if (!data.items || data.items.length === 0) {
+    if (!data.docs || data.docs.length === 0) {
       searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">No books found. Try a different search.</p>';
       return;
     }
 
-    // 3. Loop through the results and build the cards
-    data.items.forEach(item => {
-      const info = item.volumeInfo;
+    data.docs.forEach(doc => {
+      const title = doc.title || 'Unknown Title';
+      const author = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
       
-      // Safe fallbacks in case Google is missing data
-      const title = info.title || 'Unknown Title';
-      const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
-      const thumbnail = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http:', 'https:') : 'https://placehold.co/60x90?text=No+Cover';
+      // Open Library gives us an array of ISBNs; let's grab the first one
+      const isbn = doc.isbn && doc.isbn.length > 0 ? doc.isbn[0] : '';
       
-      // Attempt to grab an ISBN (preferring 13-digit)
-      let isbn = '';
-      if (info.industryIdentifiers) {
-        const isbnObj = info.industryIdentifiers.find(id => id.type === 'ISBN_13') || 
-                        info.industryIdentifiers.find(id => id.type === 'ISBN_10');
-        if (isbnObj) isbn = isbnObj.identifier;
+      // If they give us a cover ID, it is the most reliable way to get the image
+      let coverUrl = 'https://placehold.co/60x90?text=No+Cover';
+      if (doc.cover_i) {
+         coverUrl = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+      } else if (isbn) {
+         coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`;
       }
 
-      // Create the HTML card
       const card = document.createElement('div');
       card.className = 'search-result-card';
       card.innerHTML = `
-        <img src="${thumbnail}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 2px;">
+        <img src="${coverUrl}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 2px;" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
         <div class="search-result-info">
           <h3>${title}</h3>
           <p>${author}</p>
@@ -243,23 +239,19 @@ async function searchGoogleBooks(query) {
       searchResultsContainer.appendChild(card);
     });
 
-    // 4. Wire up the fake "Add" buttons for Part A testing
     document.querySelectorAll('.add-book-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const button = e.target;
         
-        // Visual feedback
         button.textContent = "Saving...";
         button.style.backgroundColor = "var(--terracotta)";
         
-        // Log the data to prove we caught it correctly
         console.log("Ready to push to database:", {
             title: button.dataset.title,
             author: button.dataset.author,
             isbn: button.dataset.isbn
         });
         
-        // Reset the button after 1 second
         setTimeout(() => {
             button.textContent = "Saved!";
             button.disabled = true;
@@ -273,18 +265,16 @@ async function searchGoogleBooks(query) {
   }
 }
 
-// Trigger search when clicking the button
 if (searchBtn) {
   searchBtn.addEventListener('click', () => {
-    searchGoogleBooks(searchInput.value);
+    searchBooks(searchInput.value);
   });
 }
 
-// Trigger search when pressing "Enter" on the keyboard
 if (searchInput) {
   searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-      searchGoogleBooks(searchInput.value);
+      searchBooks(searchInput.value);
     }
   });
 }
