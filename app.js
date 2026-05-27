@@ -188,47 +188,51 @@ if (topFab && bookshelfContainer) {
     });
   });
 }
-// --- BATCH 4: SEARCH LOGIC --- //
+
+// --- BATCH 4: SEARCH LOGIC (Google Books API) --- //
 const searchInput = document.getElementById('search-input');
 const searchBtn = document.getElementById('search-btn');
 const searchResultsContainer = document.getElementById('search-results-container');
 
-async function searchBooks(query) {
+async function searchGoogleBooks(query) {
   if (!query) return;
 
   searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
 
   try {
-    // Fetch data from Open Library instead of Google
-    const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`);
+    // 1. Paste your new, secure API key right here
+    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+    
+    // 2. Fetch data from Google Books using the key
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&key=${apiKey}`);
     const data = await response.json();
 
     searchResultsContainer.innerHTML = ''; 
 
-    if (!data.docs || data.docs.length === 0) {
+    if (!data.items || data.items.length === 0) {
       searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">No books found. Try a different search.</p>';
       return;
     }
 
-    data.docs.forEach(doc => {
-      const title = doc.title || 'Unknown Title';
-      const author = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
+    // 3. Loop through the results and build the cards
+    data.items.forEach(item => {
+      const info = item.volumeInfo;
       
-      // Open Library gives us an array of ISBNs; let's grab the first one
-      const isbn = doc.isbn && doc.isbn.length > 0 ? doc.isbn[0] : '';
+      const title = info.title || 'Unknown Title';
+      const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
+      const thumbnail = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http:', 'https:') : 'https://placehold.co/60x90?text=No+Cover';
       
-      // If they give us a cover ID, it is the most reliable way to get the image
-      let coverUrl = 'https://placehold.co/60x90?text=No+Cover';
-      if (doc.cover_i) {
-         coverUrl = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
-      } else if (isbn) {
-         coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`;
+      let isbn = '';
+      if (info.industryIdentifiers) {
+        const isbnObj = info.industryIdentifiers.find(id => id.type === 'ISBN_13') || 
+                        info.industryIdentifiers.find(id => id.type === 'ISBN_10');
+        if (isbnObj) isbn = isbnObj.identifier;
       }
 
       const card = document.createElement('div');
       card.className = 'search-result-card';
       card.innerHTML = `
-        <img src="${coverUrl}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 2px;" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
+        <img src="${thumbnail}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 2px;">
         <div class="search-result-info">
           <h3>${title}</h3>
           <p>${author}</p>
@@ -239,6 +243,7 @@ async function searchBooks(query) {
       searchResultsContainer.appendChild(card);
     });
 
+    // 4. Wire up the fake "Add" buttons for Part A testing
     document.querySelectorAll('.add-book-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const button = e.target;
@@ -265,16 +270,18 @@ async function searchBooks(query) {
   }
 }
 
+// Trigger search when clicking the button
 if (searchBtn) {
   searchBtn.addEventListener('click', () => {
-    searchBooks(searchInput.value);
+    searchGoogleBooks(searchInput.value);
   });
 }
 
+// Trigger search when pressing "Enter" on the keyboard
 if (searchInput) {
   searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-      searchBooks(searchInput.value);
+      searchGoogleBooks(searchInput.value);
     }
   });
 }
