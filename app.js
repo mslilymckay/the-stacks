@@ -38,14 +38,20 @@ function openDetails(book, clickedElement) {
   const stampEl = document.getElementById('completion-stamp');
   const stampDateEl = document.getElementById('stamp-date');
 
+  // Resilient checks for capitalization
+  const cat = book.category || book.Category || 'N/A';
+  const rating = book.rating || book.Rating;
+  const readDate = book.read_date || book.Read_Date || book.Read_date;
+  const status = Number(book.status !== undefined ? book.status : book.Status);
+
   if(titleEl) titleEl.textContent = book.title;
   if(authorEl) authorEl.textContent = book.author;
-  if(catEl) catEl.textContent = `Category: ${book.category || 'N/A'}`;
-  if(ratingEl) ratingEl.textContent = `Rating: ${book.rating ? book.rating + ' Stars' : 'No rating'}`;
+  if(catEl) catEl.textContent = `Category: ${cat}`;
+  if(ratingEl) ratingEl.textContent = `Rating: ${rating ? rating + ' Stars' : 'No rating'}`;
   if(isbnEl) isbnEl.textContent = `ISBN: ${book.isbn || 'N/A'}`;
 
-  if (book.status === 1 && book.read_date) {
-    if(stampDateEl) stampDateEl.textContent = formatDate(book.read_date);
+  if (status === 1 && readDate) {
+    if(stampDateEl) stampDateEl.textContent = formatDate(readDate);
     if(stampEl) stampEl.classList.add('visible');
   } else {
     if(stampEl) stampEl.classList.remove('visible');
@@ -68,13 +74,20 @@ function calculateStats() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  const activeCount = books.filter(b => b.status === 0).length;
+  // Resilient Helpers
+  const getStatus = (b) => Number(b.status !== undefined ? b.status : b.Status);
+  const getReadDate = (b) => b.read_date || b.Read_Date || b.Read_date;
+  const getCategory = (b) => b.category || b.Category;
+
+  // 1. Calculate active reads (Loose equality ensures string "0" matches number 0)
+  const activeCount = books.filter(b => getStatus(b) === 0).length;
   
+  // 2. Calculate finished books
   let periodCount = 0;
-  const completedBooks = books.filter(b => b.status === 1 && b.read_date);
+  const completedBooks = books.filter(b => getStatus(b) === 1 && getReadDate(b));
   
   completedBooks.forEach(b => {
-    const readDate = new Date(b.read_date);
+    const readDate = new Date(getReadDate(b));
     if (filter === 'all') {
       periodCount++;
     } else if (filter === 'year' && readDate.getFullYear() === currentYear) {
@@ -84,16 +97,19 @@ function calculateStats() {
     }
   });
 
+  // 3. Count categories
   const categoryCounts = {};
   books.forEach(b => {
-    if (b.category && b.category !== 'Uncategorized' && b.category !== 'N/A') {
-      categoryCounts[b.category] = (categoryCounts[b.category] || 0) + 1;
+    const cat = getCategory(b);
+    if (cat && cat !== 'Uncategorized' && cat !== 'N/A') {
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
     }
   });
 
   const sortedCategories = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
   const topCategories = sortedCategories.slice(0, 3); 
 
+  // 4. Update DOM
   const statActiveEl = document.getElementById('stat-active');
   const statYearlyEl = document.getElementById('stat-yearly');
   const statCategoriesEl = document.getElementById('stat-categories');
@@ -132,12 +148,17 @@ async function loadBooks() {
 
   if (error) { console.error(error); return; }
   
+  // DIAGNOSTIC LOG: Check your Chrome console to see exact column capitalization!
+  console.log("DB SCHEMA CHECK (Look at the keys here):", books[0]);
+
   globalLibraryData = books; 
   calculateStats(); 
   
   if(bookGrid) bookGrid.innerHTML = '';
 
-  const activeBook = books.find(b => b.status === 0) || books.find(b => b.status !== 1) || books[0];
+  const getStatus = (b) => Number(b.status !== undefined ? b.status : b.Status);
+  const activeBook = books.find(b => getStatus(b) === 0) || books.find(b => getStatus(b) !== 1) || books[0];
+  
   if (activeBook) {
     const activeCoverUrl = getCoverUrl(activeBook.isbn);
     const activeDiv = document.querySelector('.active-read');
@@ -190,7 +211,7 @@ async function searchGoogleBooks(query) {
   if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
 
   try {
-    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4'; // <--- PASTE YOUR KEY HERE
     const typeRadio = document.querySelector('input[name="search-type"]:checked');
     const searchType = typeRadio ? typeRadio.value : 'intitle:';
     
@@ -251,6 +272,11 @@ async function searchGoogleBooks(query) {
         button.style.backgroundColor = 'var(--terracotta)';
         button.disabled = true;
         
+        // --------------------------------------------------------------------------
+        // IMPORTANT MANUAL FIX: If your Console Schema Check showed that 
+        // your column is capitalized (e.g., "Category"), you MUST change the 
+        // word "category" below to "Category" so Supabase accepts it!
+        // --------------------------------------------------------------------------
         const { error } = await supabase
           .from('books')
           .insert([
@@ -259,7 +285,7 @@ async function searchGoogleBooks(query) {
               title: decodeURIComponent(button.dataset.title),
               author: decodeURIComponent(button.dataset.author),
               isbn: button.dataset.isbn,
-              category: decodeURIComponent(button.dataset.category),
+              category: decodeURIComponent(button.dataset.category), // <-- Check capitalization here!
               status: 0 
             }
           ]);
