@@ -9,12 +9,25 @@ let globalLibraryData = [];
 const bookGrid = document.getElementById('book-grid');
 const sheet = document.querySelector('.bottom-sheet');
 const sheetHandle = document.querySelector('.sheet-handle');
+const topFab = document.getElementById('top-fab'); 
+const bookshelfContainer = document.querySelector('.bookshelf'); 
 
+// Closes the bottom sheet and brings the FAB back if you are scrolled down
 if (sheetHandle) {
   sheetHandle.addEventListener('click', () => {
     sheet.classList.remove('open');
+    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) {
+      topFab.classList.add('visible');
+    }
   });
 }
+
+// A highly resilient helper to find data regardless of database capitalization
+const getField = (obj, fieldName) => {
+  if (!obj) return undefined;
+  const key = Object.keys(obj).find(k => k.toLowerCase() === fieldName.toLowerCase());
+  return key ? obj[key] : undefined;
+};
 
 function formatDate(isoString) {
   if (!isoString) return '';
@@ -38,17 +51,19 @@ function openDetails(book, clickedElement) {
   const stampEl = document.getElementById('completion-stamp');
   const stampDateEl = document.getElementById('stamp-date');
 
-  // Resilient checks for capitalization
-  const cat = book.category || book.Category || 'N/A';
-  const rating = book.rating || book.Rating;
-  const readDate = book.read_date || book.Read_Date || book.Read_date;
-  const status = Number(book.status !== undefined ? book.status : book.Status);
+  const title = getField(book, 'title') || 'Unknown Title';
+  const author = getField(book, 'author') || 'Unknown Author';
+  const cat = getField(book, 'category') || 'N/A';
+  const rating = getField(book, 'rating');
+  const isbn = getField(book, 'isbn') || 'N/A';
+  const readDate = getField(book, 'read_date');
+  const status = Number(getField(book, 'status'));
 
-  if(titleEl) titleEl.textContent = book.title;
-  if(authorEl) authorEl.textContent = book.author;
+  if(titleEl) titleEl.textContent = title;
+  if(authorEl) authorEl.textContent = author;
   if(catEl) catEl.textContent = `Category: ${cat}`;
   if(ratingEl) ratingEl.textContent = `Rating: ${rating ? rating + ' Stars' : 'No rating'}`;
-  if(isbnEl) isbnEl.textContent = `ISBN: ${book.isbn || 'N/A'}`;
+  if(isbnEl) isbnEl.textContent = `ISBN: ${isbn}`;
 
   if (status === 1 && readDate) {
     if(stampDateEl) stampDateEl.textContent = formatDate(readDate);
@@ -58,6 +73,9 @@ function openDetails(book, clickedElement) {
   }
 
   if(sheet) sheet.classList.add('open');
+  
+  // Cleanly hide the FAB when the details card is open
+  if (topFab) topFab.classList.remove('visible');
 }
 
 function getCoverUrl(isbn) {
@@ -74,33 +92,21 @@ function calculateStats() {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  // Resilient Helpers
-  const getStatus = (b) => Number(b.status !== undefined ? b.status : b.Status);
-  const getReadDate = (b) => b.read_date || b.Read_Date || b.Read_date;
-  const getCategory = (b) => b.category || b.Category;
-
-  // 1. Calculate active reads (Loose equality ensures string "0" matches number 0)
-  const activeCount = books.filter(b => getStatus(b) === 0).length;
+  const activeCount = books.filter(b => Number(getField(b, 'status')) === 0).length;
   
-  // 2. Calculate finished books
   let periodCount = 0;
-  const completedBooks = books.filter(b => getStatus(b) === 1 && getReadDate(b));
+  const completedBooks = books.filter(b => Number(getField(b, 'status')) === 1 && getField(b, 'read_date'));
   
   completedBooks.forEach(b => {
-    const readDate = new Date(getReadDate(b));
-    if (filter === 'all') {
-      periodCount++;
-    } else if (filter === 'year' && readDate.getFullYear() === currentYear) {
-      periodCount++;
-    } else if (filter === 'month' && readDate.getFullYear() === currentYear && readDate.getMonth() === currentMonth) {
-      periodCount++;
-    }
+    const readDate = new Date(getField(b, 'read_date'));
+    if (filter === 'all') periodCount++;
+    else if (filter === 'year' && readDate.getFullYear() === currentYear) periodCount++;
+    else if (filter === 'month' && readDate.getFullYear() === currentYear && readDate.getMonth() === currentMonth) periodCount++;
   });
 
-  // 3. Count categories
   const categoryCounts = {};
   books.forEach(b => {
-    const cat = getCategory(b);
+    const cat = getField(b, 'category');
     if (cat && cat !== 'Uncategorized' && cat !== 'N/A') {
       categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
     }
@@ -109,7 +115,6 @@ function calculateStats() {
   const sortedCategories = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
   const topCategories = sortedCategories.slice(0, 3); 
 
-  // 4. Update DOM
   const statActiveEl = document.getElementById('stat-active');
   const statYearlyEl = document.getElementById('stat-yearly');
   const statCategoriesEl = document.getElementById('stat-categories');
@@ -148,25 +153,28 @@ async function loadBooks() {
 
   if (error) { console.error(error); return; }
   
-  // DIAGNOSTIC LOG: Check your Chrome console to see exact column capitalization!
-  console.log("DB SCHEMA CHECK (Look at the keys here):", books[0]);
-
   globalLibraryData = books; 
   calculateStats(); 
   
   if(bookGrid) bookGrid.innerHTML = '';
 
-  const getStatus = (b) => Number(b.status !== undefined ? b.status : b.Status);
-  const activeBook = books.find(b => getStatus(b) === 0) || books.find(b => getStatus(b) !== 1) || books[0];
+  const activeBook = books.find(b => Number(getField(b, 'status')) === 0) || books.find(b => Number(getField(b, 'status')) !== 1) || books[0];
+  
   if (activeBook) {
-    // Check for a saved cover first, then fallback to Open Library
-    const activeCoverUrl = activeBook.cover_url || getCoverUrl(activeBook.isbn);
+    const savedCover = getField(activeBook, 'cover_url');
+    const activeCoverUrl = (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') 
+      ? savedCover 
+      : getCoverUrl(getField(activeBook, 'isbn'));
+      
     const activeDiv = document.querySelector('.active-read');
+    const title = getField(activeBook, 'title') || 'Unknown Title';
+    const author = getField(activeBook, 'author') || 'Unknown Author';
+
     if (activeDiv) {
       activeDiv.innerHTML = `
-        <img src="${activeCoverUrl}" alt="${activeBook.title}" class="cover-image" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
-        <h3 class="cover-title">${activeBook.title}</h3>
-        <p class="cover-author">${activeBook.author}</p>
+        <img src="${activeCoverUrl}" alt="${title}" class="cover-image" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
+        <h3 class="cover-title">${title}</h3>
+        <p class="cover-author">${author}</p>
       `;
       activeDiv.addEventListener('click', () => openDetails(activeBook, activeDiv));
     }
@@ -176,19 +184,22 @@ async function loadBooks() {
     const bookDiv = document.createElement('div');
     bookDiv.className = 'book-cover';
     
-    if (book.cover_url && book.cover_url !== 'https://placehold.co/60x90?text=No+Cover') {
-      // If we saved a valid cover from Google, render it immediately
+    const savedCover = getField(book, 'cover_url');
+    const isbn = getField(book, 'isbn');
+    const title = getField(book, 'title') || 'Unknown Title';
+    const author = getField(book, 'author') || 'Unknown Author';
+
+    if (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') {
       bookDiv.innerHTML = `
-        <img src="${book.cover_url}" data-isbn="${book.isbn}" alt="${book.title}" class="cover-image" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
-        <h3 class="cover-title">${book.title}</h3>
-        <p class="cover-author">${book.author}</p>
+        <img src="${savedCover}" data-isbn="${isbn}" alt="${title}" class="cover-image" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
+        <h3 class="cover-title">${title}</h3>
+        <p class="cover-author">${author}</p>
       `;
     } else {
-      // If no cover was saved, use the IntersectionObserver to check Open Library
       bookDiv.innerHTML = `
-        <img src="https://placehold.co/150x200?text=Loading..." data-isbn="${book.isbn}" alt="${book.title}" class="cover-image lazy-cover">
-        <h3 class="cover-title">${book.title}</h3>
-        <p class="cover-author">${book.author}</p>
+        <img src="https://placehold.co/150x200?text=Loading..." data-isbn="${isbn}" alt="${title}" class="cover-image lazy-cover">
+        <h3 class="cover-title">${title}</h3>
+        <p class="cover-author">${author}</p>
       `;
     }
     
@@ -221,7 +232,7 @@ async function searchGoogleBooks(query) {
   if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
 
   try {
-    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4'; // <--- PASTE YOUR KEY HERE
+    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4'; 
     const typeRadio = document.querySelector('input[name="search-type"]:checked');
     const searchType = typeRadio ? typeRadio.value : 'intitle:';
     
@@ -262,6 +273,8 @@ async function searchGoogleBooks(query) {
 
       const card = document.createElement('div');
       card.className = 'search-result-card';
+      
+      // We encode every single piece of data to prevent special characters from breaking the HTML
       card.innerHTML = `
         <img src="${thumbnail}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 2px;">
         <div class="search-result-info">
@@ -270,9 +283,9 @@ async function searchGoogleBooks(query) {
           <button class="add-book-btn" 
             data-title="${encodeURIComponent(title)}" 
             data-author="${encodeURIComponent(author)}" 
-            data-isbn="${isbn}" 
+            data-isbn="${encodeURIComponent(isbn)}" 
             data-category="${encodeURIComponent(category)}"
-            data-cover="${thumbnail}">+ Add</button>
+            data-cover="${encodeURIComponent(thumbnail)}">+ Add</button>
         </div>
       `;
 
@@ -287,27 +300,18 @@ async function searchGoogleBooks(query) {
         button.style.backgroundColor = 'var(--terracotta)';
         button.disabled = true;
         
-        // --------------------------------------------------------------------------
-        // IMPORTANT MANUAL FIX: If your Console Schema Check showed that 
-        // your column is capitalized (e.g., "Category"), you MUST change the 
-        // word "category" below to "Category" so Supabase accepts it!
-        // --------------------------------------------------------------------------
-        // Dynamically find the exact capitalization your database uses
+        // This dynamically maps our payload to your exact database capitalization
         const schema = globalLibraryData.length > 0 ? Object.keys(globalLibraryData[0]) : [];
-        const isbnKey = schema.find(k => k.toLowerCase() === 'isbn') || 'isbn';
-        const catKey = schema.find(k => k.toLowerCase() === 'category') || 'category';
+        const getKey = (name) => schema.find(k => k.toLowerCase() === name.toLowerCase()) || name;
 
-        const payload = {
-          uuid: crypto.randomUUID(), 
-          title: decodeURIComponent(button.dataset.title),
-          author: decodeURIComponent(button.dataset.author),
-          status: 0,
-          cover_url: button.dataset.cover 
-        };
-        
-        // Safely apply the correctly capitalized keys
-        payload[isbnKey] = button.dataset.isbn;
-        payload[catKey] = decodeURIComponent(button.dataset.category);
+        const payload = {};
+        payload[getKey('uuid')] = crypto.randomUUID();
+        payload[getKey('title')] = decodeURIComponent(button.dataset.title);
+        payload[getKey('author')] = decodeURIComponent(button.dataset.author);
+        payload[getKey('status')] = 0;
+        payload[getKey('isbn')] = decodeURIComponent(button.dataset.isbn);
+        payload[getKey('category')] = decodeURIComponent(button.dataset.category);
+        payload[getKey('cover_url')] = decodeURIComponent(button.dataset.cover);
 
         const { error } = await supabase.from('books').insert([payload]);
 
@@ -352,8 +356,6 @@ if (readerToggle) {
 
 const navItems = document.querySelectorAll('.nav-item');
 const pageViews = document.querySelectorAll('.page-view');
-const topFab = document.getElementById('top-fab');
-const bookshelfContainer = document.querySelector('.bookshelf'); 
 
 navItems.forEach(item => {
   item.addEventListener('click', () => {
