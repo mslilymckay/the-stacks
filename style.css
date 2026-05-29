@@ -512,3 +512,59 @@ body {
   font-family: 'Courier New', Courier, monospace;
   transition: background-color 0.2s;
 }
+
+/* --- BATCH 5: STATS PAGE STYLES --- */
+.stats-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  padding: 0 15px 30px 15px;
+}
+
+.stat-card {
+  background-color: var(--card-bg);
+  border: 1px solid #e0dcd3;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.stat-card.full-width {
+  grid-column: span 2;
+}
+
+.stat-card h3 {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 32px;
+  color: var(--terracotta);
+  margin: 0 0 10px 0;
+}
+
+.stat-card.full-width h3 {
+  font-size: 20px;
+}
+
+.stat-card p {
+  font-size: 14px;
+  color: var(--sage-green);
+  margin: 0;
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.category-list li {
+  font-size: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0dcd3;
+  color: var(--text-dark);
+}
+
+.category-list li:last-child {
+  border-bottom: none;
+}
