@@ -4,13 +4,62 @@ const supabaseUrl = 'https://jvsjzlvabtffhsnvmcto.supabase.co';
 const supabaseKey = 'sb_publishable_H2EPwvAaziQVz8T4yExdEw_bQrB5f3V';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-let globalLibraryData = []; 
+let globalLibraryData = [];
+let currentOpenBookId = null;
 
 const bookGrid = document.getElementById('book-grid');
 const sheet = document.querySelector('.bottom-sheet');
 const sheetHandle = document.querySelector('.sheet-handle');
 const topFab = document.getElementById('top-fab'); 
-const bookshelfContainer = document.querySelector('.bookshelf'); 
+const bookshelfContainer = document.querySelector('.bookshelf');
+const statusDropdown = document.getElementById('status-dropdown');
+const stars = document.querySelectorAll('.star');
+
+// Function to update Supabase
+async function updateBookData(columnName, newValue) {
+  if (!currentOpenBookId) return; // Don't do anything if no book is open
+
+  // Tell Supabase to update the specific column for the current book
+  const { data, error } = await supabase
+    .from('books')
+    .update({ [columnName]: newValue })
+    .eq('uuid', currentOpenBookId);
+
+  if (error) {
+    console.error('Error updating book:', error);
+  } else {
+    console.log(`Successfully updated ${columnName} to ${newValue}`);
+    // Optional: You could trigger a little "Saved!" animation here later!
+  }
+}
+
+// Status Dropdown Listener
+statusDropdown.addEventListener('change', (event) => {
+  // 'event.target.value' gets the new number (0, 1, 2, or 3) selected by the user
+  const newStatus = parseInt(event.target.value); 
+  updateBookData('status', newStatus);
+});
+
+// Star Rating Logic
+stars.forEach(star => {
+  star.addEventListener('click', (event) => {
+    // Get the value of the clicked star (1 through 5)
+    const ratingValue = parseInt(event.target.getAttribute('data-value'));
+    
+    // Update the UI: Loop through all stars and color them in up to the clicked value
+    stars.forEach(s => {
+      const starValue = parseInt(s.getAttribute('data-value'));
+      if (starValue <= ratingValue) {
+        s.classList.add('active');
+      } else {
+        s.classList.remove('active');
+      }
+    });
+
+    // Send the new rating to Supabase
+    updateBookData('rating', ratingValue);
+  });
+});
 
 // Closes the bottom sheet and brings the FAB back if you are scrolled down
 if (sheetHandle) {
