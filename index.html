@@ -90,23 +90,50 @@
     <div class="card-content">
       <div class="card-hole"></div>
       
-      <div class="card-split">
-        <div class="card-left">
-          <div class="vintage-stamp" id="completion-stamp">
-            <span class="stamp-text">FINISHED</span>
-            <span class="stamp-date" id="stamp-date"></span>
-          </div>
+      <div class="card-header">
+        <h2 class="book-title"></h2>
+        <p class="book-author"></p>
+      </div>
+
+      <div class="red-line"></div>
+
+      <div class="blue-lines">
+        <div class="metadata-row">
+          <span class="meta-label">Category:</span>
+          <p class="metadata" data-field="category"></p>
         </div>
         
-        <div class="card-right">
-          <h2 class="book-title"></h2>
-          <p class="book-author"></p>
-          <div class="red-line"></div>
-          <div class="blue-lines">
-            <p class="metadata" data-field="category"></p>
-            <p class="metadata" data-field="rating"></p>
-            <p class="metadata" data-field="isbn"></p>
+        <div class="metadata-row">
+          <span class="meta-label">Status:</span>
+          <select id="status-dropdown" class="card-select">
+            <option value="0">Waiting</option>
+            <option value="1">Reading</option>
+            <option value="2">Finished</option>
+            <option value="3">Gave up</option>
+          </select>
+        </div>
+
+        <div class="metadata-row">
+          <span class="meta-label">Rating:</span>
+          <div class="star-rating" id="star-rating">
+            <span class="star" data-value="1">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="5">★</span>
           </div>
+        </div>
+
+        <div class="metadata-row">
+          <span class="meta-label">Date Added:</span>
+          <p class="metadata" data-field="date-added"></p>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="vintage-stamp" id="completion-stamp">
+          <span class="stamp-text">FINISHED</span>
+          <span class="stamp-date" id="stamp-date"></span>
         </div>
       </div>
     </div>
