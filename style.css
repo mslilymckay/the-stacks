@@ -215,6 +215,11 @@ body {
 }
 
 /* Card Catalog Bottom Sheet */
+.card-header {
+  padding: 0 20px;
+  text-align: center;
+}
+
 .bottom-sheet {
   position: fixed;
   bottom: -100%; /* Hidden by default */
@@ -324,19 +329,69 @@ body {
 }
 
 .blue-lines {
+  width: 100%;
   background-image: repeating-linear-gradient(
     transparent,
     transparent 39px,
+    var(--line-blue) 39px,
     var(--line-blue) 40px
   );
   line-height: 40px;
-  height: 100%;
+  padding: 0 20px;
+  margin-top: 10px;
 }
 
 .metadata {
   font-family: 'Courier New', Courier, monospace;
   font-size: 14px;
   padding-left: 10px;
+}
+
+.metadata-row {
+  display: flex;
+  align-items: center;
+  height: 40px; /* Matches the blue line spacing */
+}
+
+.meta-label {
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--sage-green);
+  width: 100px;
+  font-weight: bold;
+}
+
+/* Dropdown Styling */
+.card-select {
+  background: transparent;
+  border: none;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+  color: var(--text-dark);
+  cursor: pointer;
+  outline: none;
+}
+
+/* Star Rating Styling */
+.star-rating {
+  display: flex;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.star {
+  color: #e0dcd3; /* Empty star color */
+  font-size: 24px;
+  transition: color 0.2s ease;
+}
+
+.star.active {
+  color: var(--terracotta); /* Filled star color */
+}
+
+.card-footer {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 /* --- NEW: Focus Mode Fullscreen Toggle --- */
