@@ -138,7 +138,8 @@ function openDetails(book, clickedElement) {
   const ratingEl = document.querySelector('.metadata[data-field="rating"]');
   const isbnEl = document.querySelector('.metadata[data-field="isbn"]');
   const dateAddedEl = document.querySelector('.metadata[data-field="date-added"]');
-
+  const stampEl = document.getElementById('completion-stamp');
+  const stampDateEl = document.getElementById('stamp-date');
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
   const cat = getField(book, 'category') || 'N/A';
