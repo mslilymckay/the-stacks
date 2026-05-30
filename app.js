@@ -153,7 +153,7 @@ function openDetails(book, clickedElement) {
 
   if(titleEl) titleEl.textContent = title;
   if(authorEl) authorEl.textContent = author;
-  if(catEl) catEl.textContent = `Category: ${cat}`;
+  if(catEl) catEl.textContent = cat;
   if(ratingEl) ratingEl.textContent = `Rating: ${rating ? rating + ' Stars' : 'No rating'}`;
   if(isbnEl) isbnEl.textContent = `ISBN: ${isbn}`;
 
