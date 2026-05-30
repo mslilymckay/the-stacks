@@ -92,6 +92,7 @@ function openDetails(book, clickedElement) {
     clickedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  const currentOpenBookId = book.uuid;
   const titleEl = document.querySelector('.book-title');
   const authorEl = document.querySelector('.book-author');
   const catEl = document.querySelector('.metadata[data-field="category"]');
