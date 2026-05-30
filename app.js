@@ -43,11 +43,40 @@ async function updateBookData(columnName, newValue) {
   }
 }
 
-// Status Dropdown Listener
+// 3. Status Dropdown Listener
 statusDropdown.addEventListener('change', (event) => {
-  // 'event.target.value' gets the new number (0, 1, 2, or 3) selected by the user
   const newStatus = parseInt(event.target.value); 
   updateBookData('status', newStatus);
+
+  // --- UX FIX: Handle the Finished Stamp ---
+  const stampEl = document.getElementById('completion-stamp');
+  const stampDateEl = document.getElementById('stamp-date');
+
+  if (newStatus === 2) { // 2 = Finished
+    // Show the stamp
+    stampEl.style.display = 'flex'; // Use 'block' if flex breaks your alignment
+    
+    // Generate and format today's date
+    const today = new Date();
+    const formattedDate = today.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    stampDateEl.textContent = formattedDate;
+
+    // Save the read_date to Supabase!
+    // toISOString() formats it perfectly for your timestamp database column
+    updateBookData('read_date', today.toISOString());
+    
+  } else {
+    // Hide the stamp if the user moves it to any other status
+    stampEl.style.display = 'none';
+    
+    // Clear the read_date from the database just in case they un-finish it
+    updateBookData('read_date', null);
+  }
+  loadBooks();
 });
 
 // Star Rating Logic
@@ -133,6 +162,30 @@ function openDetails(book, clickedElement) {
     dateAddedEl.textContent = formattedDate;
   } else {
     dateAddedEl.textContent = 'Unknown';
+  }
+
+  // --- UX FIX: Show/Hide Stamp on Load ---
+  const stampEl = document.getElementById('completion-stamp');
+  const stampDateEl = document.getElementById('stamp-date');
+  const readDateRaw = getField(book, 'read_date');
+
+  if (status === 2) {
+    stampEl.style.display = 'flex';
+    
+    if (readDateRaw) {
+      // If there is a date in the DB, format and display it
+      const dateObj = new Date(readDateRaw);
+      stampDateEl.textContent = dateObj.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } else {
+      stampDateEl.textContent = 'Unknown Date';
+    }
+  } else {
+    // Ensure the stamp is hidden for Waiting, Reading, or Gave Up
+    stampEl.style.display = 'none';
   }
   
   // --- BATCH 6: POPULATE UI WITH CURRENT BOOK DATA ---
