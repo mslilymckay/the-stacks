@@ -308,8 +308,9 @@ async function loadBooks() {
   
   if(bookGrid) bookGrid.innerHTML = '';
 
-  const activeBook = books.find(b => Number(getField(b, 'status')) === 0) || books.find(b => Number(getField(b, 'status')) !== 1) || books[0];
-  
+  const activeBook = books.find(b => Number(getField(b, 'status')) === 1) || 
+                     books.find(b => Number(getField(b, 'status')) === 0) || 
+                     books[0];  
   if (activeBook) {
     const savedCover = getField(activeBook, 'cover_url');
     const activeCoverUrl = (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') 
