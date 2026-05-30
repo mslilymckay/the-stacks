@@ -15,7 +15,7 @@ const bookshelfContainer = document.querySelector('.bookshelf');
 const statusDropdown = document.getElementById('status-dropdown');
 const stars = document.querySelectorAll('.star');
 
-// Function to update Supabase
+// 2. Function to update Supabase AND local memory
 async function updateBookData(columnName, newValue) {
   if (!currentOpenBookId) return; // Don't do anything if no book is open
 
@@ -29,7 +29,17 @@ async function updateBookData(columnName, newValue) {
     console.error('Error updating book:', error);
   } else {
     console.log(`Successfully updated ${columnName} to ${newValue}`);
-    // Optional: You could trigger a little "Saved!" animation here later!
+    
+    // --- THE FIX: Update local memory ---
+    // Find the current book in our global array
+    const bookToUpdate = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    
+    if (bookToUpdate) {
+      // Find the exact key case used in the local object (e.g., 'Status' vs 'status')
+      const key = Object.keys(bookToUpdate).find(k => k.toLowerCase() === columnName.toLowerCase()) || columnName;
+      // Update the value in local memory
+      bookToUpdate[key] = newValue;
+    }
   }
 }
 
