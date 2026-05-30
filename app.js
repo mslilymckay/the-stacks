@@ -163,7 +163,6 @@ function openDetails(book, clickedElement) {
   }
 
   // --- UX FIX: Show/Hide Stamp on Load ---
-  const stampDateEl = document.getElementById('stamp-date');
   const readDateRaw = getField(book, 'read_date');
 
   if (status === 2) {
