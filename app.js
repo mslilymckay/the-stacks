@@ -92,7 +92,7 @@ function openDetails(book, clickedElement) {
     clickedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  const currentOpenBookId = book.uuid;
+  currentOpenBookId = book.uuid;
   const titleEl = document.querySelector('.book-title');
   const authorEl = document.querySelector('.book-author');
   const catEl = document.querySelector('.metadata[data-field="category"]');
@@ -100,6 +100,7 @@ function openDetails(book, clickedElement) {
   const isbnEl = document.querySelector('.metadata[data-field="isbn"]');
   const stampEl = document.getElementById('completion-stamp');
   const stampDateEl = document.getElementById('stamp-date');
+  const dateAddedEl = document.querySelector('.metadata[data-field="date-added"]');
 
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
@@ -108,6 +109,47 @@ function openDetails(book, clickedElement) {
   const isbn = getField(book, 'isbn') || 'N/A';
   const readDate = getField(book, 'read_date');
   const status = Number(getField(book, 'status'));
+  const dateAddedRaw = getField(book, 'date_added');
+
+  // --- BATCH 6: DISPLAY DATE ADDED ---
+  if (dateAddedRaw) {
+    // Converts the database timestamp into a cozy, readable format like "Oct 12, 2026"
+    const dateObj = new Date(dateAddedRaw);
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    dateAddedEl.textContent = formattedDate;
+  } else {
+    dateAddedEl.textContent = 'Unknown';
+  }
+  
+  // --- BATCH 6: POPULATE UI WITH CURRENT BOOK DATA ---
+  
+  // 1. Sync the Dropdown
+  const statusDropdown = document.getElementById('status-dropdown');
+  // Check if status is a valid number, otherwise default to "0" (Waiting)
+  if (!isNaN(status)) {
+    statusDropdown.value = status.toString();
+  } else {
+    statusDropdown.value = "0"; 
+  }
+
+  // 2. Sync the Stars
+  const stars = document.querySelectorAll('.star');
+  // Ensure rating is a number, default to 0 if not rated
+  const numericRating = Number(rating) || 0; 
+  
+  stars.forEach(s => {
+    const starValue = parseInt(s.getAttribute('data-value'));
+    // If the star's value is less than or equal to the book's rating, color it in
+    if (starValue <= numericRating) {
+      s.classList.add('active');
+    } else {
+      s.classList.remove('active');
+    }
+  });
 
   if(titleEl) titleEl.textContent = title;
   if(authorEl) authorEl.textContent = author;
