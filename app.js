@@ -43,20 +43,20 @@ async function updateBookData(columnName, newValue) {
   }
 }
 
-// 3. Status Dropdown Listener
-statusDropdown.addEventListener('change', (event) => {
+// 3. Status Dropdown Listener (Now with async/await!)
+statusDropdown.addEventListener('change', async (event) => {
   const newStatus = parseInt(event.target.value); 
-  updateBookData('status', newStatus);
+  
+  // PAUSE HERE: Wait for the status to save to Supabase and local memory
+  await updateBookData('status', newStatus);
 
   // --- UX FIX: Handle the Finished Stamp ---
   const stampEl = document.getElementById('completion-stamp');
   const stampDateEl = document.getElementById('stamp-date');
 
   if (newStatus === 2) { // 2 = Finished
-    // Show the stamp
-    stampEl.style.display = 'flex'; // Use 'block' if flex breaks your alignment
+    stampEl.style.display = 'flex'; 
     
-    // Generate and format today's date
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -65,16 +65,14 @@ statusDropdown.addEventListener('change', (event) => {
     });
     stampDateEl.textContent = formattedDate;
 
-    // Save the read_date to Supabase!
-    // toISOString() formats it perfectly for your timestamp database column
-    updateBookData('read_date', today.toISOString());
+    // PAUSE HERE: Wait for the read_date to save
+    await updateBookData('read_date', today.toISOString());
     
   } else {
-    // Hide the stamp if the user moves it to any other status
     stampEl.style.display = 'none';
     
-    // Clear the read_date from the database just in case they un-finish it
-    updateBookData('read_date', null);
+    // PAUSE HERE: Wait for the read_date to clear
+    await updateBookData('read_date', null);
   }
   loadBooks();
 });
