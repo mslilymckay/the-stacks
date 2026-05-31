@@ -656,17 +656,28 @@ body {
 .icon-action-btn {
   background: transparent;
   border: none;
-  color: var(--sage-green);
+  color: var(--terracotta); /* Accent color to make it pop */
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
-  transition: background-color 0.2s, color 0.2s;
+  transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  /* Removes the stuck grey native tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent; 
 }
 
-.icon-action-btn:hover {
-  background-color: var(--sage-green);
-  color: white;
+/* @media (hover: hover) ensures this only happens if the user has a mouse */
+@media (hover: hover) {
+  .icon-action-btn:hover {
+    transform: rotate(15deg); 
+    opacity: 0.8;
+  }
+}
+
+/* This provides the satisfying physical tap feedback on mobile */
+.icon-action-btn:active {
+  transform: scale(0.9); 
 }
