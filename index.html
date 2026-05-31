@@ -34,12 +34,14 @@
 
     <section id="view-search" class="page-view">
       <div class="hero-wrapper">
-        <h2 class="section-label" id="hero-label">Current Read</h2>
-        <div class="current-read-section" id="current-read-section">
-          
-          <div class="carousel-container" id="active-reads-carousel">
-            </div>
-          
+        <h2 class="section-label">Find a Book</h2>
+        <div class="search-form-container">
+          <div class="search-radio-group">
+            <label><input type="radio" name="search-type" value="intitle:" checked> Title</label>
+            <label><input type="radio" name="search-type" value="inauthor:"> Author</label>
+          </div>
+          <input type="text" id="search-input" placeholder="Search by title, author, or ISBN...">
+          <button id="search-btn">Search</button>
         </div>
       </div>
       
@@ -119,7 +121,7 @@
 
       <div class="red-line"></div>
 
-      <div class="blue-lines">
+      <div class="detail-lines">
         <div class="metadata-row">
           <span class="meta-label">Category:</span>
           <p class="metadata" data-field="category"></p>
