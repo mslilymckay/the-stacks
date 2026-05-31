@@ -80,14 +80,12 @@ statusDropdown.addEventListener('change', async (event) => {
 // --- BATCH 6: REFRESH DATA & MANUAL COVERS ---
 
 const refreshDataBtn = document.getElementById('refresh-data-btn');
-const manualCoverUrlInput = document.getElementById('manual-cover-url');
 const saveCoverBtn = document.getElementById('save-cover-btn');
 
 // 1. Refresh Data from Google Books
 refreshDataBtn.addEventListener('click', async () => {
   if (!currentOpenBookId) return;
   
-  // Find the exact book in our local data
   const book = globalLibraryData.find(b => b.uuid === currentOpenBookId);
   if (!book) return;
 
@@ -95,80 +93,57 @@ refreshDataBtn.addEventListener('click', async () => {
   const title = getField(book, 'title');
   const author = getField(book, 'author');
 
-  // UI Feedback
-  const originalText = refreshDataBtn.textContent;
-  refreshDataBtn.textContent = 'Refreshing...';
+  // UI Feedback: Dim the icon while loading
+  refreshDataBtn.style.opacity = '0.5';
 
   try {
-    // Build the query: prioritize ISBN, fallback to Title + Author
     let query = '';
     if (isbn && isbn !== 'N/A') {
       query = `isbn:${isbn}`;
     } else {
-      // Replace spaces with '+' for the URL
       query = `intitle:${title.replace(/ /g, '+')}+inauthor:${author.replace(/ /g, '+')}`;
     }
 
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
+    // FIX: Added your API key to bypass the 429 Rate Limit
+    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&key=${apiKey}`);
     const data = await response.json();
 
     if (data.items && data.items.length > 0) {
       const volumeInfo = data.items[0].volumeInfo;
       let updatesMade = false;
 
-      // Check for better cover
       if (volumeInfo.imageLinks && volumeInfo.imageLinks.thumbnail) {
-        // Force https to prevent mixed-content warnings
         const secureUrl = volumeInfo.imageLinks.thumbnail.replace('http:', 'https:');
         await updateBookData('cover_url', secureUrl);
         updatesMade = true;
       }
       
-      // Check for page count
       if (volumeInfo.pageCount) {
         await updateBookData('pages', volumeInfo.pageCount);
         updatesMade = true;
       }
       
-      // Check for category
       if (volumeInfo.categories && volumeInfo.categories.length > 0) {
         await updateBookData('category', volumeInfo.categories[0]);
         updatesMade = true;
       }
 
       if (updatesMade) {
-        refreshDataBtn.textContent = 'Success!';
-        // Call your rendering function here to redraw the grid with new covers!
-        // renderLibrary(); 
-      } else {
-        refreshDataBtn.textContent = 'Data is up to date!';
+        // UI Feedback: Turn terracotta on success
+        refreshDataBtn.style.color = 'var(--terracotta)';
+        loadBooks(); // Uncomment this to redraw the UI!
       }
-    } else {
-      refreshDataBtn.textContent = 'Book not found.';
     }
   } catch (error) {
     console.error('API Error:', error);
-    refreshDataBtn.textContent = 'Error contacting Google.';
   } finally {
-    // Reset the button after 3 seconds
-    setTimeout(() => { refreshDataBtn.textContent = originalText; }, 3000);
+    // Reset the button visual state after 3 seconds
+    setTimeout(() => { 
+      refreshDataBtn.style.opacity = '1'; 
+      refreshDataBtn.style.color = 'var(--sage-green)'; 
+    }, 3000);
   }
-});
-
-// 2. Manual Cover Save
-saveCoverBtn.addEventListener('click', async () => {
-  const newUrl = manualCoverUrlInput.value.trim();
-  if (!newUrl) return;
-
-  const originalText = saveCoverBtn.textContent;
-  saveCoverBtn.textContent = 'Saving...';
-
-  await updateBookData('cover_url', newUrl);
-  
-  saveCoverBtn.textContent = 'Saved!';
-  setTimeout(() => { saveCoverBtn.textContent = originalText; }, 2000);
-  
-  loadBooks(); 
 });
 
 // Star Rating Logic
@@ -240,9 +215,7 @@ function openDetails(book, clickedElement) {
   const readDate = getField(book, 'read_date');
   const status = Number(getField(book, 'status'));
   const dateAddedRaw = getField(book, 'date_added');
-  const manualCoverUrl = document.getElementById('manual-cover-url');
   const coverUrlRaw = getField(book, 'cover_url') || '';
-  manualCoverUrl.value = coverUrlRaw; // Populate the input with current cover URL
 
   // --- BATCH 6: DISPLAY DATE ADDED ---
   if (dateAddedRaw) {
