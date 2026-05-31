@@ -238,100 +238,105 @@ sheet.addEventListener('touchend', () => {
 });
 
 // --- BATCH 7: FOCUS TIMER & AUDIO ---
-const timerOverlay = document.getElementById('timer-toggle');
-const durationPicker = document.getElementById('duration-picker');
 const timerDisplay = document.getElementById('timer-display');
-const startTimerBtn = document.getElementById('start-timer-btn');
-const cancelTimerBtn = document.getElementById('cancel-timer-btn');
+const playPauseBtn = document.getElementById('play-pause-btn');
+const playIcon = document.getElementById('play-icon');
+const pauseIcon = document.getElementById('pause-icon');
 const focusDurationSelect = document.getElementById('focus-duration');
 const focusCloseBtn = document.getElementById('focus-close-btn');
-const timerSubtitle = document.getElementById('timer-subtitle');
 
 let focusInterval;
-let timeRemaining = 20 * 60; 
+let timeRemaining = 1200; // Default to 20 minutes (1200 seconds)
 let isTimerRunning = false;
-let audioCtx; // We initialize this on 'Start' to satisfy browser safety rules
+let audioCtx; 
 
-// Format the seconds into MM:SS
 function updateTimerDisplay() {
   const mins = Math.floor(timeRemaining / 60);
   const secs = timeRemaining % 60;
   timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-// 1. Tapping the Overlay
-timerOverlay.addEventListener('click', () => {
-  if (!isTimerRunning) {
-    // Open the menu
-    durationPicker.classList.remove('hidden');
-    timerOverlay.style.opacity = '0'; // Hide timer while menu is open
-  } else {
-    // Stop the timer if tapped while running
-    clearInterval(focusInterval);
-    isTimerRunning = false;
-    timerSubtitle.textContent = "Tap to adjust";
-    timerDisplay.style.color = "var(--text-dark)";
-    timeRemaining = 5;
-    updateTimerDisplay();
-  }
-});
-
-// 2. Cancel the Menu
-cancelTimerBtn.addEventListener('click', () => {
-  durationPicker.classList.add('hidden');
-  timerOverlay.style.opacity = '1';
-});
-
-// 3. Start the Timer
-startTimerBtn.addEventListener('click', () => {
-  // Initialize the browser's audio engine upon first interaction
+// 1. Play/Pause Toggle
+playPauseBtn.addEventListener('click', () => {
+  // Initialize audio context on first interaction to satisfy browser security
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
 
-  timeRemaining = parseInt(focusDurationSelect.value) * 60;
-  updateTimerDisplay();
-  
-  durationPicker.classList.add('hidden');
-  timerOverlay.style.opacity = '1';
-  
-  timerSubtitle.textContent = "Focusing... Tap to stop";
-  timerDisplay.style.color = "var(--terracotta)"; // Give it color while active
-  isTimerRunning = true;
-
-  focusInterval = setInterval(() => {
-    timeRemaining--;
-    updateTimerDisplay();
-    
+  if (isTimerRunning) {
+    // PAUSE the timer
+    clearInterval(focusInterval);
+    isTimerRunning = false;
+    playIcon.style.display = 'block';
+    pauseIcon.style.display = 'none';
+    timerDisplay.style.color = "var(--text-dark)";
+  } else {
+    // START or RESUME the timer
+    // If it hit 0 previously, reset to the current dropdown value before starting
     if (timeRemaining <= 0) {
-      clearInterval(focusInterval);
-      isTimerRunning = false;
-      timerSubtitle.textContent = "Time's up! Tap to reset";
-      timerDisplay.style.color = "var(--text-dark)";
-      playCozyChime(); // Ring the alarm!
+      timeRemaining = parseInt(focusDurationSelect.value);
     }
-  }, 1000);
+    
+    isTimerRunning = true;
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = 'block';
+    timerDisplay.style.color = "var(--terracotta)"; // Active color
+    
+    focusInterval = setInterval(() => {
+      timeRemaining--;
+      updateTimerDisplay();
+      
+      if (timeRemaining <= 0) {
+        // TIMER FINISHED
+        clearInterval(focusInterval);
+        isTimerRunning = false;
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        timerDisplay.style.color = "var(--text-dark)";
+        playCozyChime(); // Ring the alarm!
+      }
+    }, 1000);
+  }
 });
 
-// 4. The Alarm Sound Generator
+// 2. Native Select Change Listener
+focusDurationSelect.addEventListener('change', () => {
+  // If the user selects a new time, stop the clock and reset it
+  clearInterval(focusInterval);
+  isTimerRunning = false;
+  playIcon.style.display = 'block';
+  pauseIcon.style.display = 'none';
+  timerDisplay.style.color = "var(--text-dark)";
+  
+  // Pull the new time (in seconds) directly from the option value
+  timeRemaining = parseInt(focusDurationSelect.value);
+  updateTimerDisplay();
+});
+
+// 3. The Alarm Sound Generator
 function playCozyChime() {
   if (!audioCtx) return;
-  // This creates a soft, bell-like sine wave that fades out gently over 3 seconds
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // Note C5
+  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
   
-  gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volume
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 3); // Fade out
+  gain.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 3); 
   
   osc.start();
   osc.stop(audioCtx.currentTime + 3);
 }
+
+// 4. The Close "X" Button
+focusCloseBtn.addEventListener('click', () => {
+  const prevNavBtn = document.querySelector(`.nav-item[data-target="${previousViewId}"]`);
+  if (prevNavBtn) prevNavBtn.click();
+});
 
 // 5. The Close "X" Button
 focusCloseBtn.addEventListener('click', () => {
