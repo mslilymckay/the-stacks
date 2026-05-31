@@ -281,7 +281,7 @@ playPauseBtn.addEventListener('click', () => {
     isTimerRunning = true;
     playIcon.style.display = 'none';
     pauseIcon.style.display = 'block';
-    timerDisplay.style.color = "var(--terracotta)"; // Active color
+    timerDisplay.style.color = "var(--sage-green)"; // Active color
     
     focusInterval = setInterval(() => {
       timeRemaining--;
