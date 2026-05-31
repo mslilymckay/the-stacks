@@ -177,6 +177,66 @@ if (sheetHandle) {
   });
 }
 
+// --- BATCH 6: SWIPE-TO-CLOSE GESTURE ---
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isSwiping = false;
+
+// Listen for the start of a touch anywhere on the bottom sheet
+sheet.addEventListener('touchstart', (e) => {
+  const cardContent = document.querySelector('.card-content');
+  
+  // If the user has scrolled down to read a long description, don't trigger the swipe!
+  // Only trigger if they are at the very top of the card.
+  if (cardContent && cardContent.scrollTop > 0) return; 
+
+  touchStartY = e.touches[0].clientY;
+  isSwiping = true;
+  
+  // Remove the smooth CSS transition temporarily so the card sticks perfectly to her finger
+  sheet.style.transition = 'none'; 
+}, { passive: true });
+
+// Listen for the finger dragging
+sheet.addEventListener('touchmove', (e) => {
+  if (!isSwiping) return;
+  
+  touchCurrentY = e.touches[0].clientY;
+  const deltaY = touchCurrentY - touchStartY;
+
+  // Only move the sheet if she is swiping DOWN (deltaY is positive)
+  if (deltaY > 0) {
+    // Prevent the background from scrolling while we drag the card
+    if (e.cancelable) e.preventDefault(); 
+    sheet.style.transform = `translateY(${deltaY}px)`;
+  }
+}, { passive: false });
+
+// Listen for the finger letting go
+sheet.addEventListener('touchend', () => {
+  if (!isSwiping) return;
+  isSwiping = false;
+  
+  const deltaY = touchCurrentY - touchStartY;
+  
+  // Restore the smooth CSS transition so it animates beautifully
+  sheet.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'; 
+
+  // If she swiped down more than 100 pixels, dismiss the card!
+  if (deltaY > 100) {
+    sheet.classList.remove('open');
+    
+    // Bring the floating action button (FAB) back if she is scrolled down the page
+    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) {
+      topFab.classList.add('visible');
+    }
+  } 
+  
+  // Clear the inline transform so your default CSS takes over again
+  // (This either snaps it back to the top, or allows the 'open' class removal to slide it off screen)
+  sheet.style.transform = ''; 
+});
+
 // A highly resilient helper to find data regardless of database capitalization
 const getField = (obj, fieldName) => {
   if (!obj) return undefined;
