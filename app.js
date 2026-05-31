@@ -237,6 +237,109 @@ sheet.addEventListener('touchend', () => {
   sheet.style.transform = ''; 
 });
 
+// --- BATCH 7: FOCUS TIMER & AUDIO ---
+const timerOverlay = document.getElementById('timer-toggle');
+const durationPicker = document.getElementById('duration-picker');
+const timerDisplay = document.getElementById('timer-display');
+const startTimerBtn = document.getElementById('start-timer-btn');
+const cancelTimerBtn = document.getElementById('cancel-timer-btn');
+const focusDurationSelect = document.getElementById('focus-duration');
+const focusCloseBtn = document.getElementById('focus-close-btn');
+const timerSubtitle = document.getElementById('timer-subtitle');
+
+let focusInterval;
+let timeRemaining = 20 * 60; 
+let isTimerRunning = false;
+let audioCtx; // We initialize this on 'Start' to satisfy browser safety rules
+
+// Format the seconds into MM:SS
+function updateTimerDisplay() {
+  const mins = Math.floor(timeRemaining / 60);
+  const secs = timeRemaining % 60;
+  timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// 1. Tapping the Overlay
+timerOverlay.addEventListener('click', () => {
+  if (!isTimerRunning) {
+    // Open the menu
+    durationPicker.classList.remove('hidden');
+    timerOverlay.style.opacity = '0'; // Hide timer while menu is open
+  } else {
+    // Stop the timer if tapped while running
+    clearInterval(focusInterval);
+    isTimerRunning = false;
+    timerSubtitle.textContent = "Tap to adjust";
+    timerDisplay.style.color = "var(--text-dark)";
+    timeRemaining = 5;
+    updateTimerDisplay();
+  }
+});
+
+// 2. Cancel the Menu
+cancelTimerBtn.addEventListener('click', () => {
+  durationPicker.classList.add('hidden');
+  timerOverlay.style.opacity = '1';
+});
+
+// 3. Start the Timer
+startTimerBtn.addEventListener('click', () => {
+  // Initialize the browser's audio engine upon first interaction
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  timeRemaining = parseInt(focusDurationSelect.value) * 60;
+  updateTimerDisplay();
+  
+  durationPicker.classList.add('hidden');
+  timerOverlay.style.opacity = '1';
+  
+  timerSubtitle.textContent = "Focusing... Tap to stop";
+  timerDisplay.style.color = "var(--terracotta)"; // Give it color while active
+  isTimerRunning = true;
+
+  focusInterval = setInterval(() => {
+    timeRemaining--;
+    updateTimerDisplay();
+    
+    if (timeRemaining <= 0) {
+      clearInterval(focusInterval);
+      isTimerRunning = false;
+      timerSubtitle.textContent = "Time's up! Tap to reset";
+      timerDisplay.style.color = "var(--text-dark)";
+      playCozyChime(); // Ring the alarm!
+    }
+  }, 1000);
+});
+
+// 4. The Alarm Sound Generator
+function playCozyChime() {
+  if (!audioCtx) return;
+  // This creates a soft, bell-like sine wave that fades out gently over 3 seconds
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // Note C5
+  
+  gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volume
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 3); // Fade out
+  
+  osc.start();
+  osc.stop(audioCtx.currentTime + 3);
+}
+
+// 5. The Close "X" Button
+focusCloseBtn.addEventListener('click', () => {
+  // Find the nav button for whatever page they were on previously, and click it!
+  const prevNavBtn = document.querySelector(`.nav-item[data-target="${previousViewId}"]`);
+  if (prevNavBtn) prevNavBtn.click();
+});
+
 // A highly resilient helper to find data regardless of database capitalization
 const getField = (obj, fieldName) => {
   if (!obj) return undefined;
@@ -638,28 +741,28 @@ if (readerToggle) {
 const navItems = document.querySelectorAll('.nav-item');
 const pageViews = document.querySelectorAll('.page-view');
 
+let previousViewId = 'view-library'; // Tracks history for the Focus close button
+
 navItems.forEach(item => {
   item.addEventListener('click', () => {
+    const targetId = item.getAttribute('data-target');
+    
+    // Save previous view (unless they are currently on Focus)
+    const currentActive = document.querySelector('.page-view.active');
+    if (currentActive && currentActive.id !== 'view-focus' && targetId === 'view-focus') {
+      previousViewId = currentActive.id;
+    }
+
     navItems.forEach(btn => btn.classList.remove('active'));
     item.classList.add('active');
 
-    const targetId = item.getAttribute('data-target');
     pageViews.forEach(view => view.classList.remove('active'));
-    
     const targetView = document.getElementById(targetId);
     if(targetView) targetView.classList.add('active');
 
-    if (bookshelfContainer) {
-      bookshelfContainer.scrollTo({ top: 0, behavior: 'instant' });
-    }
-    
-    if (topFab) {
-      topFab.classList.remove('visible');
-    }
-    
-    if (sheet && sheet.classList.contains('open')) {
-      sheet.classList.remove('open');
-    }
+    if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'instant' });
+    if (topFab) topFab.classList.remove('visible');
+    if (sheet && sheet.classList.contains('open')) sheet.classList.remove('open');
   });
 });
 
