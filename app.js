@@ -378,55 +378,65 @@ function formatDate(isoString) {
 function renderHeroSection() {
   const carousel = document.getElementById('active-reads-carousel');
   const heroLabel = document.getElementById('hero-label');
+  const wrapper = document.getElementById('current-read-section');
   if (!carousel || !heroLabel) return;
 
-  carousel.innerHTML = ''; // Clear previous covers
-  carousel.classList.remove('centered-layout'); // Reset layout
+  carousel.innerHTML = ''; 
 
-  // 1. Find all active reads
+  // Helper to generate the slim '+' button on the right edge
+  const createSlimAddBtn = () => {
+    const btn = document.createElement('div');
+    btn.className = 'carousel-item slim-add-btn';
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+    btn.addEventListener('click', () => {
+      document.querySelector('.nav-item[data-target="view-search"]').click();
+    });
+    return btn;
+  };
+
   const activeReads = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
 
-  // 2. SCENARIO A: Zero Active Reads
+  // SCENARIO A: Empty State (Zero Active Reads)
   if (activeReads.length === 0) {
-    heroLabel.textContent = "What's Next?";
-    carousel.classList.add('centered-layout');
+    heroLabel.textContent = "Start Reading";
     
-    // Check if there is a book waiting in the queue
-    const waitingBook = globalLibraryData.find(b => Number(getField(b, 'status')) === 0);
-    const emptyCard = document.createElement('div');
-    emptyCard.className = 'carousel-item special-card';
-    
-    if (waitingBook) {
-      // Show the next book title
-      emptyCard.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-        <h3>Start Reading</h3>
-        <p>${getField(waitingBook, 'title') || 'Unknown Title'}</p>
-      `;
-      // Clicking it opens that book's detail card!
-      emptyCard.addEventListener('click', () => openDetails(waitingBook, emptyCard));
-    } else {
-      // Library is totally empty or everything is finished
-      emptyCard.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        <h3>Add Book</h3>
-      `;
-      emptyCard.addEventListener('click', () => {
-        // Automatically route them to the Search page
-        document.querySelector('.nav-item[data-target="view-search"]').click();
-      });
-    }
-    carousel.appendChild(emptyCard);
+    // Card 1: TBR
+    const tbrCard = document.createElement('div');
+    tbrCard.className = 'carousel-item special-card';
+    tbrCard.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+      <h3>TBR</h3>
+      <p>Check your To Be Read list</p>
+    `;
+    tbrCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+    carousel.appendChild(tbrCard);
 
-  // 3. SCENARIO B: One or More Active Reads
+    // Card 2: Read Again
+    const readAgainCard = document.createElement('div');
+    readAgainCard.className = 'carousel-item special-card';
+    // Utilizes a grouped SVG to place the '+' badge perfectly over the open book
+    readAgainCard.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        <circle cx="12" cy="9" r="5" fill="var(--card-bg)"></circle>
+        <line x1="12" y1="7" x2="12" y2="11" stroke="var(--sage-green)" stroke-width="2"></line>
+        <line x1="10" y1="9" x2="14" y2="9" stroke="var(--sage-green)" stroke-width="2"></line>
+      </svg>
+      <h3>Read Again</h3>
+      <p>Revisit an old classic</p>
+    `;
+    readAgainCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+    carousel.appendChild(readAgainCard);
+
+    // Card 3: Slim Add Button
+    carousel.appendChild(createSlimAddBtn());
+
+  // SCENARIO B: Active Reads
   } else {
     heroLabel.textContent = activeReads.length > 1 ? "Current Reads" : "Current Read";
-    if (activeReads.length <= 2) carousel.classList.add('centered-layout');
+    const displayReads = activeReads.slice(0, 4); // Hard cap at 4
 
-    // FIX: Slice the array to only show a maximum of 4 books
-    const displayReads = activeReads.slice(0, 4);
-
-    // Generate the covers
     displayReads.forEach(book => {
       const card = document.createElement('div');
       card.className = 'carousel-item';
@@ -436,7 +446,6 @@ function renderHeroSection() {
       carousel.appendChild(card);
     });
 
-    // 4. SCENARIO C: More than 4 Active Reads (Add "See All" card)
     if (activeReads.length > 4) {
       const seeAllCard = document.createElement('div');
       seeAllCard.className = 'carousel-item special-card';
@@ -444,11 +453,34 @@ function renderHeroSection() {
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
         <h3>See All</h3>
       `;
-      seeAllCard.addEventListener('click', () => {
-        document.querySelector('.nav-item[data-target="view-stats"]').click();
-      });
+      seeAllCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
       carousel.appendChild(seeAllCard);
+    } else {
+      carousel.appendChild(createSlimAddBtn());
     }
+  }
+
+  // Inject the floating scroll-back arrow logic
+  let backArrow = document.getElementById('carousel-back-arrow');
+  if (!backArrow) {
+    backArrow = document.createElement('button');
+    backArrow.id = 'carousel-back-arrow';
+    backArrow.className = 'carousel-back-arrow hidden';
+    backArrow.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+    wrapper.appendChild(backArrow);
+
+    backArrow.addEventListener('click', () => {
+      carousel.scrollTo({ left: 0, behavior: 'smooth' });
+    });
+
+    carousel.addEventListener('scroll', () => {
+      // Show arrow if swiped more than 20 pixels to the right
+      if (carousel.scrollLeft > 20) {
+        backArrow.classList.remove('hidden');
+      } else {
+        backArrow.classList.add('hidden');
+      }
+    });
   }
 }
 
