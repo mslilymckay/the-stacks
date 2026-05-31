@@ -131,7 +131,7 @@ refreshDataBtn.addEventListener('click', async () => {
 
       if (updatesMade) {
         // UI Feedback: Turn terracotta on success
-        refreshDataBtn.style.color = 'var(--terracotta)';
+        refreshDataBtn.style.color = 'var(--sage-green)';
         loadBooks(); // Uncomment this to redraw the UI!
       }
     }
@@ -141,7 +141,7 @@ refreshDataBtn.addEventListener('click', async () => {
     // Reset the button visual state after 3 seconds
     setTimeout(() => { 
       refreshDataBtn.style.opacity = '1'; 
-      refreshDataBtn.style.color = 'var(--sage-green)'; 
+      refreshDataBtn.style.color = 'var(--terracotta)'; // Reset to default
     }, 3000);
   }
 });
