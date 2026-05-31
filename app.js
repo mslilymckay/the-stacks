@@ -620,32 +620,11 @@ async function loadBooks() {
   
   globalLibraryData = books; 
 
-  renderHeroSection();
-  
   calculateStats(); 
   
   if(bookGrid) bookGrid.innerHTML = '';
 
-  if (activeReads) {
-    const savedCover = getField(activeReads, 'cover_url');
-    const activeCoverUrl = (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') 
-      ? savedCover 
-      : getCoverUrl(getField(activeReads, 'isbn'));
-      
-    const activeDiv = document.querySelector('.active-read');
-    const title = getField(activeReads, 'title') || 'Unknown Title';
-    const author = getField(activeReads, 'author') || 'Unknown Author';
-
-    if (activeDiv) {
-      activeDiv.innerHTML = `
-        <img src="${activeCoverUrl}" alt="${title}" class="cover-image" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
-        <h3 class="cover-title">${title}</h3>
-        <p class="cover-author">${author}</p>
-      `;
-      activeDiv.addEventListener('click', () => openDetails(activeReads, activeDiv));
-    }
-    renderHeroSection();
-  }
+  renderHeroSection();
 
   for (const book of books) {
     const bookDiv = document.createElement('div');
