@@ -103,15 +103,6 @@
           <p class="metadata" data-field="category"></p>
         </div>
 
-        <div class="card-actions">
-          <button id="refresh-data-btn" class="card-btn">⟳ Refresh Data from Google</button>
-          
-          <div class="manual-cover-input">
-            <input type="url" id="manual-cover-url" placeholder="Paste image URL here..." class="card-input">
-            <button id="save-cover-btn" class="card-btn">Save Cover</button>
-          </div>
-        </div>
-        
         <div class="metadata-row">
           <span class="meta-label">Status:</span>
           <select id="status-dropdown" class="card-select">
@@ -137,6 +128,16 @@
           <span class="meta-label">Added:</span>
           <p class="metadata" data-field="date-added"></p>
         </div>
+      </div>
+
+      <div class="card-footer-actions">
+        <button id="refresh-data-btn" class="icon-action-btn" title="Refresh Data from Google">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2v6h-6"></path>
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 2v6h6"></path>
+          </svg>
+        </button>
       </div>
 
       <div class="card-footer">
