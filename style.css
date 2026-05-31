@@ -645,3 +645,53 @@ body {
 .category-list li:last-child {
   border-bottom: none;
 }
+
+/* --- BATCH 6: CARD ACTIONS --- */
+.card-actions {
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px dashed var(--line-blue);
+  margin-top: 10px;
+}
+
+.card-btn {
+  background-color: transparent;
+  border: 1px solid var(--sage-green);
+  color: var(--sage-green);
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.card-btn:hover {
+  background-color: var(--sage-green);
+  color: white;
+}
+
+.manual-cover-input {
+  display: flex;
+  gap: 8px;
+}
+
+.card-input {
+  flex-grow: 1;
+  border: 1px solid #e0dcd3;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.5); /* Slightly translucent */
+  color: var(--text-dark);
+  outline: none;
+}
+
+.card-input:focus {
+  border-color: var(--terracotta);
+}
