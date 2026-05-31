@@ -85,21 +85,25 @@
         
         <div class="timer-overlay" id="timer-toggle">
           <div class="timer-display" id="timer-display">20:00</div>
-          <p class="timer-subtitle" id="timer-subtitle">Tap to adjust</p>
-        </div>
-        
-        <div class="duration-picker hidden" id="duration-picker">
-          <label for="focus-duration" class="meta-label" style="text-align: center; width: 100%; margin-bottom: 5px;">Set Time:</label>
-          <select id="focus-duration" class="card-select">
-            <option value="15">15 Minutes</option>
-            <option value="20" selected>20 Minutes</option>
-            <option value="30">30 Minutes</option>
-            <option value="45">45 Minutes</option>
-            <option value="60">1 Hour</option>
-          </select>
-          <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button id="cancel-timer-btn" class="card-btn" style="border-color: var(--sage-green); color: var(--sage-green); flex: 1;">Cancel</button>
-            <button id="start-timer-btn" class="card-btn" style="background: var(--terracotta); border-color: var(--terracotta); color: white; flex: 1;">Start</button>
+          
+          <div class="timer-controls">
+            <button id="play-pause-btn" class="icon-action-btn" title="Start/Pause Timer">
+              <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="display:none;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+            
+            <div class="native-select-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="clock-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              
+              <select id="focus-duration" class="hidden-native-select">
+                <option value="5">5 Seconds (Test)</option>
+                <option value="900">15 Minutes</option>
+                <option value="1200" selected>20 Minutes</option>
+                <option value="1800">30 Minutes</option>
+                <option value="2700">45 Minutes</option>
+                <option value="3600">1 Hour</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
