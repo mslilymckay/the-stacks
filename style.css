@@ -681,3 +681,109 @@ body {
 .icon-action-btn:active {
   transform: scale(0.9); 
 }
+
+/* --- BATCH 7: NAV ICONS & FOCUS PAGE --- */
+
+/* Nav Overrides */
+.bottom-nav {
+  justify-content: space-around; /* Spreads icons evenly */
+}
+.nav-item {
+  padding: 10px;
+  color: #c4c0b6; /* Inactive color */
+}
+.nav-item.active {
+  color: var(--terracotta); /* Active color */
+}
+.nav-item svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.5;
+  transition: transform 0.2s ease;
+}
+.nav-item:active svg {
+  transform: scale(0.9);
+}
+
+/* Focus Layout */
+#view-focus {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 50; /* Sits on top of the library */
+  background-color: var(--bg-color);
+}
+.focus-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.focus-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+}
+.focus-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 60;
+  background: rgba(253, 251, 247, 0.8);
+  border: 1px solid var(--line-blue);
+  color: var(--terracotta);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Timer UI */
+.timer-overlay {
+  position: relative;
+  z-index: 55;
+  background: rgba(253, 251, 247, 0.85); /* Frosty glass effect */
+  border: 1px solid var(--line-blue);
+  padding: 15px 30px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  backdrop-filter: blur(4px);
+  -webkit-tap-highlight-color: transparent;
+}
+.timer-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--text-dark);
+}
+.timer-subtitle {
+  font-size: 12px;
+  color: var(--sage-green);
+  margin: 5px 0 0 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Menu Modal */
+.duration-picker {
+  position: absolute;
+  z-index: 65;
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  border: 1px solid var(--terracotta);
+  display: flex;
+  flex-direction: column;
+}
+.duration-picker.hidden {
+  display: none;
+}
