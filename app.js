@@ -75,6 +75,7 @@ statusDropdown.addEventListener('change', async (event) => {
     await updateBookData('read_date', null);
   }
   loadBooks();
+  renderHeroSection();
 });
 
 // --- BATCH 6: REFRESH DATA & MANUAL COVERS ---
@@ -361,6 +362,82 @@ function formatDate(isoString) {
   return `${m}-${d}-${y}`;
 }
 
+// --- BATCH 7: DYNAMIC HERO SECTION ---
+function renderHeroSection() {
+  const carousel = document.getElementById('active-reads-carousel');
+  const heroLabel = document.getElementById('hero-label');
+  if (!carousel || !heroLabel) return;
+
+  carousel.innerHTML = ''; // Clear previous covers
+  carousel.classList.remove('centered-layout'); // Reset layout
+
+  // 1. Find all active reads
+  const activeReads = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
+
+  // 2. SCENARIO A: Zero Active Reads
+  if (activeReads.length === 0) {
+    heroLabel.textContent = "What's Next?";
+    carousel.classList.add('centered-layout');
+    
+    // Check if there is a book waiting in the queue
+    const waitingBook = globalLibraryData.find(b => Number(getField(b, 'status')) === 0);
+    const emptyCard = document.createElement('div');
+    emptyCard.className = 'carousel-item special-card';
+    
+    if (waitingBook) {
+      // Show the next book title
+      emptyCard.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        <h3>Start Reading</h3>
+        <p>${getField(waitingBook, 'title') || 'Unknown Title'}</p>
+      `;
+      // Clicking it opens that book's detail card!
+      emptyCard.addEventListener('click', () => openDetails(waitingBook, emptyCard));
+    } else {
+      // Library is totally empty or everything is finished
+      emptyCard.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <h3>Add Book</h3>
+      `;
+      emptyCard.addEventListener('click', () => {
+        // Automatically route them to the Search page
+        document.querySelector('.nav-item[data-target="view-search"]').click();
+      });
+    }
+    carousel.appendChild(emptyCard);
+
+  // 3. SCENARIO B: One or More Active Reads
+  } else {
+    heroLabel.textContent = activeReads.length > 1 ? "Current Reads" : "Current Read";
+    if (activeReads.length <= 2) carousel.classList.add('centered-layout');
+
+    // Generate the covers
+    activeReads.forEach(book => {
+      const card = document.createElement('div');
+      card.className = 'carousel-item';
+      const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+      card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
+      card.addEventListener('click', () => openDetails(book, card)); 
+      carousel.appendChild(card);
+    });
+
+    // 4. SCENARIO C: More than 2 Active Reads (Add "See All" card)
+    if (activeReads.length > 2) {
+      const seeAllCard = document.createElement('div');
+      seeAllCard.className = 'carousel-item special-card';
+      seeAllCard.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+        <h3>See All</h3>
+      `;
+      seeAllCard.addEventListener('click', () => {
+        document.querySelector('.nav-item[data-target="view-stats"]').click();
+        // We will hook up the specific "List View" on the Stats page in Batch 8!
+      });
+      carousel.appendChild(seeAllCard);
+    }
+  }
+}
+
 function openDetails(book, clickedElement) {
   if (clickedElement) {
     clickedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -567,6 +644,7 @@ async function loadBooks() {
       `;
       activeDiv.addEventListener('click', () => openDetails(activeBook, activeDiv));
     }
+    renderHeroSection();
   }
 
   for (const book of books) {
