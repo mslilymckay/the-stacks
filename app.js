@@ -76,6 +76,18 @@ statusDropdown.addEventListener('change', async (event) => {
   }
   loadBooks();
   renderHeroSection();
+
+  // --- NEW: Auto-Close the Card (with a satisfaction delay!) ---
+  setTimeout(() => {
+    if (sheet && sheet.classList.contains('open')) {
+      sheet.classList.remove('open');
+      
+      // Bring back the floating action button if scrolled down
+      if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) {
+        topFab.classList.add('visible');
+      }
+    }
+  }, 800); // 800ms delay lets her see the Finished stamp before closing
 });
 
 // --- BATCH 6: REFRESH DATA & MANUAL COVERS ---
@@ -411,8 +423,11 @@ function renderHeroSection() {
     heroLabel.textContent = activeReads.length > 1 ? "Current Reads" : "Current Read";
     if (activeReads.length <= 2) carousel.classList.add('centered-layout');
 
+    // FIX: Slice the array to only show a maximum of 4 books
+    const displayReads = activeReads.slice(0, 4);
+
     // Generate the covers
-    activeReads.forEach(book => {
+    displayReads.forEach(book => {
       const card = document.createElement('div');
       card.className = 'carousel-item';
       const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
@@ -421,8 +436,8 @@ function renderHeroSection() {
       carousel.appendChild(card);
     });
 
-    // 4. SCENARIO C: More than 2 Active Reads (Add "See All" card)
-    if (activeReads.length > 2) {
+    // 4. SCENARIO C: More than 4 Active Reads (Add "See All" card)
+    if (activeReads.length > 4) {
       const seeAllCard = document.createElement('div');
       seeAllCard.className = 'carousel-item special-card';
       seeAllCard.innerHTML = `
@@ -431,7 +446,6 @@ function renderHeroSection() {
       `;
       seeAllCard.addEventListener('click', () => {
         document.querySelector('.nav-item[data-target="view-stats"]').click();
-        // We will hook up the specific "List View" on the Stats page in Batch 8!
       });
       carousel.appendChild(seeAllCard);
     }
