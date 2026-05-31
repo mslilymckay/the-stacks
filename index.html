@@ -22,13 +22,7 @@
           <div class="book-cover active-read">
             <img src="https://placehold.co/150x200?text=Loading..." alt="Current Read" class="cover-image">
           </div>
-          
-          <div class="book-cover" id="reader-toggle">
-            <img src="focus.gif" alt="Reading peacefully" class="cover-image">
-            <h3 class="cover-title">Let's Read</h3>
-            <p class="cover-author">Tap to enter focus mode</p>
-          </div>
-
+         
         </div>
       </div>
     
@@ -79,6 +73,34 @@
           <ul id="stat-categories" class="category-list">
             <li>Loading...</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-focus" class="page-view">
+      <div class="focus-container">
+        <button id="focus-close-btn" class="focus-close">✕</button>
+        
+        <img src="focus.gif" alt="Reading peacefully" class="focus-bg">
+        
+        <div class="timer-overlay" id="timer-toggle">
+          <div class="timer-display" id="timer-display">20:00</div>
+          <p class="timer-subtitle" id="timer-subtitle">Tap to adjust</p>
+        </div>
+        
+        <div class="duration-picker hidden" id="duration-picker">
+          <label for="focus-duration" class="meta-label" style="text-align: center; width: 100%; margin-bottom: 5px;">Set Time:</label>
+          <select id="focus-duration" class="card-select">
+            <option value="15">15 Minutes</option>
+            <option value="20" selected>20 Minutes</option>
+            <option value="30">30 Minutes</option>
+            <option value="45">45 Minutes</option>
+            <option value="60">1 Hour</option>
+          </select>
+          <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button id="cancel-timer-btn" class="card-btn" style="border-color: var(--sage-green); color: var(--sage-green); flex: 1;">Cancel</button>
+            <button id="start-timer-btn" class="card-btn" style="background: var(--terracotta); border-color: var(--terracotta); color: white; flex: 1;">Start</button>
+          </div>
         </div>
       </div>
     </section>
@@ -151,9 +173,18 @@
   <button class="fab" id="top-fab">↑</button>
   
   <nav class="bottom-nav">
-    <button class="nav-item active" data-target="view-library">Library</button>
-    <button class="nav-item" data-target="view-search">Search</button>
-    <button class="nav-item" data-target="view-stats">Stats</button>
+    <button class="nav-item active" data-target="view-library" title="Library">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+    </button>
+    <button class="nav-item" data-target="view-search" title="Search">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+    <button class="nav-item" data-target="view-stats" title="Stats">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+    </button>
+    <button class="nav-item" data-target="view-focus" title="Focus Mode">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+    </button>
   </nav>
 
 </body>
