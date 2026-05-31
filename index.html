@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Tracker</title>
+  <title>The Stacks</title>
   <link rel="stylesheet" href="style.css?v=2">
   <link rel="manifest" href="manifest.json">
   <script type="module" src="app.js" defer></script>
@@ -35,14 +35,12 @@
 
     <section id="view-search" class="page-view">
       <div class="hero-wrapper">
-        <h2 class="section-label">Find a Book</h2>
-        <div class="search-form-container">
-          <div class="search-radio-group">
-            <label><input type="radio" name="search-type" value="intitle:" checked> Title</label>
-            <label><input type="radio" name="search-type" value="inauthor:"> Author</label>
-          </div>
-          <input type="text" id="search-input" placeholder="Search by title, author, or ISBN...">
-          <button id="search-btn">Search</button>
+        <h2 class="section-label" id="hero-label">Current Read</h2>
+        <div class="current-read-section" id="current-read-section">
+          
+          <div class="carousel-container" id="active-reads-carousel">
+            </div>
+          
         </div>
       </div>
       
