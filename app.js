@@ -626,15 +626,15 @@ async function loadBooks() {
   
   if(bookGrid) bookGrid.innerHTML = '';
 
-  if (activeBook) {
-    const savedCover = getField(activeBook, 'cover_url');
+  if (activeReads) {
+    const savedCover = getField(activeReads, 'cover_url');
     const activeCoverUrl = (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') 
       ? savedCover 
-      : getCoverUrl(getField(activeBook, 'isbn'));
+      : getCoverUrl(getField(activeReads, 'isbn'));
       
     const activeDiv = document.querySelector('.active-read');
-    const title = getField(activeBook, 'title') || 'Unknown Title';
-    const author = getField(activeBook, 'author') || 'Unknown Author';
+    const title = getField(activeReads, 'title') || 'Unknown Title';
+    const author = getField(activeReads, 'author') || 'Unknown Author';
 
     if (activeDiv) {
       activeDiv.innerHTML = `
@@ -642,7 +642,7 @@ async function loadBooks() {
         <h3 class="cover-title">${title}</h3>
         <p class="cover-author">${author}</p>
       `;
-      activeDiv.addEventListener('click', () => openDetails(activeBook, activeDiv));
+      activeDiv.addEventListener('click', () => openDetails(activeReads, activeDiv));
     }
     renderHeroSection();
   }
