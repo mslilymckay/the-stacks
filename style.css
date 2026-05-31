@@ -804,61 +804,56 @@ body {
   transform: scale(0.9);
 }
 
-/* --- BATCH 7: UPDATED HERO CONTAINER --- */
+/* --- BATCH 7: HERO CAROUSEL --- */
 .current-read-section {
   width: 100%;
-  display: block; /* This kills the old 2-column grid! */
+  display: block; 
   overflow: hidden; 
   padding: 5px 0 15px 0;
   margin-bottom: 20px;
+  position: relative; /* Anchors the back arrow */
 }
 
 .carousel-container {
   display: flex;
-  gap: 15px;
+  gap: 20px; /* Matches the book-grid gap */
   overflow-x: auto;
-  scroll-snap-type: x mandatory; /* Creates the magnetic swipe effect */
-  padding: 0 20px; /* Allows covers to bleed off the edge smoothly */
-  color: var(--sage-green);
-  
-  /* Hides default browser scrollbars */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  scroll-snap-type: x mandatory; 
+  padding: 0 15px; /* Matches the book-grid padding */
+  scrollbar-width: none; 
+  -ms-overflow-style: none;  
 }
 .carousel-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none; 
 }
 
-/* Tweak to center the layout if there are exactly 1 or 2 items */
-.carousel-container.centered-layout {
-  justify-content: center;
-}
-
+/* Updated to match the strict 2-column grid of the library */
 .carousel-item {
   flex: 0 0 auto;
-  width: 140px; 
-  scroll-snap-align: start; /* The magnetic snap point */
+  width: calc(50% - 10px); 
+  scroll-snap-align: start; 
   cursor: pointer;
   transition: transform 0.2s ease;
 }
 
 .carousel-item:active {
-  transform: scale(0.95); /* Tactile tap feedback */
+  transform: scale(0.95); 
 }
 
 .carousel-item .cover-image {
   width: 100%;
-  height: 210px;
+  height: auto;
+  aspect-ratio: 2 / 3;
   object-fit: cover;
   border-radius: 4px;
   box-shadow: 2px 4px 8px rgba(0,0,0,0.15);
 }
 
-/* The Placeholder / See All Cards */
+/* Special Cards (See All, TBR, Read Again) */
 .special-card {
-  width: 140px;
-  height: 210px;
-  border: 2px dashed var(--detail-line);
+  width: calc(50% - 10px); 
+  aspect-ratio: 2 / 3;
+  border: 2px dashed var(--line-blue);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -882,4 +877,42 @@ body {
   margin-top: 5px;
   line-height: 1.2;
   color: var(--text-dark);
+}
+
+/* The Slim Add Button */
+.slim-add-btn {
+  width: 48px;
+  aspect-ratio: auto;
+  border: 2px dashed var(--line-blue);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sage-green);
+  background: rgba(253, 251, 247, 0.5);
+}
+
+/* The Subtle Scroll-Back Arrow */
+.carousel-back-arrow {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(253, 251, 247, 0.95);
+  border: 1px solid var(--line-blue);
+  color: var(--terracotta);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  transition: opacity 0.2s ease;
+}
+.carousel-back-arrow.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
