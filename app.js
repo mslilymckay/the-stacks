@@ -585,4 +585,264 @@ async function searchGoogleBooks(query) {
     const searchType = typeRadio ? typeRadio.value : 'intitle:';
     
     const cleanQuery = query.replace(/[-\s]/g, '');
-    const isIsbn = /^\
+    const isIsbn = /^\d{10}(\d{3})?$/.test(cleanQuery);
+    const finalQuery = isIsbn ? `${encodeURIComponent(cleanQuery)}` : `${searchType}${encodeURIComponent(query)}`;
+    
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${finalQuery}&maxResults=10&key=${apiKey}`);
+    const data = await response.json();
+
+    if(searchResultsContainer) searchResultsContainer.innerHTML = ''; 
+
+    if (!data.items || data.items.length === 0) {
+      if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">No books found. Try a different search.</p>';
+      return;
+    }
+
+    data.items.forEach(item => {
+      const info = item.volumeInfo;
+      const title = info.title || 'Unknown Title';
+      const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
+      const category = info.categories ? info.categories[0] : 'Uncategorized';
+      const thumbnail = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http:', 'https:') : 'https://placehold.co/60x90?text=No+Cover';
+      const infoLink = info.infoLink || '#';
+      
+      let isbn = '';
+      if (info.industryIdentifiers) {
+        const isbnObj = info.industryIdentifiers.find(id => id.type === 'ISBN_13') || info.industryIdentifiers.find(id => id.type === 'ISBN_10');
+        if (isbnObj) isbn = isbnObj.identifier;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'search-result-card';
+      
+      card.innerHTML = `
+        <img src="${thumbnail}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 2px;">
+        <div class="search-result-info">
+          <h3>${title}</h3>
+          <p>${author}</p>
+          <button class="add-book-btn" 
+            data-title="${encodeURIComponent(title)}" 
+            data-author="${encodeURIComponent(author)}" 
+            data-isbn="${encodeURIComponent(isbn)}" 
+            data-category="${encodeURIComponent(category)}"
+            data-cover="${encodeURIComponent(thumbnail)}">+ Add</button>
+          <a href="${infoLink}" target="_blank" class="google-books-link">View on Google Books ↗</a>
+        </div>
+      `;
+
+      if(searchResultsContainer) searchResultsContainer.appendChild(card);
+    });
+
+    // Add Book Listeners
+    document.querySelectorAll('.add-book-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const button = e.target;
+        button.textContent = 'Saving...';
+        button.style.backgroundColor = 'var(--terracotta)';
+        button.disabled = true;
+        
+        const schema = globalLibraryData.length > 0 ? Object.keys(globalLibraryData[0]) : [];
+        const getKey = (name) => schema.find(k => k.toLowerCase() === name.toLowerCase()) || name;
+
+        const payload = {};
+        payload[getKey('uuid')] = crypto.randomUUID();
+        payload[getKey('title')] = decodeURIComponent(button.dataset.title);
+        payload[getKey('author')] = decodeURIComponent(button.dataset.author);
+        payload[getKey('status')] = 0; // Default to Waiting
+        payload[getKey('isbn')] = decodeURIComponent(button.dataset.isbn);
+        payload[getKey('category')] = decodeURIComponent(button.dataset.category);
+        payload[getKey('cover_url')] = decodeURIComponent(button.dataset.cover);
+
+        // Database Insert
+        const { data, error } = await supabase.from('books').insert([payload]).select();
+
+        if (error) {
+          console.error('Error adding book:', error);
+          button.textContent = 'Error!';
+        } else {
+          button.textContent = 'Saved!';
+          button.style.backgroundColor = 'var(--sage-green)';
+          
+          if (data && data.length > 0) {
+            const savedBook = data[0];
+            globalLibraryData.push(savedBook);
+            
+            // Auto-open card and refresh grid
+            setTimeout(() => { openDetails(savedBook); }, 600);
+            loadBooks(); 
+          }
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Search failed:", error);
+    if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: #a34e4e;">Something went wrong. Please try again.</p>';
+  }
+}
+
+if (searchBtn) searchBtn.addEventListener('click', () => searchGoogleBooks(searchInput.value));
+if (searchInput) {
+  searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') searchGoogleBooks(searchInput.value);
+  });
+}
+
+
+// ==========================================
+// 6. FOCUS TIMER & AUDIO
+// ==========================================
+
+const timerDisplay = document.getElementById('timer-display');
+const playPauseBtn = document.getElementById('play-pause-btn');
+const playIcon = document.getElementById('play-icon');
+const pauseIcon = document.getElementById('pause-icon');
+const focusDurationSelect = document.getElementById('focus-duration');
+const focusCloseBtn = document.getElementById('focus-close-btn');
+
+let focusInterval;
+let timeRemaining = 1200; // Default 20 mins
+let isTimerRunning = false;
+let audioCtx; 
+
+function updateTimerDisplay() {
+  const mins = Math.floor(timeRemaining / 60);
+  const secs = timeRemaining % 60;
+  if(timerDisplay) timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+if(playPauseBtn) {
+  playPauseBtn.addEventListener('click', () => {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    if (isTimerRunning) {
+      clearInterval(focusInterval);
+      isTimerRunning = false;
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+      timerDisplay.style.color = "var(--text-dark)";
+    } else {
+      if (timeRemaining <= 0) timeRemaining = parseInt(focusDurationSelect.value);
+      isTimerRunning = true;
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'block';
+      timerDisplay.style.color = "var(--sage-green)"; 
+      
+      focusInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        
+        if (timeRemaining <= 0) {
+          clearInterval(focusInterval);
+          isTimerRunning = false;
+          playIcon.style.display = 'block';
+          pauseIcon.style.display = 'none';
+          timerDisplay.style.color = "var(--text-dark)";
+          playCozyChime(); 
+        }
+      }, 1000);
+    }
+  });
+}
+
+if (focusDurationSelect) {
+  focusDurationSelect.addEventListener('change', () => {
+    clearInterval(focusInterval);
+    isTimerRunning = false;
+    if(playIcon) playIcon.style.display = 'block';
+    if(pauseIcon) pauseIcon.style.display = 'none';
+    if(timerDisplay) timerDisplay.style.color = "var(--text-dark)";
+    
+    timeRemaining = parseInt(focusDurationSelect.value);
+    updateTimerDisplay();
+  });
+}
+
+function playCozyChime() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+  gain.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 3); 
+  osc.start();
+  osc.stop(audioCtx.currentTime + 3);
+}
+
+if (focusCloseBtn) {
+  focusCloseBtn.addEventListener('click', () => {
+    const prevNavBtn = document.querySelector(`.nav-item[data-target="${previousViewId}"]`);
+    if (prevNavBtn) prevNavBtn.click();
+  });
+}
+
+
+// ==========================================
+// 7. NAVIGATION & SYSTEM
+// ==========================================
+
+const navItems = document.querySelectorAll('.nav-item');
+const pageViews = document.querySelectorAll('.page-view');
+let previousViewId = 'view-library'; 
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const targetId = item.getAttribute('data-target');
+    window.history.pushState({ view: targetId }, '');
+    
+    const currentActive = document.querySelector('.page-view.active');
+    if (currentActive && currentActive.id !== 'view-focus' && targetId === 'view-focus') {
+      previousViewId = currentActive.id;
+    }
+
+    navItems.forEach(btn => btn.classList.remove('active'));
+    item.classList.add('active');
+
+    pageViews.forEach(view => view.classList.remove('active'));
+    const targetView = document.getElementById(targetId);
+    if(targetView) targetView.classList.add('active');
+
+    if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'instant' });
+    if (topFab) topFab.classList.remove('visible');
+    if (sheet && sheet.classList.contains('open')) sheet.classList.remove('open');
+  });
+});
+
+if (topFab && bookshelfContainer) {
+  bookshelfContainer.addEventListener('scroll', () => {
+    if (bookshelfContainer.scrollTop > 300) topFab.classList.add('visible');
+    else topFab.classList.remove('visible');
+  });
+
+  topFab.addEventListener('click', () => {
+    bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// History API for Native Back Swipe
+window.addEventListener('popstate', (event) => {
+  if (sheet && sheet.classList.contains('open')) {
+    sheet.classList.remove('open');
+    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
+    return; 
+  }
+  
+  if (event.state && event.state.view) {
+    const navBtn = document.querySelector(`.nav-item[data-target="${event.state.view}"]`);
+    if (navBtn) {
+      navItems.forEach(btn => btn.classList.remove('active'));
+      navBtn.classList.add('active');
+      pageViews.forEach(view => view.classList.remove('active'));
+      document.getElementById(event.state.view).classList.add('active');
+    }
+  }
+});
+
+
+// ==========================================
+// 8. INITIALIZE APP
+// ==========================================
+loadBooks();
