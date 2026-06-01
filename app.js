@@ -74,8 +74,7 @@ if (startScanBtn) {
         html5QrcodeScanner.stop().then(() => {
           scannerContainer.classList.add('hidden');
           
-          // Prepend 'isbn:' to the barcode number so Google Books knows exactly what it is
-          searchInput.value = `isbn:${decodedText}`;
+          searchInput.value = `${decodedText}`;
           
           // Automatically click the search button for her!
           if(searchBtn) searchBtn.click();
