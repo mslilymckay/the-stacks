@@ -172,7 +172,7 @@ refreshDataBtn.addEventListener('click', async () => {
   try {
     let query = '';
     if (isbn && isbn !== 'N/A') {
-      query = `isbn:${isbn}`;
+      query = `${isbn}`;
     } else {
       query = `intitle:${title.replace(/ /g, '+')}+inauthor:${author.replace(/ /g, '+')}`;
     }
@@ -797,7 +797,7 @@ async function searchGoogleBooks(query) {
     
     let finalQuery = '';
     if (isIsbn) {
-      finalQuery = `isbn:${encodeURIComponent(cleanQuery)}`;
+      finalQuery = `${encodeURIComponent(cleanQuery)}`;
     } else {
       finalQuery = `${searchType}${encodeURIComponent(query)}`;
     }
