@@ -584,11 +584,26 @@ async function searchGoogleBooks(query) {
     const typeRadio = document.querySelector('input[name="search-type"]:checked');
     const searchType = typeRadio ? typeRadio.value : 'intitle:';
     
-    const cleanQuery = query.replace(/[-\s]/g, '');
-    const isIsbn = /^\d{10}(\d{3})?$/.test(cleanQuery);
-    const finalQuery = isIsbn ? `${encodeURIComponent(cleanQuery)}` : `${searchType}${encodeURIComponent(query)}`;
+    // --- PASTE THIS NEW LOGIC ---
+    let finalQuery = '';
+    const cleanString = query.trim();
+    const numbersOnly = cleanString.replace(/[-\s]/g, '');
+
+    // 1. If the query already starts with "isbn:" (typed manually)
+    if (cleanString.toLowerCase().startsWith('isbn:')) {
+      finalQuery = encodeURIComponent(cleanString);
+    } 
+    // 2. If it's purely a 10 or 13 digit number, force the "isbn:" prefix!
+    else if (/^\d{10}(\d{3})?$/.test(numbersOnly)) {
+      finalQuery = encodeURIComponent(`isbn:${numbersOnly}`);
+    } 
+    // 3. Otherwise, use the Title or Author radio button
+    else {
+      finalQuery = `${searchType}${encodeURIComponent(cleanString)}`;
+    }
     
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${finalQuery}&maxResults=10&key=${apiKey}`);
+    
     const data = await response.json();
 
     if(searchResultsContainer) searchResultsContainer.innerHTML = ''; 
