@@ -781,7 +781,6 @@ async function loadBooks() {
   lazyCovers.forEach(img => observer.observe(img));
 }
 
-const searchInput = document.getElementById('search-input');
 const searchBtn = document.getElementById('search-btn');
 const searchResultsContainer = document.getElementById('search-results-container');
 
