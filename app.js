@@ -896,14 +896,33 @@ async function searchGoogleBooks(query) {
         payload[getKey('category')] = decodeURIComponent(button.dataset.category);
         payload[getKey('cover_url')] = decodeURIComponent(button.dataset.cover);
 
-        const { error } = await supabase.from('books').insert([payload]);
+        // Ensure you use .select() at the end of your insert statement!
+    // This forces Supabase to return the newly generated row (including the UUID).
+    const { data, error } = await supabase
+      .from('books')
+      .insert([newBookEntry])
+      .select(); // <-- Crucial addition!
 
-        if (error) {
-          console.error("Database save failed:", error);
-          button.textContent = 'Error';
-          button.style.backgroundColor = '#a34e4e'; 
-          button.disabled = false; 
-        } else {
+    if (error) {
+      console.error('Error adding book:', error);
+      addBtn.textContent = 'Error!';
+    } else {
+      addBtn.textContent = 'Saved!';
+      addBtn.style.backgroundColor = 'var(--sage-green)';
+      
+      // Update local memory with the precise data returned from Supabase
+      if (data && data.length > 0) {
+        const savedBook = data[0];
+        globalLibraryData.push(savedBook);
+        
+        // --- UX FIX: Auto-open the details card! ---
+        // Add a slight delay so she sees the "Saved!" text before it slides up
+        setTimeout(() => {
+          openDetails(savedBook);
+        }, 600);
+      }
+    }
+      } else {
           button.textContent = 'Saved!';
           loadBooks(); 
         }
