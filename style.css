@@ -65,20 +65,6 @@ body {
   cursor: pointer;
 }
 
-/* Subtle Bookshelf Background Lines */
-.book-grid {
-  /* Creates a subtle line exactly where the books sit */
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 238px,
-    rgba(106, 144, 113, 0.15) 238px, /* Sage green shelf line */
-    rgba(106, 144, 113, 0.15) 240px
-  );
-  background-attachment: local;
-  padding-bottom: 40px; 
-}
-
 /* Feedback Modal UI */
 .feedback-modal {
   position: fixed;
@@ -125,13 +111,26 @@ body {
 }
 
 /* Bookshelf Grid Layout */
+/* --- BATCH 8: PATTERNED BOOKSHELF BACKGROUND --- */
 .book-grid {
   display: grid;
-  /* Use strict math: exactly 50% width minus half the 20px gap */
   grid-template-columns: calc(50% - 10px) calc(50% - 10px);
   gap: 20px;
-  padding: 0 15px; 
   width: 100%;
+  
+  /* The new tiled background */
+  background-image: url('bookshelf-bg.png'); 
+  background-repeat: repeat; 
+  background-size: 350px; 
+  background-attachment: local; 
+  
+  /* Top: 20px (creates the gap below the filters)
+    Right: 15px
+    Bottom: 30px (provides natural space before the bottom nav)
+    Left: 15px
+  */
+  padding: 20px 15px 30px 15px; 
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.03);
 }
 
 .hero-wrapper {
@@ -190,28 +189,30 @@ body {
   display: block; /* Removes any invisible inline spacing below the image */
 }
 
+/* --- BATCH 8: FROSTED BOOK CARDS --- */
 .book-cover {
-  background-color: #e0dcd3; 
-  border-radius: 4px 12px 12px 4px; 
-  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.15); 
+  /* New Frosted Aesthetics */
+  background-color: rgba(253, 251, 247, 0.95); 
+  border: 1px solid var(--line-blue);
+  border-radius: 8px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+  
+  /* Your Original Intact Layout Math */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: center;
+  align-items: center; /* Keeps text centered! */
   padding: 10px;
-  text-align: center;
+  text-align: center; /* Keeps text centered! */
   cursor: pointer;
   transition: transform 0.2s ease;
   height: 100%; 
-  
-  /* THE MAGIC LOCKS */
   width: 100%; 
-  min-width: 0; /* Prevents the card from expanding past the column width */
+  min-width: 0; /* Prevents card blowout/crowding! */
   overflow: hidden; 
   box-sizing: border-box;
 }
 
-/* A subtle press effect for mobile taps */
 .book-cover:active {
   transform: scale(0.95);
 }
@@ -999,20 +1000,9 @@ body {
   overflow: hidden; 
   padding: 5px 0 15px 0;
   margin-bottom: 20px;
-  position: relative; /* Anchors the back arrow */
+  position: relative; 
 }
 
-.carousel-container {
-  display: flex;
-  gap: 20px; /* Matches the book-grid gap */
-  overflow-x: auto;
-  scroll-snap-type: x mandatory; 
-  padding: 0 15px; /* Matches the book-grid padding */
-  scrollbar-width: none; 
-  -ms-overflow-style: none;  
-}
-
-/* --- BATCH 7: SCALED HERO CAROUSEL --- */
 .carousel-container {
   display: flex;
   gap: 15px; /* Tightly controlled gap */
@@ -1022,6 +1012,7 @@ body {
   scrollbar-width: none; 
   -ms-overflow-style: none;  
 }
+
 .carousel-container::-webkit-scrollbar {
   display: none; 
 }
