@@ -781,7 +781,6 @@ async function loadBooks() {
   lazyCovers.forEach(img => observer.observe(img));
 }
 
-const searchBtn = document.getElementById('search-btn');
 const searchResultsContainer = document.getElementById('search-results-container');
 
 async function searchGoogleBooks(query) {
