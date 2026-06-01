@@ -474,7 +474,6 @@ function renderHeroSection() {
     // Card 2: Read Again
     const readAgainCard = document.createElement('div');
     readAgainCard.className = 'carousel-item special-card';
-    // Utilizes a grouped SVG to place the '+' badge perfectly over the open book
     readAgainCard.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
@@ -484,7 +483,7 @@ function renderHeroSection() {
         <line x1="10" y1="9" x2="14" y2="9" stroke="var(--sage-green)" stroke-width="2"></line>
       </svg>
       <h3>Read Again</h3>
-      <p>Revisit an old classic</p>
+      <p>Revisit an old favorite</p>
     `;
     readAgainCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
     carousel.appendChild(readAgainCard);
@@ -492,10 +491,37 @@ function renderHeroSection() {
     // Card 3: Slim Add Button
     carousel.appendChild(createSlimAddBtn());
 
-  // SCENARIO B: Active Reads
+  // SCENARIO B: Exactly One Active Read
+  } else if (activeReads.length === 1) {
+    heroLabel.textContent = "Current Read";
+    
+    // 1. The Active Book
+    const book = activeReads[0];
+    const card = document.createElement('div');
+    card.className = 'carousel-item';
+    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+    card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
+    card.addEventListener('click', () => openDetails(book, card)); 
+    carousel.appendChild(card);
+
+    // 2. The TBR Card
+    const tbrCard = document.createElement('div');
+    tbrCard.className = 'carousel-item special-card';
+    tbrCard.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+      <h3>TBR</h3>
+      <p>Next up...</p>
+    `;
+    tbrCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+    carousel.appendChild(tbrCard);
+
+    // 3. The Slim Add Button
+    carousel.appendChild(createSlimAddBtn());
+
+  // SCENARIO C: 2 to 4 Active Reads
   } else {
-    heroLabel.textContent = activeReads.length > 1 ? "Current Reads" : "Current Read";
-    const displayReads = activeReads.slice(0, 4); // Hard cap at 4
+    heroLabel.textContent = "Current Reads";
+    const displayReads = activeReads.slice(0, 4); 
 
     displayReads.forEach(book => {
       const card = document.createElement('div');
@@ -842,6 +868,7 @@ async function searchGoogleBooks(query) {
             data-isbn="${encodeURIComponent(isbn)}" 
             data-category="${encodeURIComponent(category)}"
             data-cover="${encodeURIComponent(thumbnail)}">+ Add</button>
+          <a href="${infoLink}" target="_blank" class="google-books-link">View on Google Books ↗</a>
         </div>
       `;
 
