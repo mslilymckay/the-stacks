@@ -45,24 +45,26 @@ body {
   left: 0;
   width: 100%;
   height: 60px;
-  background: rgba(253, 251, 247, 0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--terracotta); /* Flipped to bold orange */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
   z-index: 100;
-  border-bottom: 1px solid var(--line-blue);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Slightly stronger shadow */
 }
 
 .header-title {
   font-family: 'Courier New', Courier, monospace;
   font-size: 20px;
-  color: var(--terracotta);
+  color: #ffffff; /* Flipped to white */
   margin: 0;
   cursor: pointer;
+}
+
+/* Ensures the feedback icon in the header turns white */
+.app-header .icon-action-btn {
+  color: #ffffff; 
 }
 
 /* Feedback Modal UI */
@@ -107,29 +109,22 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  padding-bottom: 80px; 
 }
 
 /* Bookshelf Grid Layout */
-/* --- BATCH 8: PATTERNED BOOKSHELF BACKGROUND --- */
 .book-grid {
   display: grid;
   grid-template-columns: calc(50% - 10px) calc(50% - 10px);
   gap: 20px;
   width: 100%;
   
-  /* The new tiled background */
   background-image: url('bookshelf-bg.png'); 
   background-repeat: repeat; 
   background-size: 350px; 
   background-attachment: local; 
   
-  /* Top: 20px (creates the gap below the filters)
-    Right: 15px
-    Bottom: 30px (provides natural space before the bottom nav)
-    Left: 15px
-  */
-  padding: 20px 15px 30px 15px; 
+  /* Top, Right, Bottom (Stretched behind nav!), Left */
+  padding: 20px 15px 110px 15px; 
   box-shadow: inset 0 4px 10px rgba(0,0,0,0.03);
 }
 
@@ -169,12 +164,9 @@ body {
   object-fit: cover;
 }
 
+/* Hides the old horizontal lines app-wide */
 .shelf-divider {
-  border: 0;
-  height: 3px;
-  background-color: #e0dcd3;
-  margin-bottom: 25px;
-  border-radius: 2px;
+  display: none !important;
 }
 
 /* Physical Book Cover Styling */
@@ -298,21 +290,21 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 20px;
-  padding: 0 15px; /* Aligns with bookshelf margins */
+  margin-bottom: 0; /* Flushed perfectly against the grid below */
+  padding: 20px 15px; /* Added vertical padding for breathing room */
+  background-color: var(--sage-green); /* The new bold background */
 }
 
 .toolbar-input {
   width: 100%;
   padding: 10px 15px;
-  border: 1px solid var(--line-blue);
+  border: none; /* Removed border */
   border-radius: 8px;
-  background: rgba(253, 251, 247, 0.8);
+  background: var(--bg-color); /* Cream inputs */
   font-family: 'Courier New', Courier, monospace;
   font-size: 14px;
   color: var(--text-dark);
   outline: none;
-  transition: border-color 0.2s;
 }
 
 .toolbar-input:focus {
@@ -355,12 +347,12 @@ body {
 .toolbar-select {
   flex: 1;
   padding: 8px 10px;
-  border: 1px solid var(--details-line);
+  border: none; /* Removed border */
   border-radius: 8px;
-  background: rgba(253, 251, 247, 0.8);
+  background: var(--bg-color); /* Cream dropdowns */
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
-  color: var(--sage-green);
+  color: var(--sage-green); /* Text remains sage for contrast */
   outline: none;
   cursor: pointer;
 }
