@@ -293,8 +293,6 @@ function applyLibraryFilters() {
 
   // 2. SORTING
   filteredBooks.sort((a, b) => {
-    // 2. SORTING
-  filteredBooks.sort((a, b) => {
     
     // --- BATCH 8: Title Sorting ---
     if (sortMethod === 'title_asc') {
@@ -328,7 +326,6 @@ function applyLibraryFilters() {
 
   // Pass the final sliced-and-diced array to the renderer
   renderGrid(filteredBooks);
-}
 
 // --- BATCH 7: GRID RENDERER & EMPTY STATE ---
 function renderGrid(booksToRender) {
