@@ -236,7 +236,7 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: #a34e4e; 
+  background-color: --terracotta; 
   color: #fff;
   border: none;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
