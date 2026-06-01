@@ -43,6 +43,67 @@ async function updateBookData(columnName, newValue) {
   }
 }
 
+// --- BATCH 7: BARCODE SCANNER ---
+const startScanBtn = document.getElementById('start-scan-btn');
+const stopScanBtn = document.getElementById('stop-scan-btn');
+const scannerContainer = document.getElementById('scanner-container');
+const searchInput = document.getElementById('search-input');
+const searchBtn = document.getElementById('search-btn');
+
+let html5QrcodeScanner;
+
+if (startScanBtn) {
+  startScanBtn.addEventListener('click', () => {
+    scannerContainer.classList.remove('hidden');
+
+    // Initialize the scanner on our #reader div
+    html5QrcodeScanner = new Html5Qrcode("reader");
+
+    const config = {
+      fps: 10, // Scans 10 times per second
+      qrbox: { width: 250, height: 150 }, // The framing box
+      aspectRatio: 1.0
+    };
+
+    // Request the rear camera ("environment")
+    html5QrcodeScanner.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        // --- SUCCESSFUL SCAN! ---
+        html5QrcodeScanner.stop().then(() => {
+          scannerContainer.classList.add('hidden');
+          
+          // Prepend 'isbn:' to the barcode number so Google Books knows exactly what it is
+          searchInput.value = `isbn:${decodedText}`;
+          
+          // Automatically click the search button for her!
+          if(searchBtn) searchBtn.click();
+        });
+      },
+      (errorMessage) => {
+        // The scanner throws an error every millisecond it doesn't see a barcode. 
+        // We safely ignore this so it doesn't flood the console.
+      }
+    ).catch((err) => {
+      console.error("Camera access denied or error:", err);
+      alert("Could not access the camera. Please ensure permissions are granted.");
+      scannerContainer.classList.add('hidden');
+    });
+  });
+}
+
+// Handle the Cancel button
+if (stopScanBtn) {
+  stopScanBtn.addEventListener('click', () => {
+    if (html5QrcodeScanner) {
+      html5QrcodeScanner.stop().then(() => {
+        scannerContainer.classList.add('hidden');
+      }).catch(err => console.error(err));
+    }
+  });
+}
+
 // 3. Status Dropdown Listener (Now with async/await!)
 statusDropdown.addEventListener('change', async (event) => {
   const newStatus = parseInt(event.target.value); 
