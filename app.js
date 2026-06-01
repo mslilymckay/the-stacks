@@ -271,7 +271,7 @@ async function loadBooks() {
   applyLibraryFilters();
 }
 
-// --- BATCH 7: MASTER FILTER & SORT LOGIC ---
+// --- BATCH 7 & 8: MASTER FILTER & SORT LOGIC ---
 function applyLibraryFilters() {
   const searchTerm = (document.getElementById('local-search')?.value || '').toLowerCase();
   const statusFilter = document.getElementById('filter-status')?.value || 'all';
@@ -293,31 +293,32 @@ function applyLibraryFilters() {
 
   // 2. SORTING
   filteredBooks.sort((a, b) => {
-    
-    // --- BATCH 8: Title Sorting ---
+    // Title (A-Z)
     if (sortMethod === 'title_asc') {
-      // Force to lowercase for accurate alphabetizing, fallback to 'Z' if missing
       const titleA = (getField(a, 'title') || 'Z').toLowerCase(); 
       const titleB = (getField(b, 'title') || 'Z').toLowerCase();
       return titleA.localeCompare(titleB);
     }
+    // Author (A-Z)
     else if (sortMethod === 'author_asc') {
       const authorA = (getField(a, 'author') || 'Z').toLowerCase(); 
       const authorB = (getField(b, 'author') || 'Z').toLowerCase();
       return authorA.localeCompare(authorB);
     } 
+    // Highest Rated
     else if (sortMethod === 'rating_desc') {
       const ratingA = Number(getField(a, 'rating')) || 0;
       const ratingB = Number(getField(b, 'rating')) || 0;
       return ratingB - ratingA;
     }
+    // Recently Read
     else if (sortMethod === 'date_read_desc') {
       const dateA = new Date(getField(a, 'read_date') || 0).getTime();
       const dateB = new Date(getField(b, 'read_date') || 0).getTime();
       return dateB - dateA;
     }
+    // Newest Added (Default)
     else {
-      // Default: date_added_desc
       const dateA = new Date(getField(a, 'date_added') || getField(a, 'created_at') || 0).getTime();
       const dateB = new Date(getField(b, 'date_added') || getField(b, 'created_at') || 0).getTime();
       return dateB - dateA;
@@ -326,6 +327,7 @@ function applyLibraryFilters() {
 
   // Pass the final sliced-and-diced array to the renderer
   renderGrid(filteredBooks);
+}
 
 // --- BATCH 7: GRID RENDERER & EMPTY STATE ---
 function renderGrid(booksToRender) {
