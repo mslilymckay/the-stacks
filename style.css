@@ -1,11 +1,11 @@
 :root {
   /* Earthy, folk-art color palette */
-  --bg-color: #f7f5f0; /* Off-white paper */
-  --text-dark: #2c3e50; /* Deep charcoal */
-  --terracotta: #d35400; 
-  --sage-green: #7f8c8d;
-  --card-bg: #fdfbf7;
-  --detail-line: #4a5b4c;
+  --bg-color: #fdfbf7; /* Brighter, cleaner cream */
+  --card-bg: #ffffff;
+  --text-dark: #2c3e2d; /* Richer forest green for better text contrast */
+  --sage-green: #6a9071; /* Punchier, more saturated sage */
+  --terracotta: #e06c53; /* Brighter terracotta */
+  --detail-line: #b9d2db; /* Softer vintage blue */
 }
 
 * {
@@ -20,6 +20,98 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+}
+
+/* --- BATCH 8: GLOBAL POLISH & HEADER --- */
+
+/* Hide Scrollbars Globally (App-like feel) */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+
+/* Adjust main body to account for fixed header */
+body {
+  padding-top: 60px; 
+}
+
+/* The Global Header */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: rgba(253, 251, 247, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+  border-bottom: 1px solid var(--line-blue);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.header-title {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Subtle Bookshelf Background Lines */
+.book-grid {
+  /* Creates a subtle line exactly where the books sit */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 238px,
+    rgba(106, 144, 113, 0.15) 238px, /* Sage green shelf line */
+    rgba(106, 144, 113, 0.15) 240px
+  );
+  background-attachment: local;
+  padding-bottom: 40px; 
+}
+
+/* Feedback Modal UI */
+.feedback-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(44, 62, 45, 0.4); /* Dark green overlay */
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.feedback-modal.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.feedback-content {
+  background: var(--bg-color);
+  width: 100%;
+  max-width: 400px;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--sage-green);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.feedback-modal.hidden .feedback-content {
+  transform: translateY(20px);
 }
 
 /* Main Bookshelf Area */
