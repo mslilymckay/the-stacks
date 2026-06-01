@@ -183,7 +183,7 @@ stars.forEach(star => {
 // Closes the bottom sheet and brings the FAB back if you are scrolled down
 if (sheetHandle) {
   sheetHandle.addEventListener('click', () => {
-    sheet.classList.remove('open');
+    window.history.back();
     if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) {
       topFab.classList.add('visible');
     }
@@ -237,7 +237,7 @@ sheet.addEventListener('touchend', () => {
 
   // If she swiped down more than 100 pixels, dismiss the card!
   if (deltaY > 100) {
-    sheet.classList.remove('open');
+    window.history.back();
     
     // Bring the floating action button (FAB) back if she is scrolled down the page
     if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) {
@@ -584,6 +584,12 @@ function openDetails(book, clickedElement) {
   }
 
   if(sheet) sheet.classList.add('open');
+
+  if(sheet) {
+    sheet.classList.add('open');
+    // Push the state so the browser knows the card is open!
+    window.history.pushState({ detailsOpen: true }, ''); 
+  }
   
   // Cleanly hide the FAB when the details card is open
   if (topFab) topFab.classList.remove('visible');
@@ -854,6 +860,8 @@ let previousViewId = 'view-library'; // Tracks history for the Focus close butto
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const targetId = item.getAttribute('data-target');
+
+    window.history.pushState({ view: targetId }, '');
     
     // Save previous view (unless they are currently on Focus)
     const currentActive = document.querySelector('.page-view.active');
@@ -890,5 +898,29 @@ if (topFab && bookshelfContainer) {
     });
   });
 }
+
+// --- BATCH 7: NATIVE SWIPE-BACK FIX (HISTORY API) ---
+window.addEventListener('popstate', (event) => {
+  // 1. If the details card is open, the back-swipe should ONLY close the card.
+  if (sheet && sheet.classList.contains('open')) {
+    sheet.classList.remove('open');
+    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) {
+      topFab.classList.add('visible');
+    }
+    return; // Stop here so we don't accidentally change tabs too!
+  }
+  
+  // 2. If the details card is closed, the back-swipe should switch tabs.
+  if (event.state && event.state.view) {
+    const navBtn = document.querySelector(`.nav-item[data-target="${event.state.view}"]`);
+    if (navBtn) {
+      // Switch tabs without pushing a NEW history state (which would cause an infinite loop)
+      navItems.forEach(btn => btn.classList.remove('active'));
+      navBtn.classList.add('active');
+      pageViews.forEach(view => view.classList.remove('active'));
+      document.getElementById(event.state.view).classList.add('active');
+    }
+  }
+});
 
 loadBooks();
