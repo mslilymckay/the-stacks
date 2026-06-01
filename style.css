@@ -823,14 +823,25 @@ body {
   scrollbar-width: none; 
   -ms-overflow-style: none;  
 }
+
+/* --- BATCH 7: SCALED HERO CAROUSEL --- */
+.carousel-container {
+  display: flex;
+  gap: 15px; /* Tightly controlled gap */
+  overflow-x: auto;
+  scroll-snap-type: x mandatory; 
+  padding: 0 15px; /* Matches the bookshelf grid margins */
+  scrollbar-width: none; 
+  -ms-overflow-style: none;  
+}
 .carousel-container::-webkit-scrollbar {
   display: none; 
 }
 
-/* Updated to match the strict 2-column grid of the library */
+/* Scaled down to fit 2 cards + the slim add button perfectly */
 .carousel-item {
   flex: 0 0 auto;
-  width: calc(50% - 10px); 
+  width: calc(50% - 39px); 
   scroll-snap-align: start; 
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -840,20 +851,11 @@ body {
   transform: scale(0.95); 
 }
 
-.carousel-item .cover-image {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  border-radius: 4px;
-  box-shadow: 2px 4px 8px rgba(0,0,0,0.15);
-}
-
 /* Special Cards (See All, TBR, Read Again) */
 .special-card {
-  width: calc(50% - 10px); 
+  width: calc(50% - 39px); /* Matches the scaled book cards */
   aspect-ratio: 2 / 3;
-  border: 2px dashed var(--line-blue);
+  border: 2px dashed var(--line-blue); /* Dashes restored! */
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -861,19 +863,19 @@ body {
   justify-content: center;
   text-align: center;
   color: var(--sage-green);
-  background: rgba(253, 251, 247, 0.5);
-  padding: 15px;
+  background: transparent; /* Removing the heavy background makes the dashes pop */
+  padding: 10px;
 }
 
 .special-card h3 {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 16px;
+  font-size: 14px; /* Scaled down slightly to fit the new width */
   margin-top: 10px;
   color: var(--terracotta);
 }
 
 .special-card p {
-  font-size: 12px;
+  font-size: 11px; /* Scaled down slightly */
   margin-top: 5px;
   line-height: 1.2;
   color: var(--text-dark);
@@ -883,13 +885,13 @@ body {
 .slim-add-btn {
   width: 48px;
   aspect-ratio: auto;
-  border: 2px dashed var(--line-blue);
+  border: 2px dashed var(--line-blue); /* Dashes restored! */
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--sage-green);
-  background: rgba(253, 251, 247, 0.5);
+  background: transparent; 
 }
 
 /* The Subtle Scroll-Back Arrow */
