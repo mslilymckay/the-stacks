@@ -31,22 +31,35 @@
       <h2 class="section-label" style="padding: 0 15px;">Library</h2>
       
       <div class="library-toolbar">
-          <input type="text" id="local-search" class="toolbar-input" placeholder="Search your stacks...">
-          <div class="toolbar-filters">
-            <select id="filter-status" class="toolbar-select">
-              <option value="all">All Statuses</option>
-              <option value="1">Current Reads</option>
-              <option value="0">TBR (Waiting)</option>
-              <option value="2">Finished</option>
-              <option value="3">Gave Up</option>
-            </select>
-            <select id="sort-library" class="toolbar-select">
-              <option value="date_added_desc">Newest Added</option>
-              <option value="date_read_desc">Recently Read</option>
-              <option value="rating_desc">Highest Rated</option>
-              <option value="author_asc">Author (A-Z)</option>
-            </select>
+          
+          <div class="toolbar-input-wrapper">
+            <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="local-search" class="toolbar-input with-icon" placeholder="Search your stacks...">
           </div>
+          
+          <div class="toolbar-filters">
+            <div class="toolbar-input-wrapper flex-half">
+              <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              <select id="filter-status" class="toolbar-select with-icon">
+                <option value="all">All Statuses</option>
+                <option value="1">Current Reads</option>
+                <option value="0">TBR (Waiting)</option>
+                <option value="2">Finished</option>
+                <option value="3">Gave Up</option>
+              </select>
+            </div>
+            
+            <div class="toolbar-input-wrapper flex-half">
+              <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+              <select id="sort-library" class="toolbar-select with-icon">
+                <option value="date_added_desc">Newest Added</option>
+                <option value="date_read_desc">Recently Read</option>
+                <option value="rating_desc">Highest Rated</option>
+                <option value="title_asc">Title (A-Z)</option> <option value="author_asc">Author (A-Z)</option>
+              </select>
+            </div>
+          </div>
+          
         </div>
       
       <div class="book-grid" id="book-grid">
