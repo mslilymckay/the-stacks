@@ -29,6 +29,26 @@
       <hr class="shelf-divider">
       
       <h2 class="section-label" style="padding: 0 15px;">Library</h2>
+      
+      <div class="library-toolbar">
+          <input type="text" id="local-search" class="toolbar-input" placeholder="Search your stacks...">
+          <div class="toolbar-filters">
+            <select id="filter-status" class="toolbar-select">
+              <option value="all">All Statuses</option>
+              <option value="1">Current Reads</option>
+              <option value="0">TBR (Waiting)</option>
+              <option value="2">Finished</option>
+              <option value="3">Gave Up</option>
+            </select>
+            <select id="sort-library" class="toolbar-select">
+              <option value="date_added_desc">Newest Added</option>
+              <option value="date_read_desc">Recently Read</option>
+              <option value="rating_desc">Highest Rated</option>
+              <option value="author_asc">Author (A-Z)</option>
+            </select>
+          </div>
+        </div>
+      
       <div class="book-grid" id="book-grid">
         </div>
     </section>
