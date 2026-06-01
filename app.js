@@ -889,6 +889,71 @@ const navItems = document.querySelectorAll('.nav-item');
 const pageViews = document.querySelectorAll('.page-view');
 let previousViewId = 'view-library'; 
 
+// --- BATCH 8: HEADER & FEEDBACK LOGIC ---
+
+// 1. Header Scroll-to-Top
+const headerTitle = document.getElementById('header-title');
+if (headerTitle) {
+  headerTitle.addEventListener('click', () => {
+    // Check which view is active and scroll that container to the top
+    const activeView = document.querySelector('.page-view.active');
+    if (activeView) activeView.scrollTo({ top: 0, behavior: 'smooth' });
+    if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// 2. Feedback Modal Logic
+const feedbackTriggerBtn = document.getElementById('feedback-trigger-btn');
+const feedbackModal = document.getElementById('feedback-modal');
+const closeFeedbackBtn = document.getElementById('close-feedback-btn');
+const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+const feedbackText = document.getElementById('feedback-text');
+
+if (feedbackTriggerBtn && feedbackModal) {
+  feedbackTriggerBtn.addEventListener('click', () => {
+    feedbackModal.classList.remove('hidden');
+    feedbackText.focus();
+  });
+
+  closeFeedbackBtn.addEventListener('click', () => {
+    feedbackModal.classList.add('hidden');
+    feedbackText.value = ''; // Clear text
+  });
+
+  submitFeedbackBtn.addEventListener('click', async () => {
+    const text = feedbackText.value.trim();
+    if (!text) return;
+
+    // UI Feedback
+    const originalText = submitFeedbackBtn.textContent;
+    submitFeedbackBtn.textContent = 'Sending...';
+    submitFeedbackBtn.disabled = true;
+
+    // Send to Supabase 'feedback' table
+    const { error } = await supabase
+      .from('feedback')
+      .insert([{ message: text }]);
+
+    if (error) {
+      console.error('Error sending feedback:', error);
+      submitFeedbackBtn.textContent = 'Error!';
+      submitFeedbackBtn.style.backgroundColor = 'red';
+    } else {
+      submitFeedbackBtn.textContent = 'Sent!';
+      submitFeedbackBtn.style.backgroundColor = 'var(--sage-green)';
+      
+      // Close modal after success
+      setTimeout(() => {
+        feedbackModal.classList.add('hidden');
+        feedbackText.value = '';
+        submitFeedbackBtn.textContent = originalText;
+        submitFeedbackBtn.style.backgroundColor = 'var(--terracotta)';
+        submitFeedbackBtn.disabled = false;
+      }, 1500);
+    }
+  });
+}
+
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const targetId = item.getAttribute('data-target');
