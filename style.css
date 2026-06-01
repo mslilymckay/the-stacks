@@ -231,6 +231,34 @@ body {
   gap: 10px;
 }
 
+/* --- BATCH 8: TOOLBAR ICONS --- */
+.toolbar-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.flex-half {
+  flex: 1; /* Ensures the filter and sort dropdowns split the row 50/50 */
+}
+
+.toolbar-icon {
+  position: absolute;
+  left: 10px; /* Distance from the left edge */
+  color: var(--sage-green);
+  pointer-events: none; /* Crucial: Lets her tap "through" the icon to activate the dropdown */
+}
+
+/* Add extra padding so the text doesn't hide behind the icons! */
+.toolbar-input.with-icon {
+  padding-left: 32px;
+}
+
+.toolbar-select.with-icon {
+  padding-left: 30px;
+  width: 100%;
+}
+
 .toolbar-select {
   flex: 1;
   padding: 8px 10px;
