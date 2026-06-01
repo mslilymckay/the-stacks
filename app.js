@@ -265,11 +265,80 @@ async function loadBooks() {
   
   globalLibraryData = books; 
   calculateStats(); 
-  
-  if(bookGrid) bookGrid.innerHTML = '';
   renderHeroSection();
+  
+  // Instead of drawing the grid here, we trigger the Master Filter!
+  applyLibraryFilters();
+}
 
-  for (const book of books) {
+// --- BATCH 7: MASTER FILTER & SORT LOGIC ---
+function applyLibraryFilters() {
+  const searchTerm = (document.getElementById('local-search')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('filter-status')?.value || 'all';
+  const sortMethod = document.getElementById('sort-library')?.value || 'date_added_desc';
+
+  // 1. FILTERING
+  let filteredBooks = globalLibraryData.filter(book => {
+    // Search Filter (Title or Author)
+    const title = (getField(book, 'title') || '').toLowerCase();
+    const author = (getField(book, 'author') || '').toLowerCase();
+    const matchesSearch = title.includes(searchTerm) || author.includes(searchTerm);
+
+    // Status Filter
+    const status = getField(book, 'status');
+    const matchesStatus = statusFilter === 'all' || Number(status) === Number(statusFilter);
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // 2. SORTING
+  filteredBooks.sort((a, b) => {
+    if (sortMethod === 'author_asc') {
+      const authorA = getField(a, 'author') || 'Z'; 
+      const authorB = getField(b, 'author') || 'Z';
+      return authorA.localeCompare(authorB);
+    } 
+    else if (sortMethod === 'rating_desc') {
+      const ratingA = Number(getField(a, 'rating')) || 0;
+      const ratingB = Number(getField(b, 'rating')) || 0;
+      return ratingB - ratingA;
+    }
+    else if (sortMethod === 'date_read_desc') {
+      const dateA = new Date(getField(a, 'read_date') || 0).getTime();
+      const dateB = new Date(getField(b, 'read_date') || 0).getTime();
+      return dateB - dateA;
+    }
+    else {
+      // Default: date_added_desc
+      const dateA = new Date(getField(a, 'date_added') || getField(a, 'created_at') || 0).getTime();
+      const dateB = new Date(getField(b, 'date_added') || getField(b, 'created_at') || 0).getTime();
+      return dateB - dateA;
+    }
+  });
+
+  // Pass the final sliced-and-diced array to the renderer
+  renderGrid(filteredBooks);
+}
+
+// --- BATCH 7: GRID RENDERER & EMPTY STATE ---
+function renderGrid(booksToRender) {
+  if (!bookGrid) return;
+  bookGrid.innerHTML = '';
+
+  // EMPTY STATE: If the filter returns nothing!
+  if (booksToRender.length === 0) {
+    bookGrid.innerHTML = `
+      <div class="empty-grid-state">
+        <img src="not found.png" alt="Nothing found" onerror="this.src='https://placehold.co/150x150?text=Empty'">
+        <h3>Nothing here!</h3>
+        <p>Try adjusting your search or filters.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Draw the covers
+  for (const book of booksToRender) {
     const bookDiv = document.createElement('div');
     bookDiv.className = 'book-cover';
     
@@ -293,10 +362,10 @@ async function loadBooks() {
     }
     
     bookDiv.addEventListener('click', () => openDetails(book, bookDiv));
-    if(bookGrid) bookGrid.appendChild(bookDiv);
+    bookGrid.appendChild(bookDiv);
   }
 
-  // Lazy loading logic for missing covers
+  // Re-attach Lazy loading for missing covers
   const lazyCovers = document.querySelectorAll('.lazy-cover');
   const observer = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
@@ -311,6 +380,11 @@ async function loadBooks() {
   });
   lazyCovers.forEach(img => observer.observe(img));
 }
+
+// Attach Event Listeners to Toolbar Inputs
+document.getElementById('local-search')?.addEventListener('input', applyLibraryFilters);
+document.getElementById('filter-status')?.addEventListener('change', applyLibraryFilters);
+document.getElementById('sort-library')?.addEventListener('change', applyLibraryFilters);
 
 
 // ==========================================
@@ -409,7 +483,10 @@ statusDropdown.addEventListener('change', async (event) => {
     await updateBookData('read_date', null);
   }
   
-  loadBooks(); // Re-render grid behind the scenes
+  // Update local memory and apply filters to redraw instantly
+  calculateStats();
+  renderHeroSection();
+  applyLibraryFilters();
   
   // Auto-close with delay
   setTimeout(() => {
