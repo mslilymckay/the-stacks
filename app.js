@@ -293,9 +293,19 @@ function applyLibraryFilters() {
 
   // 2. SORTING
   filteredBooks.sort((a, b) => {
-    if (sortMethod === 'author_asc') {
-      const authorA = getField(a, 'author') || 'Z'; 
-      const authorB = getField(b, 'author') || 'Z';
+    // 2. SORTING
+  filteredBooks.sort((a, b) => {
+    
+    // --- BATCH 8: Title Sorting ---
+    if (sortMethod === 'title_asc') {
+      // Force to lowercase for accurate alphabetizing, fallback to 'Z' if missing
+      const titleA = (getField(a, 'title') || 'Z').toLowerCase(); 
+      const titleB = (getField(b, 'title') || 'Z').toLowerCase();
+      return titleA.localeCompare(titleB);
+    }
+    else if (sortMethod === 'author_asc') {
+      const authorA = (getField(a, 'author') || 'Z').toLowerCase(); 
+      const authorB = (getField(b, 'author') || 'Z').toLowerCase();
       return authorA.localeCompare(authorB);
     } 
     else if (sortMethod === 'rating_desc') {
