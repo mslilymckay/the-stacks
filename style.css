@@ -1200,3 +1200,56 @@ body {
 .stat-box p {
   pointer-events: none;
 }
+
+/* --- PHASE 1: THE WANDER DRAWER --- */
+.wander-drawer {
+  position: fixed;
+  top: 60px; /* Sits perfectly below the header */
+  left: 0;
+  width: 100%;
+  background: var(--card-bg);
+  border-bottom: 3px solid #e0dcd3;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  z-index: 90;
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.wander-drawer.hidden {
+  transform: translateY(-150%);
+  box-shadow: none;
+}
+
+.drawer-content {
+  padding: 20px;
+  /* Brings in the vintage paper aesthetic from the card details view */
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 39px,
+    rgba(187, 134, 84, 0.1) 39px, /* Faint detail line */
+    rgba(187, 134, 84, 0.1) 40px
+  );
+}
+
+.quick-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-btn {
+  background: var(--bg-color);
+  border: 1px solid var(--sage-green);
+  color: var(--sage-green);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.quick-btn:active {
+  background: var(--sage-green);
+  color: #fff;
+}
