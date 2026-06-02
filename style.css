@@ -56,6 +56,16 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Slightly stronger shadow */
 }
 
+/* The Circular Header Logo */
+.header-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%; /* This perfectly rounds the image! */
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.4); /* Optional: A subtle white ring to make it pop */
+  cursor: pointer;
+}
+
 .header-title {
   font-family: 'Courier New', Courier, monospace;
   font-size: 20px;
