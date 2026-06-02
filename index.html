@@ -18,12 +18,6 @@
       <h1 class="header-title">The Stacks</h1>
     </div>
     <div style="display: flex; gap: 15px; align-items: center;">
-      <button id="wander-trigger-btn" class="icon-action-btn" title="Wander your stacks">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
-      </button>
       <button id="feedback-trigger-btn" class="icon-action-btn" title="Send Feedback" style="background: transparent; border: none; padding: 0;">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
       </button>
@@ -45,48 +39,6 @@
   <div class="botanical-frame top-left"></div>
   <div class="botanical-frame top-right"></div>
 
-  <div id="wander-drawer" class="wander-drawer hidden">
-    <div class="drawer-content">
-      <h3 style="font-family: 'Courier New'; color: var(--terracotta); margin: 0 0 15px 0;">Wander Your Stacks</h3>
-      
-      <div class="toolbar-input-wrapper" style="margin-bottom: 15px;">
-        <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="local-search" class="toolbar-input with-icon" style="border: 1px solid var(--detail-line);" placeholder="Search title or author...">
-      </div>
-
-      <div class="quick-filters">
-        <button class="quick-btn" data-status="1" data-sort="date_read_desc">Current Reads</button>
-        <button class="quick-btn" data-status="0" data-sort="date_added_desc">TBR List</button>
-        <button class="quick-btn" data-status="2" data-sort="date_read_desc">Finished</button>
-        <button class="quick-btn" data-status="3" data-sort="date_added_desc">Gave Up</button>
-      </div>
-
-      <div class="red-line" style="margin: 15px 0;"></div>
-
-      <div class="toolbar-filters">
-        <div class="toolbar-input-wrapper flex-half">
-          <select id="filter-status" class="toolbar-select" style="border: 1px solid var(--detail-line); padding-left: 10px;">
-            <option value="all">All Statuses</option>
-            <option value="1">Current Reads</option>
-            <option value="0">TBR (Waiting)</option>
-            <option value="2">Finished</option>
-            <option value="3">Gave Up</option>
-          </select>
-        </div>
-        
-        <div class="toolbar-input-wrapper flex-half">
-          <select id="sort-library" class="toolbar-select" style="border: 1px solid var(--detail-line); padding-left: 10px;">
-            <option value="date_added_desc">Newest Added</option>
-            <option value="date_read_desc">Recently Read</option>
-            <option value="rating_desc">Highest Rated</option>
-            <option value="title_asc">Title (A-Z)</option> 
-            <option value="author_asc">Author (A-Z)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <main class="bookshelf">
     
     <section id="view-library" class="page-view active">
@@ -102,7 +54,18 @@
     
       <hr class="shelf-divider">
       
-      <h2 class="section-label" style="padding: 0 15px;">Library</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 15px 10px 15px;">
+      <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+        Your Stacks
+      </h2>
+      <button id="wander-trigger-btn" class="icon-action-btn" title="Wander Settings" style="color: var(--terracotta); background: transparent; border: none; padding: 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
+          <rect x="4" y="14" width="16" height="4" rx="1" />
+          <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
+        </svg>
+      </button>
+    </div>
       
       <div class="book-grid" id="book-grid">
         </div>
@@ -210,6 +173,54 @@
     </section>
 
   </main>
+
+  <div id="wander-sheet" class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="card-detail-container" style="margin-top: 15px; margin-bottom: 30px;">
+      <div class="card-header-line"></div>
+      <div class="punch-hole"></div>
+      
+      <h3 style="font-family: 'Courier New', Courier, monospace; color: var(--terracotta); margin: 10px 0 20px 0; text-align: center;">
+        Wander Settings
+      </h3>
+      
+      <div class="toolbar-input-wrapper" style="margin-bottom: 15px;">
+        <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="local-search" class="toolbar-input with-icon" style="border: 1px solid var(--detail-line);" placeholder="Search title or author...">
+      </div>
+
+      <div class="quick-filters">
+        <button class="quick-btn" data-status="1" data-sort="date_read_desc">Current Reads</button>
+        <button class="quick-btn" data-status="0" data-sort="date_added_desc">TBR List</button>
+        <button class="quick-btn" data-status="2" data-sort="date_read_desc">Finished</button>
+        <button class="quick-btn" data-status="3" data-sort="date_added_desc">Gave Up</button>
+      </div>
+
+      <div class="red-line" style="margin: 20px 0; background-color: var(--detail-line);"></div>
+
+      <div class="toolbar-filters">
+        <div class="toolbar-input-wrapper flex-half">
+          <select id="filter-status" class="toolbar-select" style="border: 1px solid var(--detail-line); padding-left: 10px;">
+            <option value="all">All Statuses</option>
+            <option value="1">Current Reads</option>
+            <option value="0">TBR (Waiting)</option>
+            <option value="2">Finished</option>
+            <option value="3">Gave Up</option>
+          </select>
+        </div>
+        
+        <div class="toolbar-input-wrapper flex-half">
+          <select id="sort-library" class="toolbar-select" style="border: 1px solid var(--detail-line); padding-left: 10px;">
+            <option value="date_added_desc">Newest Added</option>
+            <option value="date_read_desc">Recently Read</option>
+            <option value="rating_desc">Highest Rated</option>
+            <option value="title_asc">Title (A-Z)</option> 
+            <option value="author_asc">Author (A-Z)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
