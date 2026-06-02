@@ -1259,3 +1259,26 @@ body {
   background: var(--sage-green);
   color: #fff;
 }
+
+/* --- PHASE 1: NATIVE APP STYLE DROPDOWNS --- */
+.custom-select-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: var(--bg-color);
+  border: 1px solid var(--sage-green);
+  color: var(--sage-green);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+}
+
+.custom-select-btn:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
