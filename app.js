@@ -1226,3 +1226,36 @@ if (wanderTriggerBtn && wanderSheet) {
     });
   }
 }
+
+// ==========================================
+// 10. PHASE 2: JOURNEY VIEW TOGGLES
+// ==========================================
+
+const layoutBtns = document.querySelectorAll('.layout-btn');
+const mainGrid = document.getElementById('book-grid');
+
+if (layoutBtns.length > 0 && mainGrid) {
+  // Ensure the default grid class is applied on load
+  mainGrid.classList.add('layout-grid');
+
+  layoutBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // 1. Update button visual state
+      layoutBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // 2. Clear out all layout classes
+      mainGrid.classList.remove('layout-grid', 'layout-cards', 'layout-list');
+      
+      // 3. Apply the new layout class
+      const newLayout = btn.getAttribute('data-layout');
+      mainGrid.classList.add(newLayout);
+      
+      // Optional: Add a tiny fade effect so the snap isn't too jarring
+      mainGrid.style.opacity = 0;
+      setTimeout(() => {
+        mainGrid.style.opacity = 1;
+      }, 50);
+    });
+  });
+}
