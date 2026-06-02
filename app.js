@@ -452,9 +452,8 @@ function renderGrid(booksToRender) {
   if (booksToRender.length === 0) {
     bookGrid.innerHTML = `
       <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; opacity: 0.85;">
-        <img src="empty.png" alt="No books found" style="width: 140px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));">
         <p style="font-family: 'Courier New', Courier, monospace; color: var(--sage-green); font-size: 1.1rem;">
-          It's quiet in these stacks...
+          Nothing in this stack...
         </p>
       </div>
     `;
@@ -1220,10 +1219,9 @@ if (wanderTriggerBtn && wanderSheet) {
         b.style.color = 'var(--sage-green)';
       });
 
-      // 3. Execute and close
+      // 3. Execute and stay open
       applyLibraryFilters();
       updateLibrarySubheading();
-      wanderSheet.classList.remove('open');
       if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
