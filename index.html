@@ -119,31 +119,45 @@
     </section>
 
     <section id="view-stats" class="page-view">
-      <div class="hero-wrapper" style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 class="section-label" style="margin-bottom: 0;">Reading Stats</h2>
-        <select id="stats-timefilter" style="padding: 5px 10px; border-radius: 4px; border: 1px solid var(--line-blue); background-color: var(--card-bg); font-family: 'Courier New', Courier, monospace; color: var(--sage-green);">
-          <option value="month">This Month</option>
-          <option value="year" selected>This Year</option>
-          <option value="all">All Time</option>
-        </select>
-      </div>
       
-      <div class="stats-container">
-        <div class="stat-card">
-          <h3 id="stat-active">0</h3>
-          <p>Active Reads</p>
+      <div id="stats-dashboard">
+        <div class="hero-wrapper">
+          <h2 class="section-label">Your Stats</h2>
+          <select id="stats-timefilter" class="card-input" style="margin-top: 10px;">
+            <option value="year">This Year</option>
+            <option value="month">This Month</option>
+            <option value="all">All Time</option>
+          </select>
         </div>
-        <div class="stat-card">
-          <h3 id="stat-yearly">0</h3>
-          <p>Books Read This Year</p>
+        
+        <div class="stats-grid">
+          <div class="stat-box" id="active-stat-box" title="View Current Reads">
+            <h3 id="stat-active">0</h3>
+            <p>Active Reads</p>
+          </div>
+          <div class="stat-box" id="completed-stat-box" title="View Completed Books">
+            <h3 id="stat-yearly">0</h3>
+            <p>Books Read</p>
+          </div>
         </div>
-        <div class="stat-card full-width">
-          <h3>Top Categories</h3>
-          <ul id="stat-categories" class="category-list">
-            <li>Loading...</li>
-          </ul>
+
+        <div class="hero-wrapper" style="margin-top: 20px;">
+          <h2 class="section-label">Top Categories</h2>
+          <ul id="stat-categories" class="category-list"></ul>
         </div>
       </div>
+
+      <div id="stats-list-view" class="hidden" style="padding: 0 15px;">
+        <div style="display: flex; align-items: center; gap: 15px; margin: 15px 0 20px 0;">
+          <button id="close-stats-list" class="icon-action-btn" style="background: transparent; border: 1px solid var(--line-blue); border-radius: 50%; color: var(--terracotta);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <h2 id="stats-list-title" class="section-label" style="margin: 0; color: var(--text-dark);">List Title</h2>
+        </div>
+        
+        <div id="stats-list-container" class="search-results-list"></div>
+      </div>
+
     </section>
 
     <section id="view-focus" class="page-view">
