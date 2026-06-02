@@ -1163,6 +1163,7 @@ if (wanderTriggerBtn && wanderSheet) {
 
   const wanderHandle = wanderSheet.querySelector('.sheet-handle');
   if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
+  if (sheetHandle) sheetHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
 
   // Quick Filters Logic
   const quickBtns = wanderSheet.querySelectorAll('.quick-btn');
