@@ -734,7 +734,7 @@ sheet.addEventListener('touchend', () => {
   sheet.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'; 
 
   if (deltaY > 100) {
-    window.history.back(); // Triggers popstate
+    wanderSheet.classList.remove('open');
     if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
   } 
   sheet.style.transform = ''; 
@@ -743,7 +743,7 @@ sheet.addEventListener('touchend', () => {
 // Explicit handle click closes card
 if (sheetHandle) {
   sheetHandle.addEventListener('click', () => {
-    window.history.back();
+    wanderSheet.classList.remove('open');
     if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
   });
 }
@@ -1163,8 +1163,7 @@ if (wanderTriggerBtn && wanderSheet) {
 
   const wanderHandle = wanderSheet.querySelector('.sheet-handle');
   if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
-  if (sheetHandle) sheetHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
-
+  
   // Quick Filters Logic
   const quickBtns = wanderSheet.querySelectorAll('.quick-btn');
   quickBtns.forEach(btn => {
