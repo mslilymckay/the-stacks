@@ -1117,3 +1117,53 @@ window.addEventListener('popstate', (event) => {
 // 8. INITIALIZE APP
 // ==========================================
 loadBooks();
+
+// ==========================================
+// 9. PHASE 1: WANDER DRAWER LOGIC
+// ==========================================
+
+const wanderTriggerBtn = document.getElementById('wander-trigger-btn');
+const wanderDrawer = document.getElementById('wander-drawer');
+const quickBtns = document.querySelectorAll('.quick-btn');
+const statusFilterSelect = document.getElementById('filter-status');
+const sortLibrarySelect = document.getElementById('sort-library');
+
+if (wanderTriggerBtn && wanderDrawer) {
+  wanderTriggerBtn.addEventListener('click', () => {
+    // 1. Toggle Drawer
+    wanderDrawer.classList.toggle('hidden');
+    
+    // 2. Align view: Scroll to top smoothly if opening
+    if (!wanderDrawer.classList.contains('hidden')) {
+      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+
+  // 3. Quick Lists: Context-Aware Sorting
+  quickBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const targetStatus = e.target.getAttribute('data-status');
+      const targetSort = e.target.getAttribute('data-sort');
+
+      // Update the underlying hidden select menus
+      statusFilterSelect.value = targetStatus;
+      sortLibrarySelect.value = targetSort;
+
+      // Trigger the master filter logic you already built!
+      applyLibraryFilters();
+
+      // Visual feedback on the buttons
+      quickBtns.forEach(b => {
+        b.style.background = 'var(--bg-color)';
+        b.style.color = 'var(--sage-green)';
+      });
+      e.target.style.background = 'var(--sage-green)';
+      e.target.style.color = '#fff';
+
+      // Auto-close the drawer after a brief delay for a native feel
+      setTimeout(() => {
+        wanderDrawer.classList.add('hidden');
+      }, 350);
+    });
+  });
+}
