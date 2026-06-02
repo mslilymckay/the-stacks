@@ -1,11 +1,12 @@
 :root {
-  /* Earthy, folk-art color palette */
-  --bg-color: #fdfbf7; /* Brighter, cleaner cream */
-  --card-bg: #ffffff;
-  --text-dark: #2c3e2d; /* Richer forest green for better text contrast */
-  --sage-green: #8ea483; /* Punchier, more saturated sage */
-  --terracotta: #e06c53; /* Brighter terracotta */
-  --detail-line: #b9d2db; /* Softer vintage blue */
+  /* Phase 1: Soft, Earthy Mood Board Palette */
+  --bg-color: #F5EEDB; /* Warm Cream */
+  --card-bg: #FFFFFF;
+  --text-dark: #2C3E2D; /* Kept your rich forest green for accessibility/contrast */
+  --sage-green: #8EA483; 
+  --terracotta: #D2A574; 
+  --oak-brown: #BB8654;
+  --detail-line: #BB8654; /* Repurposed oak brown for soft vintage lines */
 }
 
 * {
@@ -130,14 +131,10 @@ body {
   gap: 20px;
   width: 100%;
   
-  background-image: url('bookshelf-bg.png'); 
-  background-repeat: repeat; 
-  background-size: 350px; 
-  background-attachment: local; 
+  /* PHASE 1: Removed the bookshelf-bg.png to let the covers pop against the cream */
+  background-color: var(--bg-color); 
   
-  /* Top, Right, Bottom (Stretched behind nav!), Left */
   padding: 20px 15px 110px 15px; 
-  box-shadow: inset 0 4px 10px rgba(0,0,0,0.03);
 }
 
 .hero-wrapper {
