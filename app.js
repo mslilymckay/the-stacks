@@ -12,7 +12,7 @@ let currentOpenBookId = null;
 
 // Common DOM Elements
 const bookGrid = document.getElementById('book-grid');
-const sheet = document.querySelector('.bottom-sheet');
+const sheet = document.querySelector('.bottom-sheet:not(#wander-sheet)');
 const sheetHandle = document.querySelector('.sheet-handle');
 const topFab = document.getElementById('top-fab'); 
 const bookshelfContainer = document.querySelector('.bookshelf');
@@ -414,6 +414,33 @@ function applyLibraryFilters() {
 
   // Pass the final sliced-and-diced array to the renderer
   renderGrid(filteredBooks);
+  updateLibrarySubheading()
+}
+
+function updateLibrarySubheading() {
+  const subheading = document.getElementById('library-subheading');
+  if (!subheading) return;
+
+  const statusMap = {
+    'all': 'All Books',
+    '1': 'Current Reads',
+    '0': 'TBR List',
+    '2': 'Finished',
+    '3': 'Gave Up'
+  };
+
+  const sortMap = {
+    'title_asc': 'Title (A-Z)',
+    'author_asc': 'Author (A-Z)',
+    'date_added_desc': 'Date Added',
+    'date_started_desc': 'Date Started',
+    'date_finished_desc': 'Date Finished'
+  };
+
+  const currentStatus = document.getElementById('filter-status') ? document.getElementById('filter-status').value : 'all';
+  const currentSort = document.getElementById('sort-library') ? document.getElementById('sort-library').value : 'title_asc';
+
+  subheading.textContent = `${statusMap[currentStatus] || 'All Books'}, by ${sortMap[currentSort] || 'Title'}`;
 }
 
 // --- BATCH 7: GRID RENDERER & EMPTY STATE ---
@@ -1128,32 +1155,23 @@ const wanderSheet = document.getElementById('wander-sheet');
 const statusFilterSelect = document.getElementById('filter-status');
 const sortLibrarySelect = document.getElementById('sort-library');
 const applyWanderBtn = document.getElementById('apply-wander-btn');
+const clearWanderBtn = document.getElementById('clear-wander-btn');
+const localSearchInput = document.getElementById('local-search');
+const clearSearchBtn = document.getElementById('clear-search-btn');
 
 if (wanderTriggerBtn && wanderSheet) {
-  wanderTriggerBtn.addEventListener('click', () => {
-    wanderSheet.classList.add('open');
-  });
+  wanderTriggerBtn.addEventListener('click', () => wanderSheet.classList.add('open'));
 
-  // Swipe to close logic
   const wanderHandle = wanderSheet.querySelector('.sheet-handle');
-  if (wanderHandle) {
-    wanderHandle.addEventListener('click', () => {
-      wanderSheet.classList.remove('open');
-    });
-  }
+  if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
 
-  // Quick filters: Highlight and update invisible selects (but don't execute yet)
+  // Quick Filters Logic
   const quickBtns = wanderSheet.querySelectorAll('.quick-btn');
   quickBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const targetStatus = e.target.getAttribute('data-status');
-      const targetSort = e.target.getAttribute('data-sort');
+      if (statusFilterSelect) statusFilterSelect.value = e.target.getAttribute('data-status');
+      if (sortLibrarySelect) sortLibrarySelect.value = e.target.getAttribute('data-sort');
 
-      // Update the underlying hidden select menus
-      if (statusFilterSelect) statusFilterSelect.value = targetStatus;
-      if (sortLibrarySelect) sortLibrarySelect.value = targetSort;
-
-      // Visual feedback on the buttons (Highlights green)
       quickBtns.forEach(b => {
         b.style.background = 'var(--bg-color)';
         b.style.color = 'var(--sage-green)';
@@ -1163,16 +1181,49 @@ if (wanderTriggerBtn && wanderSheet) {
     });
   });
 
-  // The new Explicit "Wander" Apply Button
+  // Inline Search Clear Button Logic
+  if (localSearchInput && clearSearchBtn) {
+    localSearchInput.addEventListener('input', () => {
+      clearSearchBtn.style.display = localSearchInput.value.length > 0 ? 'block' : 'none';
+    });
+
+    clearSearchBtn.addEventListener('click', () => {
+      localSearchInput.value = '';
+      clearSearchBtn.style.display = 'none';
+    });
+  }
+
+  // "Wander" (Apply) Logic
   if (applyWanderBtn) {
     applyWanderBtn.addEventListener('click', () => {
-      // Trigger the master filter
-      applyLibraryFilters();
-      
-      // Close the sheet
+      applyLibraryFilters(); 
+      updateLibrarySubheading(); // Updates the text under "Your Stacks"
       wanderSheet.classList.remove('open');
+      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // "Clear" Defaults Logic
+  if (clearWanderBtn) {
+    clearWanderBtn.addEventListener('click', () => {
+      // 1. Reset inputs
+      if (localSearchInput) {
+        localSearchInput.value = '';
+        if (clearSearchBtn) clearSearchBtn.style.display = 'none';
+      }
+      if (statusFilterSelect) statusFilterSelect.value = 'all';
+      if (sortLibrarySelect) sortLibrarySelect.value = 'title_asc';
       
-      // Scroll to the top of the library grid
+      // 2. Remove green highlights from quick buttons
+      quickBtns.forEach(b => {
+        b.style.background = 'var(--bg-color)';
+        b.style.color = 'var(--sage-green)';
+      });
+
+      // 3. Execute and close
+      applyLibraryFilters();
+      updateLibrarySubheading();
+      wanderSheet.classList.remove('open');
       if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
