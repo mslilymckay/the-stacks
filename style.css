@@ -1286,20 +1286,21 @@ body {
 .book-grid.layout-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 15px; /* Tightened the gap slightly so cards aren't so wide */
 }
 .book-grid.layout-cards .book-card {
   display: flex;
   flex-direction: column;
   background-color: var(--card-bg); 
-  border: 1px solid var(--detail-line); /* Restores the Oak border */
+  border: 1px solid #e0dcd3; /* Softened the outline to match the list view */
   border-radius: 8px;
   padding: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04); /* Softened the shadow */
   align-items: center;
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s ease;
+  min-width: 0; /* THE MAGIC FIX: Forces CSS Grid to respect the 50/50 split */
 }
 .book-grid.layout-cards .book-card:active {
   transform: scale(0.95);
@@ -1315,12 +1316,11 @@ body {
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   margin-bottom: 8px;
-  /* Bulletproofing */
   padding: 0; background: transparent; border: none; 
 }
 .book-grid.layout-cards .book-title {
   font-family: 'Georgia', serif;
-  font-size: 0.9rem;
+  font-size: 16px; /* Bumped up */
   font-weight: bold;
   margin: 0 0 4px 0;
   color: var(--text-dark);
@@ -1329,10 +1329,11 @@ body {
   -webkit-line-clamp: 2; 
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: break-word; /* Prevents super long words from breaking the card */
 }
 .book-grid.layout-cards .book-author {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 0.75rem;
+  font-size: 13px; /* Bumped up */
   color: var(--sage-green);
   margin: 0;
   white-space: nowrap;
