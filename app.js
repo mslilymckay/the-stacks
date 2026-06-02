@@ -424,10 +424,11 @@ function renderGrid(booksToRender) {
   // EMPTY STATE: If the filter returns nothing!
   if (booksToRender.length === 0) {
     bookGrid.innerHTML = `
-      <div class="empty-grid-state">
-        <img src="not found.png" alt="Nothing found" onerror="this.src='https://placehold.co/150x150?text=Empty'">
-        <h3>Nothing here!</h3>
-        <p>Try adjusting your search or filters.</p>
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; opacity: 0.85;">
+        <img src="empty.png" alt="No books found" style="width: 140px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));">
+        <p style="font-family: 'Courier New', Courier, monospace; color: var(--sage-green); font-size: 1.1rem;">
+          It's quiet in these stacks...
+        </p>
       </div>
     `;
     return;
@@ -1124,13 +1125,16 @@ loadBooks();
 
 const wanderTriggerBtn = document.getElementById('wander-trigger-btn');
 const wanderSheet = document.getElementById('wander-sheet');
+const statusFilterSelect = document.getElementById('filter-status');
+const sortLibrarySelect = document.getElementById('sort-library');
+const applyWanderBtn = document.getElementById('apply-wander-btn');
 
 if (wanderTriggerBtn && wanderSheet) {
   wanderTriggerBtn.addEventListener('click', () => {
     wanderSheet.classList.add('open');
   });
 
-  // Swipe to close logic for the new sheet
+  // Swipe to close logic
   const wanderHandle = wanderSheet.querySelector('.sheet-handle');
   if (wanderHandle) {
     wanderHandle.addEventListener('click', () => {
@@ -1138,7 +1142,7 @@ if (wanderTriggerBtn && wanderSheet) {
     });
   }
 
-  // Quick filters auto-close the sheet
+  // Quick filters: Highlight and update invisible selects (but don't execute yet)
   const quickBtns = wanderSheet.querySelectorAll('.quick-btn');
   quickBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1146,37 +1150,30 @@ if (wanderTriggerBtn && wanderSheet) {
       const targetSort = e.target.getAttribute('data-sort');
 
       // Update the underlying hidden select menus
-      statusFilterSelect.value = targetStatus;
-      sortLibrarySelect.value = targetSort;
+      if (statusFilterSelect) statusFilterSelect.value = targetStatus;
+      if (sortLibrarySelect) sortLibrarySelect.value = targetSort;
 
-      // Trigger the master filter logic you already built!
-      applyLibraryFilters();
-
-      // Check if the array of books to display is empty
-      if (filteredBooksArray.length === 0) {
-        bookGrid.innerHTML = `
-          <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; opacity: 0.85;">
-            <img src="empty.png" alt="No books found" style="width: 140px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));">
-            <p style="font-family: 'Courier New', Courier, monospace; color: var(--sage-green); font-size: 1.1rem;">
-              It's quiet in these stacks...
-            </p>
-          </div>
-        `;
-        return; // Exit the render function early
-      }
-
-      // Visual feedback on the buttons
+      // Visual feedback on the buttons (Highlights green)
       quickBtns.forEach(b => {
         b.style.background = 'var(--bg-color)';
         b.style.color = 'var(--sage-green)';
       });
       e.target.style.background = 'var(--sage-green)';
       e.target.style.color = '#fff';
-
-      // Auto-close the drawer after a brief delay for a native feel
-      setTimeout(() => {
-        wanderSheet.classList.remove('open');
-      }, 350);
     });
   });
+
+  // The new Explicit "Wander" Apply Button
+  if (applyWanderBtn) {
+    applyWanderBtn.addEventListener('click', () => {
+      // Trigger the master filter
+      applyLibraryFilters();
+      
+      // Close the sheet
+      wanderSheet.classList.remove('open');
+      
+      // Scroll to the top of the library grid
+      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 }
