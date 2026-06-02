@@ -569,7 +569,10 @@ if (refreshDataBtn) {
         // 2. Live-Update the UI!
         if (updatesMade) {
           refreshDataBtn.style.color = 'var(--sage-green)';
-          applyLibraryFilters(); // Redraws the grid behind the card
+          
+          // Redraw both the Grid AND the Hero Carousel!
+          renderHeroSection(); 
+          applyLibraryFilters(); 
           
           // Re-populate the open details card with the fresh data
           const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
