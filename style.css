@@ -1182,3 +1182,24 @@ body {
   color: var(--terracotta);
   border-bottom-color: var(--terracotta);
 }
+
+/* --- BATCH 8: CLICKABLE STATS --- */
+.stat-box {
+  /* Your existing styles are likely fine, just ensure it has: */
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s;
+  border: 1px solid var(--line-blue); /* Assuming they have borders */
+}
+
+.stat-box:active {
+  transform: scale(0.95);
+  border-color: var(--terracotta);
+}
+
+.stat-box h3 {
+  pointer-events: none; /* Prevents text highlighting when tapping */
+}
+
+.stat-box p {
+  pointer-events: none;
+}
