@@ -1283,3 +1283,122 @@ body {
   border-color: var(--terracotta);
   color: var(--terracotta);
 }
+
+/* --- PHASE 2: JOURNEY LAYOUTS --- */
+.layout-toggles .layout-btn {
+  background: transparent;
+  border: none;
+  color: #b3bfae; 
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+.layout-toggles .layout-btn.active {
+  color: var(--terracotta);
+}
+
+/* Base Grid Transition */
+.book-grid {
+  transition: opacity 0.2s ease;
+  width: 100%;
+}
+
+/* 1. Default Grid (3-Column Cover Only) */
+.book-grid.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.book-grid.layout-grid .book-info {
+  display: none; /* Strip text for visual journey */
+}
+.book-grid.layout-grid .book-card {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 2 / 3; 
+}
+.book-grid.layout-grid .book-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 2. Cards (The Classic 2-Column View) */
+.book-grid.layout-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.book-grid.layout-cards .book-card {
+  display: flex;
+  flex-direction: column;
+}
+.book-grid.layout-cards .book-info {
+  display: block; /* Restore the text block */
+}
+.book-grid.layout-cards .book-cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.book-grid.layout-cards .book-title {
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin: 8px 0 4px 0;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+.book-grid.layout-cards .book-author {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.75rem;
+  color: var(--sage-green);
+  margin: 0;
+}
+
+/* 3. List View (1-Column, Synced with Search Results) */
+.book-grid.layout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; 
+}
+.book-grid.layout-list .book-card {
+  display: flex;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  gap: 15px;
+  align-items: center;
+}
+.book-grid.layout-list .book-cover {
+  width: 50px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.book-grid.layout-list .book-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+.book-grid.layout-list .book-title {
+  font-family: 'Georgia', serif;
+  font-weight: bold;
+  font-size: 15px;
+  color: var(--text-dark);
+  margin: 0 0 5px 0;
+  line-height: 1.2;
+}
+.book-grid.layout-list .book-author {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  color: var(--sage-green);
+  margin: 0;
+}
