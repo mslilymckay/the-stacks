@@ -13,13 +13,15 @@
 }
 
 body {
+  margin: 0; /* Kills the default side gaps instantly! */
+  padding-top: 60px; /* Accommodates the fixed header */
   font-family: 'Georgia', serif;
   background-color: var(--bg-color);
   color: var(--text-dark);
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: hidden; /* Stops the double-scrolling elastic bounce! */
 }
 
 /* --- BATCH 8: GLOBAL POLISH & HEADER --- */
@@ -105,7 +107,7 @@ body {
 /* Main Bookshelf Area */
 .bookshelf {
   flex-grow: 1;
-  padding: 20px 0; /* Changed to only pad top/bottom to prevent horizontal spill */
+  padding: 10px 0 0 0; /* Reduced top padding from 20px to 10px */
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
@@ -130,7 +132,7 @@ body {
 
 .hero-wrapper {
   padding: 0 15px;
-  margin-bottom: 20px;
+  margin-bottom: 5px; /* Reduced from 20px */
 }
 
 .section-label {
@@ -879,9 +881,9 @@ body {
 
 /* Focus Layout */
 #view-focus {
-  position: absolute;
+  position: fixed; /* Changed from absolute to fixed */
   top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 50; /* Sits on top of the library */
+  z-index: 9999; /* Overrides the header's 100 */
   background-color: var(--bg-color);
 }
 .focus-container {
@@ -990,8 +992,8 @@ body {
   width: 100%;
   display: block; 
   overflow: hidden; 
-  padding: 5px 0 15px 0;
-  margin-bottom: 20px;
+  padding: 5px 0 5px 0; /* Reduced bottom padding to tighten the gap */
+  margin-bottom: 0; /* Removed the 20px margin */
   position: relative; 
 }
 
