@@ -129,6 +129,93 @@ function calculateStats() {
   }
 }
 
+// --- BATCH 8: STATS LIST VIEW LOGIC ---
+function openStatsList(listType) {
+  // 1. Force navigation to the Stats Tab if we aren't there already
+  const statsNav = document.querySelector('.nav-item[data-target="view-stats"]');
+  if (statsNav && !statsNav.classList.contains('active')) statsNav.click();
+
+  const dashboard = document.getElementById('stats-dashboard');
+  const listView = document.getElementById('stats-list-view');
+  const listTitle = document.getElementById('stats-list-title');
+  const listContainer = document.getElementById('stats-list-container');
+
+  if (!dashboard || !listView || !listContainer) return;
+
+  // 2. Toggle the UI
+  dashboard.classList.add('hidden');
+  listView.classList.remove('hidden');
+  listContainer.innerHTML = ''; 
+
+  // 3. Filter Data Based on the Request
+  let booksToShow = [];
+  if (listType === 'tbr') {
+    listTitle.textContent = 'To Be Read';
+    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 0);
+  } else if (listType === 'active') {
+    listTitle.textContent = 'Current Reads';
+    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
+  } else if (listType === 'read') {
+    listTitle.textContent = 'Completed Books';
+    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 2);
+  } else if (listType === 'read_again') {
+    listTitle.textContent = 'Read Again (Favorites)';
+    // Pulls Finished books that are rated exactly 5 Stars!
+    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 2 && Number(getField(b, 'rating')) === 5);
+  }
+
+  // 4. Render the Data using the Search Result HTML structure
+  if (booksToShow.length === 0) {
+    listContainer.innerHTML = '<p style="text-align:center; margin-top: 40px; color: var(--sage-green); font-family: Courier New;">Nothing here yet!</p>';
+    return;
+  }
+
+  booksToShow.forEach(book => {
+    const title = getField(book, 'title') || 'Unknown Title';
+    const author = getField(book, 'author') || 'Unknown Author';
+    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/60x90?text=No+Cover';
+    const statusVal = Number(getField(book, 'status'));
+    
+    let statusLabel = 'Waiting';
+    if (statusVal === 1) statusLabel = 'Reading';
+    if (statusVal === 2) statusLabel = 'Finished';
+    if (statusVal === 3) statusLabel = 'Gave Up';
+
+    const card = document.createElement('div');
+    card.className = 'search-result-card';
+    card.style.cursor = 'pointer'; 
+    card.style.marginBottom = '15px'; // Breathing room
+    
+    card.innerHTML = `
+      <img src="${coverUrl}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 4px;">
+      <div class="search-result-info">
+        <h3 style="margin: 0 0 5px 0;">${title}</h3>
+        <p style="margin: 0; color: var(--text-dark);">${author}</p>
+        <span style="display: inline-block; margin-top: 8px; font-size: 11px; font-family: 'Courier New'; color: var(--terracotta); border: 1px solid var(--terracotta); padding: 2px 6px; border-radius: 4px;">${statusLabel}</span>
+      </div>
+    `;
+    
+    // Tapping the card opens the details sheet!
+    card.addEventListener('click', () => openDetails(book));
+    listContainer.appendChild(card);
+  });
+}
+
+// 5. Wire up the List Back Button & Stat Boxes
+const closeStatsListBtn = document.getElementById('close-stats-list');
+if (closeStatsListBtn) {
+  closeStatsListBtn.addEventListener('click', () => {
+    document.getElementById('stats-list-view').classList.add('hidden');
+    document.getElementById('stats-dashboard').classList.remove('hidden');
+  });
+}
+
+const activeStatBox = document.getElementById('active-stat-box');
+if (activeStatBox) activeStatBox.addEventListener('click', () => openStatsList('active'));
+
+const completedStatBox = document.getElementById('completed-stat-box');
+if (completedStatBox) completedStatBox.addEventListener('click', () => openStatsList('read'));
+
 // Time filter listener
 const timeFilterEl = document.getElementById('stats-timefilter');
 if (timeFilterEl) {
@@ -165,7 +252,7 @@ function renderHeroSection() {
       <h3>TBR</h3>
       <p>Check your To Be Read list</p>
     `;
-    tbrCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+    tbrCard.addEventListener('click', () => openStatsList('tbr'));
     carousel.appendChild(tbrCard);
 
     const readAgainCard = document.createElement('div');
@@ -181,7 +268,7 @@ function renderHeroSection() {
       <h3>Read Again</h3>
       <p>Revisit an old favorite</p>
     `;
-    readAgainCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+    readAgainCard.addEventListener('click', () => openStatsList('read_again'));
     carousel.appendChild(readAgainCard);
     carousel.appendChild(createSlimAddBtn());
 
@@ -204,7 +291,7 @@ function renderHeroSection() {
       <h3>TBR</h3>
       <p>Next up...</p>
     `;
-    tbrCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+    tbrCard.addEventListener('click', () => openStatsList('tbr'));
     carousel.appendChild(tbrCard);
     carousel.appendChild(createSlimAddBtn());
 
@@ -229,7 +316,7 @@ function renderHeroSection() {
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
         <h3>See All</h3>
       `;
-      seeAllCard.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-stats"]').click());
+      seeAllCard.addEventListener('click', () => openStatsList('active'));
       carousel.appendChild(seeAllCard);
     } else {
       carousel.appendChild(createSlimAddBtn());
