@@ -52,17 +52,22 @@
         </div>
       </div>
     
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 15px 10px 15px;">
-      <h2 class="section-label">
-        Your Stacks
-      </h2>
-      <button id="wander-trigger-btn" class="icon-action-btn" title="Wander" style="color: var(--terracotta); background: transparent; border: none; padding: 0;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
-          <rect x="4" y="14" width="16" height="4" rx="1" />
-          <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
-        </svg>
-      </button>
+      <div style="padding: 15px 15px 10px 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+          Your Stacks
+        </h2>
+        <button id="wander-trigger-btn" class="icon-action-btn" title="Wander Settings" style="color: var(--terracotta); background: transparent; border: none; padding: 0;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
+            <rect x="4" y="14" width="16" height="4" rx="1" />
+            <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
+          </svg>
+        </button>
+      </div>
+      <p id="library-subheading" style="font-family: 'Georgia', serif; font-size: 0.85rem; color: var(--sage-green); margin: 5px 0 0 0; font-style: italic;">
+        All Books, by Title (A-Z)
+      </p>
     </div>
       
       <div class="book-grid" id="book-grid">
@@ -172,59 +177,71 @@
 
   </main>
 
-  <div id="wander-sheet" class="bottom-sheet">
+  <div id="wander-sheet" class="bottom-sheet" style="height: max-content; padding-bottom: max(env(safe-area-inset-bottom), 30px);">
     <div class="sheet-handle"></div>
-    <div class="card-detail-container" style="margin-top: 15px; margin-bottom: 30px;">
+    <div class="card-detail-container" style="margin-top: 15px; margin-bottom: 10px;">
       <div class="card-header-line"></div>
       <div class="punch-hole"></div>
       
       <h3 style="font-family: 'Courier New', Courier, monospace; color: var(--terracotta); margin: 10px 0 20px 0; text-align: center;">
-        Wander Your Stacks
+        Wander Settings
       </h3>
-      
-      <div class="toolbar-input-wrapper" style="margin-bottom: 15px;">
-        <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="local-search" class="toolbar-input with-icon" style="border: 1px solid var(--detail-line);" placeholder="Search title or author...">
-      </div>
 
       <div class="quick-filters">
-        <button class="quick-btn" data-status="1" data-sort="date_read_desc">Current Reads</button>
+        <button class="quick-btn" data-status="1" data-sort="date_started_desc">Current Reads</button>
         <button class="quick-btn" data-status="0" data-sort="date_added_desc">TBR List</button>
-        <button class="quick-btn" data-status="2" data-sort="date_read_desc">Finished</button>
+        <button class="quick-btn" data-status="2" data-sort="date_finished_desc">Finished</button>
         <button class="quick-btn" data-status="3" data-sort="date_added_desc">Gave Up</button>
       </div>
 
-      <div class="red-line" style="margin: 20px 0; background-color: var(--detail-line);"></div>
-
-      <div class="toolbar-filters">
-        <div class="toolbar-input-wrapper flex-half">
-          <select id="filter-status" class="toolbar-select" style="border: 1px solid var(--detail-line); padding-left: 10px;">
-            <option value="all">All Statuses</option>
-            <option value="1">Current Reads</option>
-            <option value="0">TBR (Waiting)</option>
-            <option value="2">Finished</option>
-            <option value="3">Gave Up</option>
-          </select>
-        </div>
-        
-        <div class="toolbar-input-wrapper flex-half">
-          <select id="sort-library" class="toolbar-select" style="border: 1px solid var(--detail-line); padding-left: 10px;">
-            <option value="date_added_desc">Newest Added</option>
-            <option value="date_read_desc">Recently Read</option>
-            <option value="rating_desc">Highest Rated</option>
-            <option value="title_asc">Title (A-Z)</option> 
-            <option value="author_asc">Author (A-Z)</option>
-          </select>
-        </div>
-      </div>
-      <button id="apply-wander-btn" style="width: 100%; background-color: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 25px; border: none; padding: 12px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
-          <rect x="4" y="14" width="16" height="4" rx="1" />
-          <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
+      <div style="display: flex; justify-content: center; padding: 15px 0; opacity: 0.7;">
+        <svg width="180" height="24" viewBox="0 0 150 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 12 Q 25 2, 50 12 T 100 12 T 150 12" stroke="var(--sage-green)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M22 6 Q 28 0 33 6 Q 28 12 22 6 Z" fill="var(--sage-green)" />
+          <path d="M72 18 Q 78 24 83 18 Q 78 12 72 18 Z" fill="var(--sage-green)" />
+          <path d="M122 6 Q 128 0 133 6 Q 128 12 122 6 Z" fill="var(--sage-green)" />
         </svg>
-        Wander
-      </button>
+      </div>
+      
+      <div class="toolbar-input-wrapper" style="margin-bottom: 15px; position: relative;">
+        <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="local-search" class="toolbar-input with-icon" style="border: 1px solid var(--detail-line); padding-right: 35px;" placeholder="Search title or author...">
+        
+        <button id="clear-search-btn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--sage-green); padding: 0; cursor: pointer; display: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="toolbar-filters" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <select id="filter-status" class="custom-select-btn">
+          <option value="all">All Statuses</option>
+          <option value="1">Current Reads</option>
+          <option value="0">TBR List</option>
+          <option value="2">Finished</option>
+          <option value="3">Gave Up</option>
+        </select>
+        
+        <select id="sort-library" class="custom-select-btn">
+          <option value="title_asc" selected>Title (A-Z)</option>
+          <option value="author_asc">Author (A-Z)</option>
+          <option value="date_added_desc">Date Added</option>
+          <option value="date_started_desc">Date Started</option>
+          <option value="date_finished_desc">Date Finished</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 25px;">
+        <button id="apply-wander-btn" style="flex: 2; background-color: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; padding: 12px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          Wander
+        </button>
+        
+        <button id="clear-wander-btn" style="flex: 1; background-color: transparent; color: var(--terracotta); border: 1px solid var(--terracotta); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 15px; font-weight: bold; cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><line x1="9" y1="7" x2="15" y2="13"></line><line x1="15" y1="7" x2="9" y2="13"></line></svg>
+          Clear
+        </button>
+      </div>
+
     </div>
   </div>
   
