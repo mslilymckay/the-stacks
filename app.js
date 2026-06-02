@@ -465,10 +465,12 @@ function openDetails(book, clickedElement) {
     else s.classList.remove('active');
   });
 
-  // Open the card & trigger history state
+  // Open the card & trigger history state (Only if it isn't already open!)
   if(sheet) {
-    sheet.classList.add('open');
-    window.history.pushState({ detailsOpen: true }, ''); 
+    if (!sheet.classList.contains('open')) {
+      sheet.classList.add('open');
+      window.history.pushState({ detailsOpen: true }, ''); 
+    }
   }
   if (topFab) topFab.classList.remove('visible');
 }
@@ -528,13 +530,21 @@ if (refreshDataBtn) {
     if (!book) return;
 
     const isbn = getField(book, 'isbn');
-    const title = getField(book, 'title');
-    const author = getField(book, 'author');
+    const title = getField(book, 'title') || '';
+    const author = getField(book, 'author') || '';
 
     refreshDataBtn.style.opacity = '0.5';
 
     try {
-      const query = (isbn && isbn !== 'N/A') ? `${isbn}` : `intitle:${title.replace(/ /g, '+')}+inauthor:${author.replace(/ /g, '+')}`;
+      // 1. Fixed Query Logic (Ensuring ISBNs are prefixed properly)
+      let query = '';
+      const cleanIsbn = String(isbn).replace(/[-\s]/g, '');
+      if (cleanIsbn && cleanIsbn !== 'N/A' && cleanIsbn !== 'undefined') {
+        query = `isbn:${cleanIsbn}`;
+      } else {
+        query = `intitle:${title.replace(/ /g, '+')}+inauthor:${author.replace(/ /g, '+')}`;
+      }
+
       const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
       const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&key=${apiKey}`);
       const data = await response.json();
@@ -555,9 +565,15 @@ if (refreshDataBtn) {
           await updateBookData('category', volumeInfo.categories[0]);
           updatesMade = true;
         }
+        
+        // 2. Live-Update the UI!
         if (updatesMade) {
           refreshDataBtn.style.color = 'var(--sage-green)';
-          loadBooks();
+          applyLibraryFilters(); // Redraws the grid behind the card
+          
+          // Re-populate the open details card with the fresh data
+          const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+          openDetails(updatedBook); 
         }
       }
     } catch (error) {
@@ -892,10 +908,9 @@ let previousViewId = 'view-library';
 // --- BATCH 8: HEADER & FEEDBACK LOGIC ---
 
 // 1. Header Scroll-to-Top
-const headerTitle = document.getElementById('header-title');
-if (headerTitle) {
-  headerTitle.addEventListener('click', () => {
-    // Check which view is active and scroll that container to the top
+const headerScrollTrigger = document.getElementById('header-scroll-trigger');
+if (headerScrollTrigger) {
+  headerScrollTrigger.addEventListener('click', () => {
     const activeView = document.querySelector('.page-view.active');
     if (activeView) activeView.scrollTo({ top: 0, behavior: 'smooth' });
     if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
