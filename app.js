@@ -448,12 +448,15 @@ function renderGrid(booksToRender) {
   if (!bookGrid) return;
   bookGrid.innerHTML = '';
 
+  // 1. Set the baseline layout class for the container
+  bookGrid.className = 'book-grid layout-grid';
+
   // EMPTY STATE: If the filter returns nothing!
   if (booksToRender.length === 0) {
     bookGrid.innerHTML = `
       <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; opacity: 0.85;">
         <p style="font-family: 'Courier New', Courier, monospace; color: var(--sage-green); font-size: 1.1rem;">
-          Nothing in this stack...
+          This stack's empty.
         </p>
       </div>
     `;
@@ -463,24 +466,29 @@ function renderGrid(booksToRender) {
   // Draw the covers
   for (const book of booksToRender) {
     const bookDiv = document.createElement('div');
-    bookDiv.className = 'book-cover';
+    bookDiv.className = 'book-card'; // Updated wrapper class
     
     const savedCover = getField(book, 'cover_url');
     const isbn = getField(book, 'isbn');
     const title = getField(book, 'title') || 'Unknown Title';
     const author = getField(book, 'author') || 'Unknown Author';
 
+    // 2. The Standardized Layout HTML
     if (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') {
       bookDiv.innerHTML = `
-        <img src="${savedCover}" data-isbn="${isbn}" alt="${title}" class="cover-image" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
-        <h3 class="cover-title">${title}</h3>
-        <p class="cover-author">${author}</p>
+        <img src="${savedCover}" data-isbn="${isbn}" alt="${title}" class="book-cover" onerror="this.src='empty.png'">
+        <div class="book-info">
+          <p class="book-title">${title}</p>
+          <p class="book-author">${author}</p>
+        </div>
       `;
     } else {
       bookDiv.innerHTML = `
-        <img src="https://placehold.co/150x200?text=Loading..." data-isbn="${isbn}" alt="${title}" class="cover-image lazy-cover">
-        <h3 class="cover-title">${title}</h3>
-        <p class="cover-author">${author}</p>
+        <img src="https://placehold.co/150x200?text=Loading..." data-isbn="${isbn}" alt="${title}" class="book-cover lazy-cover">
+        <div class="book-info">
+          <p class="book-title">${title}</p>
+          <p class="book-author">${author}</p>
+        </div>
       `;
     }
     
@@ -496,7 +504,7 @@ function renderGrid(booksToRender) {
         const img = entry.target;
         const coverUrl = getCoverUrl(img.dataset.isbn);
         img.src = coverUrl;
-        img.onerror = () => { img.src = 'https://placehold.co/150x200?text=No+Cover'; };
+        img.onerror = () => { img.src = 'empty.png'; };
         observer.unobserve(img);
       }
     });
