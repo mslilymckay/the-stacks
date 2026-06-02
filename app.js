@@ -1123,23 +1123,23 @@ loadBooks();
 // ==========================================
 
 const wanderTriggerBtn = document.getElementById('wander-trigger-btn');
-const wanderDrawer = document.getElementById('wander-drawer');
-const quickBtns = document.querySelectorAll('.quick-btn');
-const statusFilterSelect = document.getElementById('filter-status');
-const sortLibrarySelect = document.getElementById('sort-library');
+const wanderSheet = document.getElementById('wander-sheet');
 
-if (wanderTriggerBtn && wanderDrawer) {
+if (wanderTriggerBtn && wanderSheet) {
   wanderTriggerBtn.addEventListener('click', () => {
-    // 1. Toggle Drawer
-    wanderDrawer.classList.toggle('hidden');
-    
-    // 2. Align view: Scroll to top smoothly if opening
-    if (!wanderDrawer.classList.contains('hidden')) {
-      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    wanderSheet.classList.add('open');
   });
 
-  // 3. Quick Lists: Context-Aware Sorting
+  // Swipe to close logic for the new sheet
+  const wanderHandle = wanderSheet.querySelector('.sheet-handle');
+  if (wanderHandle) {
+    wanderHandle.addEventListener('click', () => {
+      wanderSheet.classList.remove('open');
+    });
+  }
+
+  // Quick filters auto-close the sheet
+  const quickBtns = wanderSheet.querySelectorAll('.quick-btn');
   quickBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
       const targetStatus = e.target.getAttribute('data-status');
@@ -1152,6 +1152,19 @@ if (wanderTriggerBtn && wanderDrawer) {
       // Trigger the master filter logic you already built!
       applyLibraryFilters();
 
+      // Check if the array of books to display is empty
+      if (filteredBooksArray.length === 0) {
+        bookGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; opacity: 0.85;">
+            <img src="empty.png" alt="No books found" style="width: 140px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));">
+            <p style="font-family: 'Courier New', Courier, monospace; color: var(--sage-green); font-size: 1.1rem;">
+              It's quiet in these stacks...
+            </p>
+          </div>
+        `;
+        return; // Exit the render function early
+      }
+
       // Visual feedback on the buttons
       quickBtns.forEach(b => {
         b.style.background = 'var(--bg-color)';
@@ -1162,7 +1175,7 @@ if (wanderTriggerBtn && wanderDrawer) {
 
       // Auto-close the drawer after a brief delay for a native feel
       setTimeout(() => {
-        wanderDrawer.classList.add('hidden');
+        wanderSheet.classList.remove('open');
       }, 350);
     });
   });
