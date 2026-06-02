@@ -184,7 +184,7 @@
       <div class="punch-hole"></div>
       
       <h3 style="font-family: 'Courier New', Courier, monospace; color: var(--terracotta); margin: 10px 0 20px 0; text-align: center;">
-        Wander Settings
+        Wander Your Stacks
       </h3>
 
       <div class="quick-filters">
@@ -194,14 +194,7 @@
         <button class="quick-btn" data-status="3" data-sort="date_added_desc">Gave Up</button>
       </div>
 
-      <div style="display: flex; justify-content: center; padding: 15px 0; opacity: 0.7;">
-        <svg width="180" height="24" viewBox="0 0 150 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 12 Q 25 2, 50 12 T 100 12 T 150 12" stroke="var(--sage-green)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-          <path d="M22 6 Q 28 0 33 6 Q 28 12 22 6 Z" fill="var(--sage-green)" />
-          <path d="M72 18 Q 78 24 83 18 Q 78 12 72 18 Z" fill="var(--sage-green)" />
-          <path d="M122 6 Q 128 0 133 6 Q 128 12 122 6 Z" fill="var(--sage-green)" />
-        </svg>
-      </div>
+      <div class="red-line"></div>
       
       <div class="toolbar-input-wrapper" style="margin-bottom: 15px; position: relative;">
         <svg class="toolbar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -232,12 +225,18 @@
 
       <div style="display: flex; gap: 10px; margin-top: 25px;">
         <button id="apply-wander-btn" style="flex: 2; background-color: var(--terracotta); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; padding: 12px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
+            <rect x="4" y="14" width="16" height="4" rx="1" />
+            <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
+          </svg>
           Wander
         </button>
-        
+      </div>
+
+       <div style="display: flex; gap: 10px; margin-top: 25px;"> 
         <button id="clear-wander-btn" style="flex: 1; background-color: transparent; color: var(--terracotta); border: 1px solid var(--terracotta); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 8px; font-family: 'Courier New', Courier, monospace; font-size: 15px; font-weight: bold; cursor: pointer;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><line x1="9" y1="7" x2="15" y2="13"></line><line x1="15" y1="7" x2="9" y2="13"></line></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
           Clear
         </button>
       </div>
