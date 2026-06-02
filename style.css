@@ -1,12 +1,13 @@
 :root {
-  /* Phase 1: Soft, Earthy Mood Board Palette */
-  --bg-color: #F5EEDB; /* Warm Cream */
-  --card-bg: #FFFFFF;
-  --text-dark: #2C3E2D; /* Kept your rich forest green for accessibility/contrast */
-  --sage-green: #8EA483; 
-  --terracotta: #D2A574; 
-  --oak-brown: #BB8654;
-  --detail-line: #BB8654; /* Repurposed oak brown for soft vintage lines */
+  /* High-Contrast, Soft Earth Palette */
+  --bg-color: #F5EEDB;       /* Warm Cream */
+  --card-bg: #FAF8F2;        /* Softened off-white for book cards */
+  --header-text: #EAE3D5;    /* Subtly tinted white for header text and icons */
+  --text-dark: #2C3E2D;      /* Deep Forest Green */
+  --sage-green: #597755;     /* Darkened, richer sage for contrast */
+  --terracotta: #A65239;     /* Deep burnt orange/brick for contrast */
+  --oak-brown: #8B5E34;      /* Darkened vintage detail line */
+  --detail-line: #8B5E34;
 }
 
 * {
@@ -55,6 +56,11 @@ body {
   padding: 0 20px;
   z-index: 100;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Slightly stronger shadow */
+  color: var(--header-text); 
+}
+
+.app-header svg, .icon-action-btn {
+  color: var(--header-text);
 }
 
 /* The Circular Header Logo */
