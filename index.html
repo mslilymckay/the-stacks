@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Stacks</title>
   <link rel="stylesheet" href="style.css?v=2">
-  <link rel="icon" type="image/png" href="https://github.com/user-attachments/assets/b721a016-dd97-4308-8f58-610b274b7aab">
-  <link rel="apple-touch-icon" href="https://github.com/user-attachments/assets/b721a016-dd97-4308-8f58-610b274b7aab">
+  <link rel="icon" type="image/png" href="icon_lines">
+  <link rel="apple-touch-icon" href="icon_lines">
   <link rel="manifest" href="manifest.json">
   <script type="module" src="app.js" defer></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -14,7 +14,7 @@
 <body>
   <header class="app-header">
     <div id="header-scroll-trigger" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;">
-      <img src="https://github.com/user-attachments/assets/b721a016-dd97-4308-8f58-610b274b7aab" alt="The Stacks Logo" class="header-logo">
+      <img src="icon_lines" alt="The Stacks Logo" class="header-logo">
       <h1 class="header-title">The Stacks</h1>
     </div>
     <div style="display: flex; gap: 15px; align-items: center;">
@@ -66,17 +66,17 @@
             </button>
           </div>
         </div>
-        <div style="display: flex; align-items: left; margin-top: 5px; v-align: middle; gap: 10px;">
-          <button id="wander-trigger-btn" class="icon-action-btn" title="Wander Settings" style="color: var(--terracotta); background: transparent; border: none; padding: 0;">
+        <div style="display: flex; align-items: left; margin-top: 5px; align-items: center; gap: 10px;">
+          <button id="wander-trigger-btn" class="icon-action-btn" title="Wander Settings" style="color: var(--terracotta); background: var(--terracotta); border: none; padding: 0;">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
               <rect x="4" y="14" width="16" height="4" rx="1" />
               <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
             </svg>
+            <p id="library-subheading" style="font-family: 'Georgia', serif; font-size: 0.85rem; color: var(--sage-green); margin: 0; font-style: italic;">
+              All Books, by Title (A-Z)
+            </p>
           </button>
-          <p id="library-subheading" style="font-family: 'Georgia', serif; font-size: 0.85rem; color: var(--sage-green); margin: 0; font-style: italic;">
-            All Books, by Title (A-Z)
-          </p>
         </div>
       </div>
       
@@ -143,7 +143,7 @@
 
       <div id="stats-list-view" class="hidden" style="padding: 0 15px;">
         <div style="display: flex; align-items: center; gap: 15px; margin: 15px 0 20px 0;">
-          <button id="close-stats-list" class="icon-action-btn" style="background: transparent; border: 1px solid var(--line-blue); border-radius: 50%; color: var(--terracotta);">
+          <button id="close-stats-list" class="icon-action-btn" style="background: transparent; border: 1px solid (--line-blue); border-radius: 50%; color: var(--terracotta);">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
           <h2 id="stats-list-title" class="section-label" style="margin: 0; color: var(--text-dark);">List Title</h2>
