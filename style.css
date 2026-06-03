@@ -1394,3 +1394,26 @@ body {
   color: var(--sage-green);
   margin: 0;
 }
+
+/* Hide ratings by default so they don't break the 2-column or 3-column views */
+.book-grid .book-rating {
+  display: none;
+}
+
+/* List View Explicit Overrides */
+.book-grid.layout-list .book-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  text-align: left; /* Force left-alignment */
+  align-items: flex-start;
+  height: 90px; /* Match the cover height exactly to push the stars to the bottom */
+}
+
+.book-grid.layout-list .book-rating {
+  display: block;
+  margin-top: auto; /* Pushes the stars to the absolute bottom of the container */
+  color: #DDA750; /* A soft, vintage gold color */
+  font-size: 12px;
+  letter-spacing: 2px;
+}
