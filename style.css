@@ -1397,6 +1397,8 @@ body {
   font-weight: bold;
   font-size: 16px;
   color: var(--text-dark);
+  text-align: left;
+  width: 100%;
   margin: 0 0 5px 0;
   line-height: 1.2;
   display: -webkit-box;
@@ -1407,6 +1409,8 @@ body {
 .book-grid.layout-list .book-author {
   font-family: 'Georgia', serif; /* Synced with search result author */
   font-size: 14px;
+  text-align: left;
+  width: 100%;
   color: var(--sage-green);
   margin: 0;
 }
