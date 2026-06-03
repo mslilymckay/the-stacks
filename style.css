@@ -1496,3 +1496,51 @@ body {
   color: var(--text-dark);
   font-weight: bold;
 }
+
+/* --- PHASE 3: DETAILS HERO & ACTIONS --- */
+.stamp {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 5px;
+  border: 1px dashed;
+}
+.stamp-started { color: var(--sage-green); border-color: var(--sage-green); background: rgba(89, 119, 85, 0.1); }
+.stamp-finished { color: var(--terracotta); border-color: var(--terracotta); background: rgba(166, 82, 57, 0.1); }
+
+.journal-action-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--detail-line);
+  color: var(--sage-green);
+  border-radius: 8px;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  transition: transform 0.1s, color 0.2s;
+}
+.journal-action-btn:active { transform: scale(0.95); }
+.journal-action-btn.delete { color: #A65239; } /* Terracotta */
+
+.journal-notes-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 15px;
+  border: 1px solid var(--detail-line);
+  border-radius: 8px;
+  background: transparent;
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  color: var(--text-dark);
+  resize: vertical;
+  line-height: 1.5;
+  background-image: repeating-linear-gradient(transparent, transparent 23px, rgba(139, 94, 52, 0.1) 23px, rgba(139, 94, 52, 0.1) 24px); /* Faint lined paper effect */
+}
+.journal-notes-input:focus { outline: none; border-color: var(--sage-green); }
