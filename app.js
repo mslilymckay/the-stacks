@@ -378,38 +378,45 @@ function applyLibraryFilters() {
   });
 
   // 2. SORTING
-  filteredBooks.sort((a, b) => {
-    // Title (A-Z)
-    if (sortMethod === 'title_asc') {
-      const titleA = (getField(a, 'title') || 'Z').toLowerCase(); 
-      const titleB = (getField(b, 'title') || 'Z').toLowerCase();
-      return titleA.localeCompare(titleB);
-    }
-    // Author (A-Z)
-    else if (sortMethod === 'author_asc') {
-      const authorA = (getField(a, 'author') || 'Z').toLowerCase(); 
-      const authorB = (getField(b, 'author') || 'Z').toLowerCase();
-      return authorA.localeCompare(authorB);
-    } 
-    // Highest Rated
-    else if (sortMethod === 'rating_desc') {
-      const ratingA = Number(getField(a, 'rating')) || 0;
-      const ratingB = Number(getField(b, 'rating')) || 0;
-      return ratingB - ratingA;
-    }
-    // Recently Read
-    else if (sortMethod === 'date_read_desc') {
-      const dateA = new Date(getField(a, 'read_date') || 0).getTime();
-      const dateB = new Date(getField(b, 'read_date') || 0).getTime();
-      return dateB - dateA;
-    }
-    // Newest Added (Default)
-    else {
-      const dateA = new Date(getField(a, 'date_added') || getField(a, 'created_at') || 0).getTime();
-      const dateB = new Date(getField(b, 'date_added') || getField(b, 'created_at') || 0).getTime();
-      return dateB - dateA;
-    }
-  });
+    filteredBooks.sort((a, b) => {
+      // Title (A-Z)
+      if (sortMethod === 'title_asc') {
+        const titleA = (getField(a, 'title') || 'Z').toLowerCase(); 
+        const titleB = (getField(b, 'title') || 'Z').toLowerCase();
+        return titleA.localeCompare(titleB);
+      }
+      // Author (A-Z)
+      else if (sortMethod === 'author_asc') {
+        const authorA = (getField(a, 'author') || 'Z').toLowerCase(); 
+        const authorB = (getField(b, 'author') || 'Z').toLowerCase();
+        return authorA.localeCompare(authorB);
+      } 
+      // Highest Rated
+      else if (sortMethod === 'rating_desc') {
+        const ratingA = Number(getField(a, 'rating')) || 0;
+        const ratingB = Number(getField(b, 'rating')) || 0;
+        return ratingB - ratingA;
+      }
+      // Date Finished (Matches Wander Drawer HTML)
+      else if (sortMethod === 'date_finished_desc') {
+        // We still pull from 'read_date' in the database!
+        const dateA = new Date(getField(a, 'read_date') || 0).getTime();
+        const dateB = new Date(getField(b, 'read_date') || 0).getTime();
+        return dateB - dateA;
+      }
+      // Date Started (Added for Current Reads!)
+      else if (sortMethod === 'date_started_desc') {
+        const dateA = new Date(getField(a, 'date_started') || 0).getTime();
+        const dateB = new Date(getField(b, 'date_started') || 0).getTime();
+        return dateB - dateA;
+      }
+      // Date Added (Default Fallback)
+      else {
+        const dateA = new Date(getField(a, 'date_added') || getField(a, 'created_at') || 0).getTime();
+        const dateB = new Date(getField(b, 'date_added') || getField(b, 'created_at') || 0).getTime();
+        return dateB - dateA;
+      }
+    });
 
   // Pass the final sliced-and-diced array to the renderer
   renderGrid(filteredBooks);
@@ -548,16 +555,23 @@ function openDetails(book, clickedElement) {
   const notes = getField(book, 'notes') || '';
   
   // Date Formatting for Display and Inputs
+  const formatStandardDate = (iso) => {
+    if (!iso) return '--';
+    const d = new Date(iso);
+    if (isNaN(d)) return '--';
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  };
+  
   const rawDateAdded = getField(book, 'created_at') || getField(book, 'date_added');
   const dateAdded = formatDate(rawDateAdded) || '--';
 
   const rawStarted = getField(book, 'date_started');
   const startedVal = rawStarted ? new Date(rawStarted).toISOString().split('T')[0] : '';
-  const startedText = rawStarted ? formatDate(rawStarted) : '';
+  const startedText = rawStarted ? formatStandardDate(rawStarted) : '';
 
   const rawFinished = getField(book, 'read_date') || getField(book, 'date_finished');
   const finishedVal = rawFinished ? new Date(rawFinished).toISOString().split('T')[0] : '';
-  const finishedText = rawFinished ? formatDate(rawFinished) : '';
+  const finishedText = rawFinished ? formatStandardDate(rawFinished) : '';
 
   // Helper for vintage mm-dd-yy dates
   const formatVintageDate = (iso) => {
@@ -656,33 +670,92 @@ function openDetails(book, clickedElement) {
     const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
     
     await updateBookData('status', newStatus);
-    updatedBook.status = newStatus; // Update local memory instantly
+    updatedBook.status = newStatus; 
     
     const todayIso = new Date().toISOString();
     
-    if (newStatus === 1) {
-      await updateBookData('date_started', todayIso);
-      updatedBook.date_started = todayIso;
-    } else if (newStatus === 2) {
+    if (newStatus === 1) { // Reading
+      if (!updatedBook.date_started) {
+        await updateBookData('date_started', todayIso);
+        updatedBook.date_started = todayIso;
+      }
+      // Clear finish date if moved back to Reading
+      await updateBookData('read_date', null);
+      updatedBook.read_date = null;
+    } else if (newStatus === 2) { // Finished
       await updateBookData('read_date', todayIso);
       updatedBook.read_date = todayIso;
     }
+    
+    if (typeof renderHeroSection === 'function') renderHeroSection();
+    if (typeof calculateStats === 'function') calculateStats();
     
     openDetails(updatedBook); 
     applyLibraryFilters(); 
   });
 
   document.getElementById('inline-started').addEventListener('change', async (e) => {
-    const newDate = e.target.value ? new Date(e.target.value).toISOString() : null;
-    await updateBookData('date_started', newDate);
     const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    const rawInput = e.target.value;
+    
+    if (!rawInput) {
+      await updateBookData('date_started', null);
+      updatedBook.date_started = null;
+    } else {
+      // Parse locally to avoid UTC off-by-one errors
+      const [year, month, day] = rawInput.split('-');
+      const isoString = new Date(year, month - 1, day).toISOString();
+      await updateBookData('date_started', isoString);
+      updatedBook.date_started = isoString;
+    }
     openDetails(updatedBook);
   });
 
   document.getElementById('inline-finished').addEventListener('change', async (e) => {
-    const newDate = e.target.value ? new Date(e.target.value).toISOString() : null;
-    await updateBookData('read_date', newDate);
     const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    const rawInput = e.target.value;
+
+    if (!rawInput) {
+      await updateBookData('read_date', null);
+      updatedBook.read_date = null;
+    } else {
+      const [year, month, day] = rawInput.split('-');
+      const newDateObj = new Date(year, month - 1, day);
+      
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); 
+
+      const startedInput = document.getElementById('inline-started').value;
+      let startedDateObj = null;
+      if (startedInput) {
+         const [sYear, sMonth, sDay] = startedInput.split('-');
+         startedDateObj = new Date(sYear, sMonth - 1, sDay);
+      }
+
+      // Validations
+      if (newDateObj > today) {
+        alert("Finished date cannot be in the future.");
+        e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
+        return;
+      }
+      if (startedDateObj && newDateObj < startedDateObj) {
+        alert("Finished date cannot be before the Started date.");
+        e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
+        return;
+      }
+
+      const isoString = newDateObj.toISOString();
+      await updateBookData('read_date', isoString);
+      updatedBook.read_date = isoString;
+
+      // Auto-update status to Finished
+      await updateBookData('status', 2);
+      updatedBook.status = 2;
+    }
+
+    if (typeof renderHeroSection === 'function') renderHeroSection();
+    if (typeof calculateStats === 'function') calculateStats();
+
     openDetails(updatedBook);
     applyLibraryFilters();
   });
