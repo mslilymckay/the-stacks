@@ -1161,6 +1161,23 @@ body {
 }
 
 /* --- PHASE 1: THE WANDER DRAWER --- */
+.wander {
+  /* Unified wander button */
+  flex: 1; 
+  background-color: var(--terracotta); 
+  color: var(--header-text); 
+  display: flex; 
+  align-items: center; 
+  justify-content: left; 
+  gap: 8px; 
+  border: none; 
+  padding: 8px; 
+  border-radius: 8px; 
+  font-weight: bold; 
+  cursor: pointer; 
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 .wander-drawer {
   position: fixed;
   top: 60px; /* Sits perfectly below the header */
