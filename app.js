@@ -592,36 +592,38 @@ if (closeDetailsBtn) {
 
 // Event: Status Dropdown Changes
 const statusDropdown = document.getElementById('status-dropdown');
-statusDropdown.addEventListener('change', async (event) => {
-  const newStatus = parseInt(event.target.value); 
-  await updateBookData('status', newStatus);
+if (statusDropdown) {
+  statusDropdown.addEventListener('change', async (event) => {
+    const newStatus = parseInt(event.target.value); 
+    await updateBookData('status', newStatus);
 
-  const stampEl = document.getElementById('completion-stamp');
-  const stampDateEl = document.getElementById('stamp-date');
+    const stampEl = document.getElementById('completion-stamp');
+    const stampDateEl = document.getElementById('stamp-date');
 
-  if (newStatus === 2) { 
-    stampEl.style.display = 'flex'; 
-    const today = new Date();
-    stampDateEl.textContent = today.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-    await updateBookData('read_date', today.toISOString());
-  } else {
-    stampEl.style.display = 'none';
-    await updateBookData('read_date', null);
-  }
-  
-  // Update local memory and apply filters to redraw instantly
-  calculateStats();
-  renderHeroSection();
-  applyLibraryFilters();
-  
-  // Auto-close with delay
-  setTimeout(() => {
-    if (sheet && sheet.classList.contains('open')) {
-      window.history.back(); // Triggers popstate to close cleanly
-      if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
+    if (newStatus === 2) { 
+      stampEl.style.display = 'flex'; 
+      const today = new Date();
+      stampDateEl.textContent = today.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      await updateBookData('read_date', today.toISOString());
+    } else {
+      stampEl.style.display = 'none';
+      await updateBookData('read_date', null);
     }
-  }, 800); 
-});
+    
+    // Update local memory and apply filters to redraw instantly
+    calculateStats();
+    renderHeroSection();
+    applyLibraryFilters();
+    
+    // Auto-close with delay
+    setTimeout(() => {
+      if (sheet && sheet.classList.contains('open')) {
+        window.history.back(); // Triggers popstate to close cleanly
+        if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
+      }
+    }, 800); 
+  });
+}
 
 // Event: Star Rating Clicks
 const stars = document.querySelectorAll('.star');
