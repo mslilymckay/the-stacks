@@ -480,7 +480,7 @@ function renderGrid(booksToRender) {
         <div class="book-info">
           <p class="book-title">${title}</p>
           <p class="book-author">${author}</p>
-          <div class="book-rating">★★★★★</div>
+          <div class="book-rating">${rating}</div>
         </div>
       `;
     } else {
@@ -489,7 +489,7 @@ function renderGrid(booksToRender) {
         <div class="book-info">
           <p class="book-title">${title}</p>
           <p class="book-author">${author}</p>
-          <div class="book-rating">★★★★★</div>
+          <div class="book-rating">${rating}</div>
         </div>
       `;
     }
