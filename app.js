@@ -675,18 +675,20 @@ function openDetails(book, clickedElement) {
     const todayIso = new Date().toISOString();
     
     if (newStatus === 1) { // Reading
-      if (!updatedBook.date_started) {
-        await updateBookData('date_started', todayIso);
-        updatedBook.date_started = todayIso;
-      }
+      // ALWAYS update to today's date when switching to Reading
+      await updateBookData('date_started', todayIso);
+      updatedBook.date_started = todayIso;
+      
       // Clear finish date if moved back to Reading
       await updateBookData('read_date', null);
       updatedBook.read_date = null;
+      
     } else if (newStatus === 2) { // Finished
       await updateBookData('read_date', todayIso);
       updatedBook.read_date = todayIso;
     }
     
+    // Instantly update the Hero Carousel!
     if (typeof renderHeroSection === 'function') renderHeroSection();
     if (typeof calculateStats === 'function') calculateStats();
     
@@ -839,7 +841,6 @@ function openDetails(book, clickedElement) {
   document.getElementById('btn-read-again').addEventListener('click', async () => {
     if(confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) {
        
-       // Explicitly map ONLY the safe fields so Supabase doesn't reject it
        const duplicate = {
          uuid: crypto.randomUUID(),
          title: getField(book, 'title'),
@@ -861,15 +862,20 @@ function openDetails(book, clickedElement) {
          console.error('Error duplicating:', error);
          alert("Oops! Something went wrong communicating with the database.");
        } else {
-         // Push the new book straight into memory and redraw!
+         // Push the new book straight into memory
          globalLibraryData.push(data[0] || duplicate);
+         
+         // THE FIX: Explicitly redraw the carousel and stats!
+         if (typeof renderHeroSection === 'function') renderHeroSection();
+         if (typeof calculateStats === 'function') calculateStats();
          applyLibraryFilters(); 
+         
          alert("New journey added! Check your Current Reads.");
          closeDetailsBtn.click();
        }
     }
   });
-
+  
   document.getElementById('btn-delete-book').addEventListener('click', async () => {
     if(confirm("Are you sure you want to permanently delete this book from your library?")) {
       await supabase.from('books').delete().eq('uuid', currentOpenBookId);
