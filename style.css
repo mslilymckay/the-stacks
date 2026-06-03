@@ -1464,6 +1464,8 @@ body {
 .meta-value {
   color: var(--text-dark);
   font-weight: bold;
+  text-align: right;
+  flex-grow: 1;
 }
 
 /* Inline Edit Inputs */
@@ -1480,10 +1482,16 @@ body {
   outline: none;
   cursor: pointer;
   padding: 0;
+  width: auto;
+  flex-grow: 1;
+  /* THE FIX: Forces native iOS/Android date pickers to align right */
+  direction: rtl; 
 }
+
 .inline-edit-input:focus {
   color: var(--terracotta);
 }
+
 .inline-edit-input option {
   text-align: left;
 }
