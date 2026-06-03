@@ -1172,54 +1172,30 @@ if (headerScrollTrigger) {
   });
 }
 
-// 2. Feedback Modal Logic
-const feedbackTriggerBtn = document.getElementById('feedback-trigger-btn');
-const feedbackModal = document.getElementById('feedback-modal');
-const closeFeedbackBtn = document.getElementById('close-feedback-btn');
-const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
-const feedbackText = document.getElementById('feedback-text');
+// ==========================================
+// FEEDBACK MODAL LOGIC
+// ==========================================
+const feedbackModal = document.querySelector('.feedback-modal');
+const feedbackBtn = document.getElementById('feedback-trigger-btn');
+const closeFeedbackBtn = document.querySelector('.close-modal');
 
-if (feedbackTriggerBtn && feedbackModal) {
-  feedbackTriggerBtn.addEventListener('click', () => {
-    feedback-Modal.classList.remove('hidden');
-    feedbackText.focus();
+if (feedbackModal && feedbackBtn) {
+  // 1. Open the modal
+  feedbackBtn.addEventListener('click', () => {
+    feedbackModal.classList.remove('hidden');
   });
 
-  closeFeedbackBtn.addEventListener('click', () => {
-    feedback-Modal.classList.add('hidden');
-    feedback-content.value = ''; // Clear text
-  });
+  // 2. Close the modal via 'X'
+  if (closeFeedbackBtn) {
+    closeFeedbackBtn.addEventListener('click', () => {
+      feedbackModal.classList.add('hidden');
+    });
+  }
 
-  submitFeedbackBtn.addEventListener('click', async () => {
-    const text = feedbackText.value.trim();
-    if (!text) return;
-
-    // UI Feedback
-    const originalText = submitFeedbackBtn.textContent;
-    submitFeedbackBtn.textContent = 'Sending...';
-    submitFeedbackBtn.disabled = true;
-
-    // Send to Supabase 'feedback' table
-    const { error } = await supabase
-      .from('feedback')
-      .insert([{ message: text }]);
-
-    if (error) {
-      console.error('Error sending feedback:', error);
-      submitFeedbackBtn.textContent = 'Error!';
-      submitFeedbackBtn.style.backgroundColor = 'red';
-    } else {
-      submitFeedbackBtn.textContent = 'Sent!';
-      submitFeedbackBtn.style.backgroundColor = 'var(--sage-green)';
-      
-      // Close modal after success
-      setTimeout(() => {
-        feedbackModal.classList.add('hidden');
-        feedbackText.value = '';
-        submitFeedbackBtn.textContent = originalText;
-        submitFeedbackBtn.style.backgroundColor = 'var(--terracotta)';
-        submitFeedbackBtn.disabled = false;
-      }, 1500);
+  // 3. Close the modal by tapping the background
+  feedbackModal.addEventListener('click', (e) => {
+    if (e.target === feedbackModal) {
+      feedbackModal.classList.add('hidden');
     }
   });
 }
