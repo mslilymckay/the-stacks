@@ -69,7 +69,6 @@ body {
   height: 32px;
   border-radius: 50%; /* This perfectly rounds the image! */
   object-fit: cover;
-  border: 1.5px solid rgba(255, 255, 255, 0.4); /* Optional: A subtle white ring to make it pop */
   cursor: pointer;
 }
 
