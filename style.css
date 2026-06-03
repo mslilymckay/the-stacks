@@ -1617,8 +1617,7 @@ body {
 
 /* Stamps */
 .stamp {
-  display: flex;
-  flex: 0 1 auto; /* fit contents */
+  display: flex; /* fit contents */
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1647,5 +1646,15 @@ body {
   margin-top: 5px;
   border: 1.5px dashed;*/
 }
-.stamp-started { color: var(--sage-green); border-color: var(--sage-green); background: transparent; }
-.stamp-finished { color: var(--terracotta); border-color: var(--terracotta); background: transparent; }
+.stamp-started {
+  flex: 0 1 auto;
+  color: var(--sage-green); 
+  border-color: var(--sage-green); 
+  background: transparent;
+}
+.stamp-finished {
+  flex: 0 1 auto;
+  color: var(--terracotta); 
+  border-color: var(--terracotta); 
+  background: transparent;
+}
