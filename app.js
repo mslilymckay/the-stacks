@@ -449,7 +449,8 @@ function renderGrid(booksToRender) {
   bookGrid.innerHTML = '';
 
   // 1. Set the baseline layout class for the container
-  bookGrid.className = 'book-grid layout-grid';
+  const activeLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
+  bookGrid.className = `book-grid ${activeLayout}`;
 
   // EMPTY STATE: If the filter returns nothing!
   if (booksToRender.length === 0) {
@@ -472,7 +473,13 @@ function renderGrid(booksToRender) {
     const isbn = getField(book, 'isbn');
     const title = getField(book, 'title') || 'Unknown Title';
     const author = getField(book, 'author') || 'Unknown Author';
-    const rating = getField(book, 'rating') || 'No Rating';
+    const ratingNum = Number(getField(book, 'rating')) || 0;
+    
+    // Generate the stars: Gold for active, Grey for inactive
+    let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
+    if (ratingNum > 0) {
+      ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
+    }
 
     // 2. The Standardized Layout HTML
     if (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') {
@@ -481,7 +488,7 @@ function renderGrid(booksToRender) {
         <div class="book-info">
           <p class="book-title">${title}</p>
           <p class="book-author">${author}</p>
-          <div class="book-rating">${rating}</div>
+          <div class="book-rating">${ratingDisplay}</div>
         </div>
       `;
     } else {
@@ -490,7 +497,7 @@ function renderGrid(booksToRender) {
         <div class="book-info">
           <p class="book-title">${title}</p>
           <p class="book-author">${author}</p>
-          <div class="book-rating">${rating}</div>
+          <div class="book-rating">${ratingDisplay}</div>
         </div>
       `;
     }
@@ -1236,28 +1243,33 @@ if (wanderTriggerBtn && wanderSheet) {
 const layoutBtns = document.querySelectorAll('.layout-btn');
 const mainGrid = document.getElementById('book-grid');
 
+// Pull saved layout from memory, or default to the 3-column grid
+let currentLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
+
 if (layoutBtns.length > 0 && mainGrid) {
-  // Ensure the default grid class is applied on load
-  mainGrid.classList.add('layout-grid');
+  // 1. Initialize the correct active button on load
+  layoutBtns.forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('data-layout') === currentLayout) {
+      b.classList.add('active');
+    }
+  });
 
   layoutBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // 1. Update button visual state
+      // 2. Update button visual state
       layoutBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
-      // 2. Clear out all layout classes
-      mainGrid.classList.remove('layout-grid', 'layout-cards', 'layout-list');
+      // 3. Save the choice to memory!
+      currentLayout = btn.getAttribute('data-layout');
+      localStorage.setItem('stacksLayout', currentLayout);
       
-      // 3. Apply the new layout class
-      const newLayout = btn.getAttribute('data-layout');
-      mainGrid.classList.add(newLayout);
+      // 4. Apply directly to the grid
+      mainGrid.className = 'book-grid ' + currentLayout;
       
-      // Optional: Add a tiny fade effect so the snap isn't too jarring
       mainGrid.style.opacity = 0;
-      setTimeout(() => {
-        mainGrid.style.opacity = 1;
-      }, 50);
+      setTimeout(() => { mainGrid.style.opacity = 1; }, 50);
     });
   });
 }
