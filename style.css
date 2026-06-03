@@ -1617,7 +1617,8 @@ body {
 
 /* Stamps */
 .stamp {
-  display: flex; /* Hidden by default via JS */
+  display: flex;
+  flex: 0 1 auto; /* fit contents */
   flex-direction: column;
   align-items: center;
   justify-content: center;
