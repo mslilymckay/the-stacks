@@ -98,6 +98,11 @@ body {
   backdrop-filter: blur(3px);
 }
 
+.feedback-modal:not(.hidden) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
 .feedback-modal.hidden {
   opacity: 0;
   pointer-events: none;
