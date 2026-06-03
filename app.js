@@ -534,7 +534,6 @@ document.getElementById('sort-library')?.addEventListener('change', applyLibrary
 const viewDetails = document.getElementById('view-details');
 const closeDetailsBtn = document.getElementById('close-details-btn');
 const journalContent = document.getElementById('journal-content');
-const pageViews = document.querySelectorAll('.page-view');
 
 function openDetails(book, clickedElement) {
   currentOpenBookId = book.id;
