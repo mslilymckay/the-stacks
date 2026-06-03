@@ -472,6 +472,7 @@ function renderGrid(booksToRender) {
     const isbn = getField(book, 'isbn');
     const title = getField(book, 'title') || 'Unknown Title';
     const author = getField(book, 'author') || 'Unknown Author';
+    const rating = getField(book, 'rating') || 'No Rating';
 
     // 2. The Standardized Layout HTML
     if (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') {
