@@ -1466,67 +1466,6 @@ body {
   font-weight: bold;
 }
 
-/* --- PHASE 3: READING JOURNAL VIEWS --- */
-#view-details {
-  background-color: var(--bg-color);
-  overflow-y: auto;
-  padding-bottom: 80px; 
-}
-
-.journal-cover {
-  width: 140px;
-  border-radius: 6px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-}
-
-.journal-title {
-  font-family: 'Georgia', serif;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: var(--text-dark);
-  margin: 0 0 8px 0;
-  line-height: 1.2;
-}
-
-.journal-author {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 1rem;
-  color: var(--sage-green);
-  margin: 0 0 20px 0;
-}
-
-/* Updated Meta Card: Lined Paper Motif */
-.journal-meta-card {
-  width: 100%;
-  background-color: var(--card-bg);
-  border: 1px solid var(--detail-line);
-  border-radius: 8px;
-  margin-top: 15px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-  text-align: left;
-  background-image: repeating-linear-gradient(transparent, transparent 39px, rgba(139, 94, 52, 0.2) 39px, rgba(139, 94, 52, 0.2) 40px);
-  padding: 0 15px;
-}
-
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px; /* Snaps text perfectly to the 40px background lines */
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.9rem;
-}
-
-.meta-label {
-  color: var(--sage-green);
-}
-
-.meta-value {
-  color: var(--text-dark);
-  font-weight: bold;
-}
-
 /* Inline Edit Inputs */
 .inline-edit-input {
   appearance: none;
