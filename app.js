@@ -592,50 +592,6 @@ if (closeDetailsBtn) {
 
 // DELETED EVENT LISTENERS
 
-// Swipe-to-Close Gestures
-let touchStartY = 0;
-let touchCurrentY = 0;
-let isSwiping = false;
-
-sheet.addEventListener('touchstart', (e) => {
-  const cardContent = document.querySelector('.card-content');
-  if (cardContent && cardContent.scrollTop > 0) return; 
-  touchStartY = e.touches[0].clientY;
-  isSwiping = true;
-  sheet.style.transition = 'none'; 
-}, { passive: true });
-
-sheet.addEventListener('touchmove', (e) => {
-  if (!isSwiping) return;
-  touchCurrentY = e.touches[0].clientY;
-  const deltaY = touchCurrentY - touchStartY;
-  if (deltaY > 0) {
-    if (e.cancelable) e.preventDefault(); 
-    sheet.style.transform = `translateY(${deltaY}px)`;
-  }
-}, { passive: false });
-
-sheet.addEventListener('touchend', () => {
-  if (!isSwiping) return;
-  isSwiping = false;
-  const deltaY = touchCurrentY - touchStartY;
-  sheet.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'; 
-
-  if (deltaY > 100) {
-    wanderSheet.classList.remove('open');
-    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
-  } 
-  sheet.style.transform = ''; 
-});
-
-// Explicit handle click closes card
-if (sheetHandle) {
-  sheetHandle.addEventListener('click', () => {
-    wanderSheet.classList.remove('open');
-    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
-  });
-}
-
 
 // ==========================================
 // 5. SEARCH & BARCODE SCANNER LOGIC
