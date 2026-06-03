@@ -490,7 +490,7 @@ function renderGrid(booksToRender) {
     // 2. The Standardized Layout HTML
     if (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') {
       bookDiv.innerHTML = `
-        <img src="${savedCover}" data-isbn="${isbn}" alt="${title}" class="book-cover" onerror="this.src='empty.png'">
+        <img src="${savedCover}" data-isbn="${isbn}" alt="${title}" class="book-cover" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
         <div class="book-info">
           <p class="book-title">${title}</p>
           <p class="book-author">${author}</p>
@@ -520,7 +520,7 @@ function renderGrid(booksToRender) {
         const img = entry.target;
         const coverUrl = getCoverUrl(img.dataset.isbn);
         img.src = coverUrl;
-        img.onerror = () => { img.src = 'empty.png'; };
+        img.onerror = () => { img.src = 'https://placehold.co/60x90?text=No+Cover'; };
         observer.unobserve(img);
       }
     });
@@ -549,7 +549,7 @@ function openDetails(book, clickedElement) {
 
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
-  const coverUrl = getField(book, 'cover_url') || 'empty.png';
+  const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/60x90?text=No+Cover';
   const ratingNum = Number(getField(book, 'rating')) || 0;
   const statusNum = String(getField(book, 'status') || '0');
   const notes = getField(book, 'notes') || '';
@@ -599,7 +599,7 @@ function openDetails(book, clickedElement) {
   // 3. Inject Layout HTML
   journalContent.innerHTML = `
     <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 10px;">
-      <img src="${coverUrl}" style="width: 110px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0;" onerror="this.src='empty.png'">
+      <img src="${coverUrl}" style="width: 110px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0;" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
       <div style="flex-grow: 1; min-width: 0;">
         <h2 style="font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: var(--text-dark); margin: 0 0 4px 0; line-height: 1.2; overflow-wrap: break-word;">${title}</h2>
         <p style="font-family: 'Courier New'; font-size: 0.9rem; color: var(--sage-green); margin: 0 0 10px 0;">by ${author}</p>
