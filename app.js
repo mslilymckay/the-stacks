@@ -535,32 +535,37 @@ const closeDetailsBtn = document.getElementById('close-details-btn');
 const journalContent = document.getElementById('journal-content');
 
 function openDetails(book, clickedElement) {
-  currentOpenBookId = book.id;
+  // THE FIX: Use uuid, not id!
+  currentOpenBookId = book.uuid; 
   
-  // Update browser history so native back swipe works
   window.history.pushState({ view: 'details' }, '');
 
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
   const coverUrl = getField(book, 'cover_url') || 'empty.png';
   const ratingNum = Number(getField(book, 'rating')) || 0;
-  const statusNum = String(getField(book, 'status'));
-  const notes = getField(book, 'notes') || ''; // Pull existing notes if any
+  const statusNum = String(getField(book, 'status') || '0');
+  const notes = getField(book, 'notes') || '';
   
-  const dateAdded = formatDate(getField(book, 'created_at')) || '--';
-  const dateStarted = formatDate(getField(book, 'date_started')) || '--';
-  const dateFinished = formatDate(getField(book, 'date_read')) || '--';
+  // Date Formatting for Display and Inputs
+  const rawDateAdded = getField(book, 'created_at') || getField(book, 'date_added');
+  const dateAdded = formatDate(rawDateAdded) || '--';
 
-  const statusMap = { '0': 'TBR', '1': 'Reading', '2': 'Finished', '3': 'Gave Up' };
-  const statusText = statusMap[statusNum] || 'Unknown';
+  const rawStarted = getField(book, 'date_started');
+  const startedVal = rawStarted ? new Date(rawStarted).toISOString().split('T')[0] : '';
+  const startedText = rawStarted ? formatDate(rawStarted) : '';
 
-  // 1. Conditional Stamps
+  const rawFinished = getField(book, 'read_date') || getField(book, 'date_finished');
+  const finishedVal = rawFinished ? new Date(rawFinished).toISOString().split('T')[0] : '';
+  const finishedText = rawFinished ? formatDate(rawFinished) : '';
+
+  // 1. Conditional Stamps (Now based on Status, relying on text if date exists)
   let stampsHtml = '<div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 10px;">';
-  if ((statusNum === '1' || statusNum === '2') && dateStarted !== '--') {
-    stampsHtml += `<span class="stamp stamp-started">Started ${dateStarted}</span>`;
+  if (statusNum === '1' || statusNum === '2') {
+    stampsHtml += `<span class="stamp stamp-started">Started ${startedText}</span>`;
   }
-  if (statusNum === '2' && dateFinished !== '--') {
-    stampsHtml += `<span class="stamp stamp-finished">Finished ${dateFinished}</span>`;
+  if (statusNum === '2') {
+    stampsHtml += `<span class="stamp stamp-finished">Finished ${finishedText}</span>`;
   }
   stampsHtml += '</div>';
 
@@ -573,7 +578,7 @@ function openDetails(book, clickedElement) {
 
   // 3. Inject Layout HTML
   journalContent.innerHTML = `
-    <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 20px;">
+    <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 10px;">
       <img src="${coverUrl}" style="width: 110px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0;" onerror="this.src='empty.png'">
       <div style="flex-grow: 1; min-width: 0;">
         <h2 style="font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: var(--text-dark); margin: 0 0 4px 0; line-height: 1.2; overflow-wrap: break-word;">${title}</h2>
@@ -584,22 +589,40 @@ function openDetails(book, clickedElement) {
     </div>
 
     <div style="display: flex; gap: 15px; width: 100%; margin-bottom: 25px;">
-      <div class="journal-meta-card" style="margin-top: 0; flex-grow: 1;">
-        <div class="meta-row"><span class="meta-label">Status:</span> <span class="meta-value">${statusText}</span></div>
-        <div class="meta-row"><span class="meta-label">Added:</span> <span class="meta-value">${dateAdded}</span></div>
-        <div class="meta-row"><span class="meta-label">Started:</span> <span class="meta-value">${dateStarted}</span></div>
-        <div class="meta-row"><span class="meta-label">Finished:</span> <span class="meta-value">${dateFinished}</span></div>
+      
+      <div class="journal-meta-card" style="flex-grow: 1;">
+        <div class="meta-row">
+          <span class="meta-label">Status:</span> 
+          <select id="inline-status" class="inline-edit-input">
+            <option value="0" ${statusNum === '0' ? 'selected' : ''}>TBR</option>
+            <option value="1" ${statusNum === '1' ? 'selected' : ''}>Reading</option>
+            <option value="2" ${statusNum === '2' ? 'selected' : ''}>Finished</option>
+            <option value="3" ${statusNum === '3' ? 'selected' : ''}>Gave Up</option>
+          </select>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Added:</span> 
+          <span class="meta-value">${dateAdded}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Started:</span> 
+          <input type="date" id="inline-started" class="inline-edit-input" value="${startedVal}">
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Finished:</span> 
+          <input type="date" id="inline-finished" class="inline-edit-input" value="${finishedVal}">
+        </div>
       </div>
       
-      <div style="display: flex; flex-direction: column; gap: 10px; justify-content: space-between;">
-        <button id="btn-edit-book" class="journal-action-btn" title="Edit Data">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 10px; justify-content: space-between; margin-top: 15px;">
+        <button id="btn-refresh-book" class="journal-action-btn" title="Refresh Data">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
         </button>
         <button id="btn-read-again" class="journal-action-btn" title="Read Again">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
         </button>
         <button id="btn-delete-book" class="journal-action-btn delete" title="Return/Delete">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
         </button>
       </div>
     </div>
@@ -613,7 +636,6 @@ function openDetails(book, clickedElement) {
     </div>
   `;
 
-  // Switch View
   pageViews.forEach(view => view.classList.remove('active'));
   viewDetails.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -622,13 +644,44 @@ function openDetails(book, clickedElement) {
   // 4. ATTACH INTERACTIVE EVENT LISTENERS
   // ==========================================
   
-  // A. Editable Stars Logic
+  // A. Inline Edits (Status & Dates)
+  document.getElementById('inline-status').addEventListener('change', async (e) => {
+    const newStatus = parseInt(e.target.value);
+    await updateBookData('status', newStatus);
+    
+    // Auto-stamp today's date if marked Finished
+    if (newStatus === 2) {
+      const todayIso = new Date().toISOString();
+      await updateBookData('read_date', todayIso);
+    }
+    
+    // Soft reload the card to redraw stamps
+    const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    openDetails(updatedBook); 
+    applyLibraryFilters(); 
+  });
+
+  document.getElementById('inline-started').addEventListener('change', async (e) => {
+    const newDate = e.target.value ? new Date(e.target.value).toISOString() : null;
+    await updateBookData('date_started', newDate);
+    const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    openDetails(updatedBook);
+  });
+
+  document.getElementById('inline-finished').addEventListener('change', async (e) => {
+    const newDate = e.target.value ? new Date(e.target.value).toISOString() : null;
+    await updateBookData('read_date', newDate);
+    const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    openDetails(updatedBook);
+    applyLibraryFilters();
+  });
+
+  // B. Editable Stars
   const starElements = document.querySelectorAll('#details-stars span');
   starElements.forEach(star => {
     star.addEventListener('click', async (e) => {
       const newValue = parseInt(e.target.getAttribute('data-value'));
       
-      // Update UI instantly
       starElements.forEach(s => {
         const val = parseInt(s.getAttribute('data-value'));
         s.style.color = val <= newValue ? '#DDA750' : '#e0dcd3';
@@ -636,62 +689,95 @@ function openDetails(book, clickedElement) {
         setTimeout(() => s.style.transform = 'scale(1)', 150);
       });
 
-      // Update Database
-      await supabase.from('books').update({ rating: newValue }).eq('id', currentOpenBookId);
-      applyLibraryFilters(); // Syncs library data behind the scenes
+      await updateBookData('rating', newValue);
+      applyLibraryFilters(); 
     });
   });
 
-  // B. Notes Saving Logic
+  // C. Notes
   const notesArea = document.getElementById('journal-notes-area');
   const saveNotesBtn = document.getElementById('btn-save-notes');
   
-  notesArea.addEventListener('input', () => {
-    saveNotesBtn.style.display = 'block'; // Show save button when typing
-  });
+  notesArea.addEventListener('input', () => saveNotesBtn.style.display = 'block');
 
   saveNotesBtn.addEventListener('click', async () => {
-    const newNotes = notesArea.value;
     saveNotesBtn.textContent = 'Saved!';
     saveNotesBtn.style.background = 'var(--sage-green)';
     
-    await supabase.from('books').update({ notes: newNotes }).eq('id', currentOpenBookId);
+    await updateBookData('notes', notesArea.value);
     
     setTimeout(() => {
       saveNotesBtn.style.display = 'none';
       saveNotesBtn.textContent = 'Save';
       saveNotesBtn.style.background = 'var(--terracotta)';
-      applyLibraryFilters();
     }, 1500);
   });
 
-  // C. Action Buttons Logic
-  document.getElementById('btn-edit-book').addEventListener('click', () => {
-    alert("Edit functionality coming soon!"); // Placeholder for Phase 4
+  // D. Action Buttons
+  document.getElementById('btn-refresh-book').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.style.opacity = '0.5';
+    
+    const isbn = getField(book, 'isbn');
+    const qTitle = getField(book, 'title') || '';
+    const qAuthor = getField(book, 'author') || '';
+    let query = '';
+    
+    const cleanIsbn = String(isbn).replace(/[-\s]/g, '');
+    if (cleanIsbn && cleanIsbn !== 'N/A' && cleanIsbn !== 'undefined') {
+      query = `isbn:${cleanIsbn}`;
+    } else {
+      query = `intitle:${qTitle.replace(/ /g, '+')}+inauthor:${qAuthor.replace(/ /g, '+')}`;
+    }
+
+    try {
+      const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&key=${apiKey}`);
+      const data = await response.json();
+
+      if (data.items && data.items.length > 0) {
+        const volumeInfo = data.items[0].volumeInfo;
+        if (volumeInfo.imageLinks?.thumbnail) await updateBookData('cover_url', volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
+        if (volumeInfo.pageCount) await updateBookData('pages', volumeInfo.pageCount);
+        if (volumeInfo.categories?.length > 0) await updateBookData('category', volumeInfo.categories[0]);
+        
+        const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+        openDetails(updatedBook);
+        applyLibraryFilters();
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      btn.style.opacity = '1';
+    }
   });
 
   document.getElementById('btn-read-again').addEventListener('click', async () => {
-    if(confirm("Start a new reading journey for this book? This will duplicate the entry so you can log new dates and notes.")) {
-       // Deep copy the book, wipe the dates/rating/status, and insert as new
+    if(confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) {
        const duplicate = { ...book };
-       delete duplicate.id;
-       duplicate.status = 1; // Set to Reading
+       // Create a new UUID for the fresh entry!
+       duplicate.uuid = crypto.randomUUID(); 
+       duplicate.status = 1; 
        duplicate.date_started = new Date().toISOString();
-       duplicate.date_read = null;
+       duplicate.read_date = null;
        duplicate.rating = 0;
        duplicate.notes = null;
        
        await supabase.from('books').insert([duplicate]);
-       applyLibraryFilters();
+       // Reload library to pull new entry
+       loadBooks(); 
        alert("New journey added! Check your Current Reads.");
+       closeDetailsBtn.click();
     }
   });
 
   document.getElementById('btn-delete-book').addEventListener('click', async () => {
     if(confirm("Are you sure you want to permanently delete this book from your library?")) {
-      await supabase.from('books').delete().eq('id', currentOpenBookId);
+      await supabase.from('books').delete().eq('uuid', currentOpenBookId);
+      
+      // Remove from local array and update UI
+      globalLibraryData = globalLibraryData.filter(b => b.uuid !== currentOpenBookId);
       applyLibraryFilters();
-      // Emulate clicking the back button
       closeDetailsBtn.click(); 
     }
   });
@@ -700,7 +786,7 @@ function openDetails(book, clickedElement) {
 // Ensure the Close button functions
 if (closeDetailsBtn) {
   closeDetailsBtn.addEventListener('click', () => {
-    window.history.back(); // Triggers the popstate listener we built in step 1!
+    window.history.back(); 
   });
 }
 
