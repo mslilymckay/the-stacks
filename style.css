@@ -134,7 +134,7 @@ body {
 }
 
 /* Modal Form Specifics */
-#feedback-form textarea {
+.feedback-content textarea {
   background-color: transparent;
   border: 1px solid var(--detail-line);
   border-radius: 8px;
@@ -144,13 +144,14 @@ body {
   padding: 15px;
   margin-bottom: 15px;
   width: 100%;
+  resize: none;
 }
-#feedback-form textarea:focus {
+.feedback-content textarea:focus {
   outline: none;
   border-color: var(--sage-green);
 }
 
-#feedback-form button {
+.feedback-content button {
   background-color: var(--terracotta);
   color: var(--bg-color);
   border: none;
@@ -161,9 +162,9 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.1s;
-  width: 100%;
+  flex: 1; /* Makes the Cancel and Send buttons exactly the same width */
 }
-#feedback-form button:active {
+.feedback-content button:active {
   opacity: 0.8;
   transform: scale(0.98);
 }
