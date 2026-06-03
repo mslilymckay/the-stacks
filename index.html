@@ -30,7 +30,7 @@
       <p style="font-size: 12px; color: var(--sage-green); margin-bottom: 15px;">What should we build next?</p>
       <textarea id="feedback-text" rows="4" class="card-input" placeholder="Type your ideas here..." style="width: 100%; resize: none; margin-bottom: 15px;"></textarea>
       <div style="display: flex; gap: 10px;">
-        <button id="close-feedback-btn" class="card-btn" style="flex: 1; border-color: var(--line-blue); color: var(--sage-green);">Cancel</button>
+        <button id="close-feedback-btn" class="card-btn" style="flex: 1; border-color: var(--detail-line); color: var(--sage-green);">Cancel</button>
         <button id="submit-feedback-btn" class="card-btn" style="flex: 1; background: var(--terracotta); border-color: var(--terracotta); color: white;">Send</button>
       </div>
     </div>
@@ -143,7 +143,7 @@
 
       <div id="stats-list-view" class="hidden" style="padding: 0 15px;">
         <div style="display: flex; align-items: center; gap: 15px; margin: 15px 0 20px 0;">
-          <button id="close-stats-list" class="icon-action-btn" style="background: transparent; border: 1px solid (--line-blue); border-radius: 50%; color: var(--terracotta);">
+          <button id="close-stats-list" class="icon-action-btn" style="background: transparent; border: 1px solid (--detail-line); border-radius: 50%; color: var(--terracotta);">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           </button>
           <h2 id="stats-list-title" class="section-label" style="margin: 0; color: var(--text-dark);">List Title</h2>
@@ -173,6 +173,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="clock-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               
               <select id="focus-duration" class="hidden-native-select">
+                <option value="5">5 Sec (Test)</option>
                 <option value="900">15 Minutes</option>
                 <option value="1200" selected>20 Minutes</option>
                 <option value="1800">30 Minutes</option>
