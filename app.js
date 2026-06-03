@@ -67,6 +67,61 @@ async function updateBookData(columnName, newValue) {
   }
 }
 
+// ==========================================
+// NAVIGATION & GESTURE FIXES
+// ==========================================
+
+// 1. History API (Fixes Native Edge-Swipe Back)
+window.addEventListener('popstate', (event) => {
+  // If the wander menu is open, close it
+  if (wanderSheet && wanderSheet.classList.contains('open')) {
+    wanderSheet.classList.remove('open');
+    return;
+  }
+  // If Details view is open, close it and return to Library
+  if (viewDetails && viewDetails.classList.contains('active')) {
+    pageViews.forEach(view => view.classList.remove('active'));
+    document.getElementById('view-library').classList.add('active');
+  }
+});
+
+// 2. Restore Wander Drawer Swipe-to-Close
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isSwiping = false;
+
+if (wanderSheet) {
+  wanderSheet.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    isSwiping = true;
+    wanderSheet.style.transition = 'none'; // Disable snap to allow dragging
+  }, { passive: true });
+
+  wanderSheet.addEventListener('touchmove', (e) => {
+    if (!isSwiping) return;
+    touchCurrentY = e.touches[0].clientY;
+    const deltaY = touchCurrentY - touchStartY;
+    if (deltaY > 0) { // Only allow dragging downwards
+      wanderSheet.style.transform = `translateY(${deltaY}px)`;
+    }
+  }, { passive: true });
+
+  wanderSheet.addEventListener('touchend', () => {
+    if (!isSwiping) return;
+    isSwiping = false;
+    const deltaY = touchCurrentY - touchStartY;
+    
+    // Restore CSS snap transition and clear drag transform
+    wanderSheet.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    wanderSheet.style.transform = ''; 
+
+    // If dragged down far enough, close it
+    if (deltaY > 80) {
+      wanderSheet.classList.remove('open');
+    }
+  });
+}
+
 
 // ==========================================
 // 3. CORE LIBRARY RENDERING (Grid, Hero, Stats)
