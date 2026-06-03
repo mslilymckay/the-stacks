@@ -1484,8 +1484,20 @@ body {
   padding: 0;
   width: auto;
   flex-grow: 1;
-  /* THE FIX: Forces native iOS/Android date pickers to align right */
-  direction: rtl; 
+  direction: ltr; /* Revert the RTL trick */
+}
+
+/* 1. Force iOS/Safari/Chrome text to align right inside the Shadow DOM */
+.inline-edit-input::-webkit-datetime-edit {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+/* 2. Hide the ugly default calendar icon on Desktop */
+.inline-edit-input::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
 }
 
 .inline-edit-input:focus {
