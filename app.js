@@ -559,15 +559,21 @@ function openDetails(book, clickedElement) {
   const finishedVal = rawFinished ? new Date(rawFinished).toISOString().split('T')[0] : '';
   const finishedText = rawFinished ? formatDate(rawFinished) : '';
 
-  // 1. Conditional Stamps (Now based on Status, relying on text if date exists)
-  let stampsHtml = '<div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 10px;">';
-  if (statusNum === '1' || statusNum === '2') {
-    stampsHtml += `<span class="stamp stamp-started">Started ${startedText}</span>`;
+  // Helper for vintage mm-dd-yy dates
+  const formatVintageDate = (iso) => {
+    if (!iso) return 'mm-dd-yy';
+    const d = new Date(iso);
+    if (isNaN(d)) return 'mm-dd-yy';
+    return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${String(d.getFullYear()).slice(-2)}`;
+  };
+
+  // 1. Conditional Stamps (One stamp only!)
+  let stampsHtml = '';
+  if (statusNum === '1') { // Reading
+    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-started">STARTED ${formatVintageDate(rawStarted)}</span></div>`;
+  } else if (statusNum === '2') { // Finished
+    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-finished">FINISHED ${formatVintageDate(rawFinished)}</span></div>`;
   }
-  if (statusNum === '2') {
-    stampsHtml += `<span class="stamp stamp-finished">Finished ${finishedText}</span>`;
-  }
-  stampsHtml += '</div>';
 
   // 2. Interactive Stars HTML
   let starsHtml = `<div id="details-stars" style="display: flex; gap: 4px; font-size: 24px; margin-bottom: 5px;">`;
@@ -647,16 +653,21 @@ function openDetails(book, clickedElement) {
   // A. Inline Edits (Status & Dates)
   document.getElementById('inline-status').addEventListener('change', async (e) => {
     const newStatus = parseInt(e.target.value);
-    await updateBookData('status', newStatus);
+    const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
     
-    // Auto-stamp today's date if marked Finished
-    if (newStatus === 2) {
-      const todayIso = new Date().toISOString();
+    await updateBookData('status', newStatus);
+    updatedBook.status = newStatus; // Update local memory instantly
+    
+    const todayIso = new Date().toISOString();
+    
+    if (newStatus === 1) {
+      await updateBookData('date_started', todayIso);
+      updatedBook.date_started = todayIso;
+    } else if (newStatus === 2) {
       await updateBookData('read_date', todayIso);
+      updatedBook.read_date = todayIso;
     }
     
-    // Soft reload the card to redraw stamps
-    const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
     openDetails(updatedBook); 
     applyLibraryFilters(); 
   });
@@ -754,20 +765,35 @@ function openDetails(book, clickedElement) {
 
   document.getElementById('btn-read-again').addEventListener('click', async () => {
     if(confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) {
-       const duplicate = { ...book };
-       // Create a new UUID for the fresh entry!
-       duplicate.uuid = crypto.randomUUID(); 
-       duplicate.status = 1; 
-       duplicate.date_started = new Date().toISOString();
-       duplicate.read_date = null;
-       duplicate.rating = 0;
-       duplicate.notes = null;
        
-       await supabase.from('books').insert([duplicate]);
-       // Reload library to pull new entry
-       loadBooks(); 
-       alert("New journey added! Check your Current Reads.");
-       closeDetailsBtn.click();
+       // Explicitly map ONLY the safe fields so Supabase doesn't reject it
+       const duplicate = {
+         uuid: crypto.randomUUID(),
+         title: getField(book, 'title'),
+         author: getField(book, 'author'),
+         isbn: getField(book, 'isbn'),
+         cover_url: getField(book, 'cover_url'),
+         pages: getField(book, 'pages'),
+         category: getField(book, 'category'),
+         status: 1, 
+         date_started: new Date().toISOString(),
+         read_date: null,
+         rating: 0,
+         notes: null
+       };
+       
+       const { data, error } = await supabase.from('books').insert([duplicate]).select();
+       
+       if (error) {
+         console.error('Error duplicating:', error);
+         alert("Oops! Something went wrong communicating with the database.");
+       } else {
+         // Push the new book straight into memory and redraw!
+         globalLibraryData.push(data[0] || duplicate);
+         applyLibraryFilters(); 
+         alert("New journey added! Check your Current Reads.");
+         closeDetailsBtn.click();
+       }
     }
   });
 
