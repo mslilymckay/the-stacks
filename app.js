@@ -950,7 +950,7 @@ async function searchGoogleBooks(query) {
     const typeRadio = document.querySelector('input[name="search-type"]:checked');
     const searchType = typeRadio ? typeRadio.value : 'intitle:';
     
-    // --- PASTE THIS NEW LOGIC ---
+    // --- SEARCH WITHOUT TITLE OR AUTHOR ---
     let finalQuery = '';
     const cleanString = query.trim();
     const numbersOnly = cleanString.replace(/[-\s]/g, '');
@@ -959,13 +959,13 @@ async function searchGoogleBooks(query) {
     if (cleanString.toLowerCase().startsWith('isbn:')) {
       finalQuery = encodeURIComponent(cleanString);
     } 
-    // 2. If it's purely a 10 or 13 digit number, force the "isbn:" prefix!
+    // 2. If it's purely a 10 or 13 digit number, force the "isbn:" prefix
     else if (/^\d{10}(\d{3})?$/.test(numbersOnly)) {
       finalQuery = encodeURIComponent(`isbn:${numbersOnly}`);
     } 
-    // 3. Otherwise, use the Title or Author radio button
+    // 3. Otherwise, perform a broad keyword search!
     else {
-      finalQuery = `${searchType}${encodeURIComponent(cleanString)}`;
+      finalQuery = encodeURIComponent(cleanString);
     }
     
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${finalQuery}&maxResults=10&key=${apiKey}`);
