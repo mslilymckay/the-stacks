@@ -76,14 +76,14 @@ body {
 .header-title {
   font-family: 'Courier New', Courier, monospace;
   font-size: 20px;
-  color: #FAF8F2; /* Flipped to white */
+  color: var(--header-text); /* Flipped to white */
   margin: 0;
   cursor: pointer;
 }
 
 /* Ensures the feedback icon in the header turns white */
 .app-header .icon-action-btn {
-  color: #FAF8F2; 
+  color: var(--header-text); 
 }
 
 /* Feedback Modal UI */
