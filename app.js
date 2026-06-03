@@ -570,9 +570,9 @@ function openDetails(book, clickedElement) {
   // 1. Conditional Stamps (One stamp only!)
   let stampsHtml = '';
   if (statusNum === '1') { // Reading
-    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-started">STARTED</span></br><span class="stamp stamp-started">${formatVintageDate(rawStarted)}</span></div>`;
+    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-started">STARTED<br/>${formatVintageDate(rawStarted)}</span></div>`;
   } else if (statusNum === '2') { // Finished
-    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-finished">FINISHED ${formatVintageDate(rawFinished)}</span></div>`;
+    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-finished">FINISHED<br/>${formatVintageDate(rawFinished)}</span></div>`;
   }
 
   // 2. Interactive Stars HTML
