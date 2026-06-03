@@ -3,6 +3,6 @@
   "short_name": "Stacks",
   "start_url": "/the-stacks/",
   "display": "standalone",
-  "background_color": "#A65239"
-  "theme_color": "#2c3e50"
+  "background_color": "#A65239",
+  "theme_color": "#2c3e50",
 }
