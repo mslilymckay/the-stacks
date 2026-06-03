@@ -942,6 +942,7 @@ const playIcon = document.getElementById('play-icon');
 const pauseIcon = document.getElementById('pause-icon');
 const focusDurationSelect = document.getElementById('focus-duration');
 const focusCloseBtn = document.getElementById('focus-close-btn');
+const sound = new Audio('uplifting-bells.wav');
 
 let focusInterval;
 let timeRemaining = 1200; // Default 20 mins
@@ -1003,17 +1004,7 @@ if (focusDurationSelect) {
 }
 
 function playCozyChime() {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-  gain.gain.setValueAtTime(0.5, audioCtx.currentTime); 
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 3); 
-  osc.start();
-  osc.stop(audioCtx.currentTime + 3);
+  sound.play();
 }
 
 if (focusCloseBtn) {
