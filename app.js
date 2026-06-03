@@ -593,59 +593,172 @@ const journalContent = document.getElementById('journal-content');
 function openDetails(book, clickedElement) {
   currentOpenBookId = book.id;
   
-  // 1. Extract the data safely
+  // Update browser history so native back swipe works
+  window.history.pushState({ view: 'details' }, '');
+
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
   const coverUrl = getField(book, 'cover_url') || 'empty.png';
   const ratingNum = Number(getField(book, 'rating')) || 0;
   const statusNum = String(getField(book, 'status'));
+  const notes = getField(book, 'notes') || ''; // Pull existing notes if any
   
-  // Format Dates
   const dateAdded = formatDate(getField(book, 'created_at')) || '--';
   const dateStarted = formatDate(getField(book, 'date_started')) || '--';
   const dateFinished = formatDate(getField(book, 'date_read')) || '--';
 
-  // Format Status Text
   const statusMap = { '0': 'TBR', '1': 'Reading', '2': 'Finished', '3': 'Gave Up' };
   const statusText = statusMap[statusNum] || 'Unknown';
 
-  // Format Stars
-  let ratingDisplay = '<span style="color: #b3bfae;">No Rating</span>';
-  if (ratingNum > 0) {
-    ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
+  // 1. Conditional Stamps
+  let stampsHtml = '<div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; margin-top: 10px;">';
+  if ((statusNum === '1' || statusNum === '2') && dateStarted !== '--') {
+    stampsHtml += `<span class="stamp stamp-started">Started ${dateStarted}</span>`;
   }
+  if (statusNum === '2' && dateFinished !== '--') {
+    stampsHtml += `<span class="stamp stamp-finished">Finished ${dateFinished}</span>`;
+  }
+  stampsHtml += '</div>';
 
-  // 2. Inject HTML into the Journal View
+  // 2. Interactive Stars HTML
+  let starsHtml = `<div id="details-stars" style="display: flex; gap: 4px; font-size: 24px; margin-bottom: 5px;">`;
+  for (let i = 1; i <= 5; i++) {
+    starsHtml += `<span data-value="${i}" style="color: ${i <= ratingNum ? '#DDA750' : '#e0dcd3'}; cursor:pointer; transition: transform 0.1s;">★</span>`;
+  }
+  starsHtml += `</div>`;
+
+  // 3. Inject Layout HTML
   journalContent.innerHTML = `
-    <img src="${coverUrl}" alt="${title}" class="journal-cover" onerror="this.src='empty.png'">
-    <h2 class="journal-title">${title}</h2>
-    <p class="journal-author">by ${author}</p>
-    <div style="color: #DDA750; font-size: 18px; letter-spacing: 3px; margin-bottom: 10px;">${ratingDisplay}</div>
-    
-    <div class="journal-meta-card">
-      <div class="meta-row"><span class="meta-label">Status:</span> <span class="meta-value">${statusText}</span></div>
-      <div class="meta-row"><span class="meta-label">Added:</span> <span class="meta-value">${dateAdded}</span></div>
-      <div class="meta-row"><span class="meta-label">Started:</span> <span class="meta-value">${dateStarted}</span></div>
-      <div class="meta-row"><span class="meta-label">Finished:</span> <span class="meta-value">${dateFinished}</span></div>
+    <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 20px;">
+      <img src="${coverUrl}" style="width: 110px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0;" onerror="this.src='empty.png'">
+      <div style="flex-grow: 1; min-width: 0;">
+        <h2 style="font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: var(--text-dark); margin: 0 0 4px 0; line-height: 1.2; overflow-wrap: break-word;">${title}</h2>
+        <p style="font-family: 'Courier New'; font-size: 0.9rem; color: var(--sage-green); margin: 0 0 10px 0;">by ${author}</p>
+        ${starsHtml}
+        ${stampsHtml}
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 15px; width: 100%; margin-bottom: 25px;">
+      <div class="journal-meta-card" style="margin-top: 0; flex-grow: 1;">
+        <div class="meta-row"><span class="meta-label">Status:</span> <span class="meta-value">${statusText}</span></div>
+        <div class="meta-row"><span class="meta-label">Added:</span> <span class="meta-value">${dateAdded}</span></div>
+        <div class="meta-row"><span class="meta-label">Started:</span> <span class="meta-value">${dateStarted}</span></div>
+        <div class="meta-row"><span class="meta-label">Finished:</span> <span class="meta-value">${dateFinished}</span></div>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; justify-content: space-between;">
+        <button id="btn-edit-book" class="journal-action-btn" title="Edit Data">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+        <button id="btn-read-again" class="journal-action-btn" title="Read Again">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        </button>
+        <button id="btn-delete-book" class="journal-action-btn delete" title="Return/Delete">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="width: 100%; text-align: left;">
+      <h3 style="font-family: 'Courier New'; color: var(--terracotta); margin: 0 0 10px 0; font-size: 1rem;">Notes</h3>
+      <div style="position: relative;">
+        <textarea id="journal-notes-area" class="journal-notes-input" placeholder="Tap to add your thoughts...">${notes}</textarea>
+        <button id="btn-save-notes" style="position: absolute; bottom: 12px; right: 12px; background: var(--terracotta); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-family: 'Courier New'; font-weight: bold; cursor: pointer; display: none;">Save</button>
+      </div>
     </div>
   `;
 
-  // 3. Switch the View (Hide all pages, show Details)
+  // Switch View
   pageViews.forEach(view => view.classList.remove('active'));
   viewDetails.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
 
-// 4. Wire up the Back Button
-if (closeDetailsBtn) {
-  closeDetailsBtn.addEventListener('click', () => {
-    // Hide details, show Library
-    pageViews.forEach(view => view.classList.remove('active'));
-    document.getElementById('view-library').classList.add('active');
+  // ==========================================
+  // 4. ATTACH INTERACTIVE EVENT LISTENERS
+  // ==========================================
+  
+  // A. Editable Stars Logic
+  const starElements = document.querySelectorAll('#details-stars span');
+  starElements.forEach(star => {
+    star.addEventListener('click', async (e) => {
+      const newValue = parseInt(e.target.getAttribute('data-value'));
+      
+      // Update UI instantly
+      starElements.forEach(s => {
+        const val = parseInt(s.getAttribute('data-value'));
+        s.style.color = val <= newValue ? '#DDA750' : '#e0dcd3';
+        s.style.transform = val === newValue ? 'scale(1.2)' : 'scale(1)';
+        setTimeout(() => s.style.transform = 'scale(1)', 150);
+      });
+
+      // Update Database
+      await supabase.from('books').update({ rating: newValue }).eq('id', currentOpenBookId);
+      applyLibraryFilters(); // Syncs library data behind the scenes
+    });
+  });
+
+  // B. Notes Saving Logic
+  const notesArea = document.getElementById('journal-notes-area');
+  const saveNotesBtn = document.getElementById('btn-save-notes');
+  
+  notesArea.addEventListener('input', () => {
+    saveNotesBtn.style.display = 'block'; // Show save button when typing
+  });
+
+  saveNotesBtn.addEventListener('click', async () => {
+    const newNotes = notesArea.value;
+    saveNotesBtn.textContent = 'Saved!';
+    saveNotesBtn.style.background = 'var(--sage-green)';
+    
+    await supabase.from('books').update({ notes: newNotes }).eq('id', currentOpenBookId);
+    
+    setTimeout(() => {
+      saveNotesBtn.style.display = 'none';
+      saveNotesBtn.textContent = 'Save';
+      saveNotesBtn.style.background = 'var(--terracotta)';
+      applyLibraryFilters();
+    }, 1500);
+  });
+
+  // C. Action Buttons Logic
+  document.getElementById('btn-edit-book').addEventListener('click', () => {
+    alert("Edit functionality coming soon!"); // Placeholder for Phase 4
+  });
+
+  document.getElementById('btn-read-again').addEventListener('click', async () => {
+    if(confirm("Start a new reading journey for this book? This will duplicate the entry so you can log new dates and notes.")) {
+       // Deep copy the book, wipe the dates/rating/status, and insert as new
+       const duplicate = { ...book };
+       delete duplicate.id;
+       duplicate.status = 1; // Set to Reading
+       duplicate.date_started = new Date().toISOString();
+       duplicate.date_read = null;
+       duplicate.rating = 0;
+       duplicate.notes = null;
+       
+       await supabase.from('books').insert([duplicate]);
+       applyLibraryFilters();
+       alert("New journey added! Check your Current Reads.");
+    }
+  });
+
+  document.getElementById('btn-delete-book').addEventListener('click', async () => {
+    if(confirm("Are you sure you want to permanently delete this book from your library?")) {
+      await supabase.from('books').delete().eq('id', currentOpenBookId);
+      applyLibraryFilters();
+      // Emulate clicking the back button
+      closeDetailsBtn.click(); 
+    }
   });
 }
 
-// DELETED EVENT LISTENERS
+// Ensure the Close button functions
+if (closeDetailsBtn) {
+  closeDetailsBtn.addEventListener('click', () => {
+    window.history.back(); // Triggers the popstate listener we built in step 1!
+  });
+}
 
 
 // ==========================================
