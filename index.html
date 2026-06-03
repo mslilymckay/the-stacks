@@ -100,15 +100,12 @@
       <div class="hero-wrapper">
         <h2 class="section-label">Find a Book</h2>
         <div class="search-form-container">
-          <div class="search-radio-group">
-            <label><input type="radio" name="search-type" value="intitle:" checked> Title</label>
-            <label><input type="radio" name="search-type" value="inauthor:"> Author</label>
-          </div>
           
-          <div class="search-input-wrapper">
-            <input type="text" id="search-input" placeholder="Search by title, author, or ISBN...">
-            <button id="start-scan-btn" class="card-btn scan-btn" title="Scan Barcode">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10"></rect></svg>
+          <div class="search-input-wrapper" style="position: relative; width: 100%; margin-bottom: 5px;">
+            <input type="text" id="search-input" class="toolbar-input" placeholder="Title, author, or ISBN..." style="border: 1px solid var(--detail-line); padding-right: 45px; width: 100%;">
+            
+            <button id="start-scan-btn" class="icon-action-btn" title="Scan Barcode" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: var(--sage-green);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10"></rect></svg>
             </button>
           </div>
           
@@ -116,7 +113,7 @@
 
           <div id="scanner-container" class="scanner-container hidden">
             <div id="reader"></div>
-            <button id="stop-scan-btn" class="card-btn stop-scan-btn">Cancel Scan</button>
+            <button id="stop-scan-btn" class="card-btn stop-scan-btn" style="background: transparent; border: 1px solid var(--terracotta); border-radius: 8px; padding: 10px; font-family: 'Courier New'; font-weight: bold;">Cancel Scan</button>
           </div>
         </div>
       </div>
