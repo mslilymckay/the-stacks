@@ -1176,28 +1176,68 @@ if (headerScrollTrigger) {
 // FEEDBACK MODAL LOGIC
 // ==========================================
 const feedbackModal = document.querySelector('.feedback-modal');
-const feedbackBtn = document.getElementById('feedback-trigger-btn');
-const closeFeedbackBtn = document.querySelector('.close-modal');
+const feedbackTriggerBtn = document.getElementById('feedback-trigger-btn');
+const closeXBtn = document.querySelector('.close-modal');
+const closeFeedbackBtn = document.getElementById('close-feedback-btn');
+const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+const feedbackText = document.getElementById('feedback-text');
 
-if (feedbackModal && feedbackBtn) {
+if (feedbackModal && feedbackTriggerBtn) {
   // 1. Open the modal
-  feedbackBtn.addEventListener('click', () => {
+  feedbackTriggerBtn.addEventListener('click', () => {
     feedbackModal.classList.remove('hidden');
+    feedbackText.focus();
   });
 
-  // 2. Close the modal via 'X'
-  if (closeFeedbackBtn) {
-    closeFeedbackBtn.addEventListener('click', () => {
-      feedbackModal.classList.add('hidden');
+  // 2. Reusable Close Function
+  const closeModal = () => {
+    feedbackModal.classList.add('hidden');
+    if (feedbackText) feedbackText.value = ''; // Clear text on close
+  };
+
+  // Wire up the 'X' and 'Cancel' buttons
+  if (closeXBtn) closeXBtn.addEventListener('click', closeModal);
+  if (closeFeedbackBtn) closeFeedbackBtn.addEventListener('click', closeModal);
+
+  // Close by tapping the blurred background
+  feedbackModal.addEventListener('click', (e) => {
+    if (e.target === feedbackModal) closeModal();
+  });
+
+  // 3. Submit Logic to Supabase
+  if (submitFeedbackBtn) {
+    submitFeedbackBtn.addEventListener('click', async () => {
+      const text = feedbackText.value.trim();
+      if (!text) return;
+
+      // UI Feedback state
+      const originalText = submitFeedbackBtn.textContent;
+      submitFeedbackBtn.textContent = 'Sending...';
+      submitFeedbackBtn.disabled = true;
+
+      // Send to Supabase
+      const { error } = await supabase
+        .from('feedback')
+        .insert([{ message: text }]);
+
+      if (error) {
+        console.error('Error sending feedback:', error);
+        submitFeedbackBtn.textContent = 'Error!';
+        submitFeedbackBtn.style.backgroundColor = '#a34e4e'; // Turn red on error
+      } else {
+        submitFeedbackBtn.textContent = 'Sent!';
+        submitFeedbackBtn.style.backgroundColor = 'var(--sage-green)';
+        
+        // Reset and close after a brief delay
+        setTimeout(() => {
+          closeModal();
+          submitFeedbackBtn.textContent = originalText;
+          submitFeedbackBtn.style.backgroundColor = 'var(--terracotta)';
+          submitFeedbackBtn.disabled = false;
+        }, 1500);
+      }
     });
   }
-
-  // 3. Close the modal by tapping the background
-  feedbackModal.addEventListener('click', (e) => {
-    if (e.target === feedbackModal) {
-      feedbackModal.classList.add('hidden');
-    }
-  });
 }
 
 navItems.forEach(item => {
