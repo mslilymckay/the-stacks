@@ -1181,13 +1181,13 @@ const feedbackText = document.getElementById('feedback-text');
 
 if (feedbackTriggerBtn && feedbackModal) {
   feedbackTriggerBtn.addEventListener('click', () => {
-    feedbackModal.classList.remove('hidden');
+    feedback-Modal.classList.remove('hidden');
     feedbackText.focus();
   });
 
   closeFeedbackBtn.addEventListener('click', () => {
-    feedbackModal.classList.add('hidden');
-    feedbackText.value = ''; // Clear text
+    feedback-Modal.classList.add('hidden');
+    feedback-content.value = ''; // Clear text
   });
 
   submitFeedbackBtn.addEventListener('click', async () => {
