@@ -1163,7 +1163,7 @@ body {
 /* --- PHASE 1: THE WANDER DRAWER --- */
 .wander {
   /* Unified wander button */
-  flex: 1; 
+  flex: 0 1 auto; 
   background-color: var(--terracotta); 
   color: var(--header-text); 
   display: flex; 
@@ -1173,7 +1173,7 @@ body {
   border: none; 
   padding: 8px; 
   border-radius: 8px; 
-  font-weight: bold; 
+  font-size: 8px; 
   cursor: pointer; 
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
