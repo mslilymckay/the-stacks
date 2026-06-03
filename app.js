@@ -529,82 +529,66 @@ document.getElementById('sort-library')?.addEventListener('change', applyLibrary
 
 
 // ==========================================
-// 4. DETAILS CARD LOGIC (Populate, Status, Stars)
+// PHASE 3: FULL PAGE READING JOURNAL
 // ==========================================
+const viewDetails = document.getElementById('view-details');
+const closeDetailsBtn = document.getElementById('close-details-btn');
+const journalContent = document.getElementById('journal-content');
+const pageViews = document.querySelectorAll('.page-view');
 
 function openDetails(book, clickedElement) {
-  if (clickedElement) clickedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  currentOpenBookId = book.uuid;
+  currentOpenBookId = book.id;
   
-  // Elements
-  const titleEl = document.querySelector('.book-title');
-  const authorEl = document.querySelector('.book-author');
-  const catEl = document.querySelector('.metadata[data-field="category"]');
-  const ratingEl = document.querySelector('.metadata[data-field="rating"]');
-  const isbnEl = document.querySelector('.metadata[data-field="isbn"]');
-  const dateAddedEl = document.querySelector('.metadata[data-field="date-added"]');
-  const stampEl = document.getElementById('completion-stamp');
-  const stampDateEl = document.getElementById('stamp-date');
-  const statusDropdown = document.getElementById('status-dropdown');
-  const stars = document.querySelectorAll('.star');
-
-  // Values
+  // 1. Extract the data safely
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
-  const cat = getField(book, 'category') || 'N/A';
-  const rating = getField(book, 'rating');
-  const isbn = getField(book, 'isbn') || 'N/A';
-  const status = Number(getField(book, 'status'));
-  const dateAddedRaw = getField(book, 'date_added');
-  const readDateRaw = getField(book, 'read_date');
-
-  // Populate Text
-  if(titleEl) titleEl.textContent = title;
-  if(authorEl) authorEl.textContent = author;
-  if(catEl) catEl.textContent = cat;
-  if(ratingEl) ratingEl.textContent = `Rating: ${rating ? rating + ' Stars' : 'No rating'}`;
-  if(isbnEl) isbnEl.textContent = `ISBN: ${isbn}`;
-
-  // Date Added formatting
-  if (dateAddedRaw) {
-    const dateObj = new Date(dateAddedRaw);
-    dateAddedEl.textContent = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  } else {
-    dateAddedEl.textContent = 'Unknown';
-  }
-
-  // Stamp logic
-  if (status === 2) {
-    stampEl.style.display = 'flex';
-    if (readDateRaw) {
-      const dateObj = new Date(readDateRaw);
-      stampDateEl.textContent = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-    } else {
-      stampDateEl.textContent = 'Unknown Date';
-    }
-  } else {
-    stampEl.style.display = 'none';
-  }
+  const coverUrl = getField(book, 'cover_url') || 'empty.png';
+  const ratingNum = Number(getField(book, 'rating')) || 0;
+  const statusNum = String(getField(book, 'status'));
   
-  // Status Dropdown sync
-  statusDropdown.value = !isNaN(status) ? status.toString() : "0"; 
+  // Format Dates
+  const dateAdded = formatDate(getField(book, 'created_at')) || '--';
+  const dateStarted = formatDate(getField(book, 'date_started')) || '--';
+  const dateFinished = formatDate(getField(book, 'date_read')) || '--';
 
-  // Stars sync
-  const numericRating = Number(rating) || 0; 
-  stars.forEach(s => {
-    if (parseInt(s.getAttribute('data-value')) <= numericRating) s.classList.add('active');
-    else s.classList.remove('active');
-  });
+  // Format Status Text
+  const statusMap = { '0': 'TBR', '1': 'Reading', '2': 'Finished', '3': 'Gave Up' };
+  const statusText = statusMap[statusNum] || 'Unknown';
 
-  // Open the card & trigger history state (Only if it isn't already open!)
-  if(sheet) {
-    if (!sheet.classList.contains('open')) {
-      sheet.classList.add('open');
-      window.history.pushState({ detailsOpen: true }, ''); 
-    }
+  // Format Stars
+  let ratingDisplay = '<span style="color: #b3bfae;">No Rating</span>';
+  if (ratingNum > 0) {
+    ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
   }
-  if (topFab) topFab.classList.remove('visible');
+
+  // 2. Inject HTML into the Journal View
+  journalContent.innerHTML = `
+    <img src="${coverUrl}" alt="${title}" class="journal-cover" onerror="this.src='empty.png'">
+    <h2 class="journal-title">${title}</h2>
+    <p class="journal-author">by ${author}</p>
+    <div style="color: #DDA750; font-size: 18px; letter-spacing: 3px; margin-bottom: 10px;">${ratingDisplay}</div>
+    
+    <div class="journal-meta-card">
+      <div class="meta-row"><span class="meta-label">Status:</span> <span class="meta-value">${statusText}</span></div>
+      <div class="meta-row"><span class="meta-label">Added:</span> <span class="meta-value">${dateAdded}</span></div>
+      <div class="meta-row"><span class="meta-label">Started:</span> <span class="meta-value">${dateStarted}</span></div>
+      <div class="meta-row"><span class="meta-label">Finished:</span> <span class="meta-value">${dateFinished}</span></div>
+    </div>
+  `;
+
+  // 3. Switch the View (Hide all pages, show Details)
+  pageViews.forEach(view => view.classList.remove('active'));
+  viewDetails.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 4. Wire up the Back Button
+if (closeDetailsBtn) {
+  closeDetailsBtn.addEventListener('click', () => {
+    // Hide details, show Library
+    pageViews.forEach(view => view.classList.remove('active'));
+    document.getElementById('view-library').classList.add('active');
+  });
 }
 
 // Event: Status Dropdown Changes
