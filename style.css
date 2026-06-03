@@ -1497,7 +1497,123 @@ body {
   font-weight: bold;
 }
 
-/* --- PHASE 3: DETAILS HERO & ACTIONS --- */
+/* --- PHASE 3: READING JOURNAL VIEWS --- */
+#view-details {
+  background-color: var(--bg-color);
+  overflow-y: auto;
+  padding-bottom: 80px; 
+}
+
+.journal-cover {
+  width: 140px;
+  border-radius: 6px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.journal-title {
+  font-family: 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--text-dark);
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.journal-author {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  color: var(--sage-green);
+  margin: 0 0 20px 0;
+}
+
+/* Updated Meta Card: Lined Paper Motif */
+.journal-meta-card {
+  width: 100%;
+  background-color: var(--card-bg);
+  border: 1px solid var(--detail-line);
+  border-radius: 8px;
+  margin-top: 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  text-align: left;
+  background-image: repeating-linear-gradient(transparent, transparent 39px, rgba(139, 94, 52, 0.2) 39px, rgba(139, 94, 52, 0.2) 40px);
+  padding: 0 15px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 40px; /* Snaps text perfectly to the 40px background lines */
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+}
+
+.meta-label {
+  color: var(--sage-green);
+}
+
+.meta-value {
+  color: var(--text-dark);
+  font-weight: bold;
+}
+
+/* Inline Edit Inputs */
+.inline-edit-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dark);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-align: right;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+}
+.inline-edit-input:focus {
+  color: var(--terracotta);
+}
+.inline-edit-input option {
+  text-align: left;
+}
+
+/* Updated Action Buttons: Bolder Icons, No BG */
+.journal-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--terracotta);
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.journal-action-btn:active { transform: scale(0.85); opacity: 0.7; }
+.journal-action-btn.delete { color: #A65239; }
+
+/* Updated Notes Area: Removed lines */
+.journal-notes-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 15px;
+  border: 1px solid var(--detail-line);
+  border-radius: 8px;
+  background: var(--card-bg);
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  color: var(--text-dark);
+  resize: vertical;
+  line-height: 1.5;
+}
+.journal-notes-input:focus { outline: none; border-color: var(--sage-green); }
+
+/* Stamps */
 .stamp {
   font-family: 'Courier New', Courier, monospace;
   font-size: 11px;
@@ -1507,40 +1623,7 @@ body {
   border-radius: 4px;
   display: inline-block;
   margin-top: 5px;
-  border: 1px dashed;
+  border: 1.5px dashed;
 }
 .stamp-started { color: var(--sage-green); border-color: var(--sage-green); background: rgba(89, 119, 85, 0.1); }
 .stamp-finished { color: var(--terracotta); border-color: var(--terracotta); background: rgba(166, 82, 57, 0.1); }
-
-.journal-action-btn {
-  background: var(--card-bg);
-  border: 1px solid var(--detail-line);
-  color: var(--sage-green);
-  border-radius: 8px;
-  width: 45px;
-  height: 45px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  transition: transform 0.1s, color 0.2s;
-}
-.journal-action-btn:active { transform: scale(0.95); }
-.journal-action-btn.delete { color: #A65239; } /* Terracotta */
-
-.journal-notes-input {
-  width: 100%;
-  min-height: 120px;
-  padding: 15px;
-  border: 1px solid var(--detail-line);
-  border-radius: 8px;
-  background: transparent;
-  font-family: 'Georgia', serif;
-  font-size: 15px;
-  color: var(--text-dark);
-  resize: vertical;
-  line-height: 1.5;
-  background-image: repeating-linear-gradient(transparent, transparent 23px, rgba(139, 94, 52, 0.1) 23px, rgba(139, 94, 52, 0.1) 24px); /* Faint lined paper effect */
-}
-.journal-notes-input:focus { outline: none; border-color: var(--sage-green); }
