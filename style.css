@@ -1473,21 +1473,23 @@ body {
   background-color: var(--card-bg);
   border: 1px solid var(--detail-line);
   border-radius: 8px;
-  padding: 20px;
   margin-top: 15px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.02);
   text-align: left;
+  padding: 0 15px;
 }
 
 .meta-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
+  align-items: center;
+  height: 45px;
+  border-bottom: 1px solid rgba(139, 94, 52, 0.2); /* Lined paper effect tied to text length */
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.9rem;
 }
 .meta-row:last-child {
-  margin-bottom: 0;
+  border-bottom: none;
 }
 .meta-label {
   color: var(--sage-green);
@@ -1615,6 +1617,25 @@ body {
 
 /* Stamps */
 .stamp {
+  display: flex; /* Hidden by default via JS */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #a34e4e; /* Faded red ink */
+  color: #a34e4e;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transform: rotate(-12deg);
+  opacity: 0.75;
+  margin-top: 15px;
+  font-size: 14px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid #a34e4e;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  /*
   font-family: 'Courier New', Courier, monospace;
   font-size: 11px;
   font-weight: bold;
@@ -1623,7 +1644,7 @@ body {
   border-radius: 4px;
   display: inline-block;
   margin-top: 5px;
-  border: 1.5px dashed;
+  border: 1.5px dashed;*/
 }
-.stamp-started { color: var(--sage-green); border-color: var(--sage-green); background: rgba(89, 119, 85, 0.1); }
-.stamp-finished { color: var(--terracotta); border-color: var(--terracotta); background: rgba(166, 82, 57, 0.1); }
+.stamp-started { color: var(--sage-green); border-color: var(--sage-green); background: transparent; }
+.stamp-finished { color: var(--terracotta); border-color: var(--terracotta); background: transparent; }
