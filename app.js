@@ -131,9 +131,9 @@ function calculateStats() {
 // ==========================================
 // PHASE 4: STATS DASHBOARD 2.0
 // ==========================================
-let statsChartInstance = null; // Holds the active Chart.js object
+let statsChartInstance = null; 
+let currentStatsYear = 'all';
 
-// Standard formatting helper for the dynamic list
 const renderStatsList = (booksArray, listTitle) => {
   document.getElementById('stats-list-title').textContent = listTitle;
   const listContainer = document.getElementById('stats-book-list');
@@ -168,162 +168,166 @@ const renderStatsList = (booksArray, listTitle) => {
   });
 };
 
-// State A: Annual Overview (Bar Chart)
 function renderAnnualStats(targetYear) {
+  currentStatsYear = targetYear;
   const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
   
-  // Filter by year if not 'all'
-  const filtered = targetYear === 'all' 
-    ? finishedBooks 
-    : finishedBooks.filter(b => new Date(b.read_date).getFullYear().toString() === targetYear);
+  // ALL TIME VIEW (Years)
+  if (targetYear === 'all') {
+    const yearsMap = {};
+    finishedBooks.forEach(b => {
+      const y = b.read_date.split('-')[0]; // Safe string split
+      yearsMap[y] = (yearsMap[y] || 0) + 1;
+    });
+    
+    const labels = Object.keys(yearsMap).sort();
+    const data = labels.map(y => yearsMap[y]);
+    
+    drawBarChart(labels, data, '#A65239', (clickedIndex) => {
+      const selectedYear = labels[clickedIndex];
+      document.getElementById('stats-year-select').value = selectedYear;
+      renderAnnualStats(selectedYear); // Drill to Year
+    });
+    
+    renderStatsList(finishedBooks.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `All Time Books (${finishedBooks.length})`);
+    document.getElementById('stats-drilldown-nav').classList.add('hidden');
+    document.getElementById('btn-view-in-stacks').style.display = 'block';
+  } 
+  // SPECIFIC YEAR VIEW (Months)
+  else {
+    const filtered = finishedBooks.filter(b => b.read_date.startsWith(targetYear));
+    const monthlyCounts = Array(12).fill(0);
+    
+    filtered.forEach(b => {
+      const m = parseInt(b.read_date.split('-')[1]) - 1; // Safe month extraction
+      monthlyCounts[m]++;
+    });
 
-  // Group by Month (0-11)
-  const monthlyCounts = Array(12).fill(0);
-  filtered.forEach(b => {
-    const m = new Date(b.read_date).getMonth();
-    monthlyCounts[m]++;
-  });
+    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    drawBarChart(monthLabels, monthlyCounts, '#597755', (clickedIndex) => {
+      renderMonthlyStats(clickedIndex, targetYear); // Drill to Month
+    });
 
-  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${targetYear} (${filtered.length})`);
+    
+    // Show back button only if we started from 'all'
+    if (document.getElementById('stats-year-select').querySelector('option[value="all"]')) {
+      document.getElementById('stats-drilldown-nav').classList.remove('hidden');
+      document.getElementById('btn-stats-back').onclick = () => {
+        document.getElementById('stats-year-select').value = 'all';
+        renderAnnualStats('all');
+      };
+    }
+    document.getElementById('btn-view-in-stacks').style.display = 'block';
+  }
+}
 
-  // Render List
-  const yearText = targetYear === 'all' ? 'All Time' : targetYear;
-  renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${yearText} (${filtered.length})`);
-
-  // Destroy old chart if it exists
+function drawBarChart(labels, data, color, onClickCallback) {
   if (statsChartInstance) statsChartInstance.destroy();
+  
+  // Dynamic Height Calculation!
+  const maxValue = Math.max(5, ...data); // Minimum 5 rows
+  const container = document.getElementById('stats-chart-container');
+  container.style.height = `${Math.max(250, (maxValue * 25) + 50)}px`; // 25px per row
 
-  // Draw Chart
   const ctx = document.getElementById('stats-chart').getContext('2d');
   statsChartInstance = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: monthLabels,
-      datasets: [{
-        label: 'Books Finished',
-        data: monthlyCounts,
-        backgroundColor: '#597755', // Sage Green
-        borderRadius: 4,
-        barPercentage: 0.7
-      }]
-    },
+    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      onClick: (e, activeElements) => {
-        // Drill-Down Trigger! If they click a bar, go to that month.
-        if (activeElements.length > 0) {
-          const monthIndex = activeElements[0].index;
-          renderMonthlyStats(monthIndex, targetYear === 'all' ? new Date().getFullYear().toString() : targetYear);
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#FAF8F2',
-          titleColor: '#2C3E2D',
-          bodyColor: '#597755',
-          borderColor: '#8B5E34',
-          borderWidth: 1,
-          titleFont: { family: 'Georgia', size: 14 },
-          bodyFont: { family: 'Courier New', size: 13, weight: 'bold' },
-          displayColors: false
-        }
-      },
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => { if (elements.length > 0) onClickCallback(elements[0].index); },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: color, borderColor: '#8B5E34', borderWidth: 1 } },
       scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
+        y: { suggestedMax: 5, ticks: { stepSize: 1, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
         x: { ticks: { font: { family: 'Georgia' } }, grid: { display: false } }
       }
     }
   });
-
-  document.getElementById('stats-drilldown-nav').classList.add('hidden');
 }
 
-// State B: Monthly Drill-Down (Line/Scatter Chart)
 function renderMonthlyStats(monthIndex, yearStr) {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   
-  // Filter for specific month and year
-  const monthlyBooks = globalLibraryData.filter(b => {
-    if (b.status !== 2 || !b.read_date) return false;
-    const d = new Date(b.read_date);
-    return d.getMonth() === monthIndex && d.getFullYear().toString() === yearStr;
-  }).sort((a, b) => new Date(a.read_date) - new Date(b.read_date));
+  // Safe parsing: YYYY-MM
+  const targetPrefix = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`;
+  const monthlyBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(targetPrefix));
 
   renderStatsList(monthlyBooks, `${monthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
+  document.getElementById('btn-view-in-stacks').style.display = 'none'; // Hide on line charts
 
-  // Prepare Data for Line Chart (X = Day of Month, Y = Star Rating)
+  // Plot Data (Safely extract exact day string, ignore timezones)
   const plotData = monthlyBooks.map(b => ({
-    x: new Date(b.read_date).getDate(),
+    x: parseInt(b.read_date.split('T')[0].split('-')[2]), 
     y: Number(b.rating) || 0,
-    title: b.title
+    book: b
   }));
 
   if (statsChartInstance) statsChartInstance.destroy();
+  document.getElementById('stats-chart-container').style.height = '280px'; // Fixed height for Line Chart
 
   const ctx = document.getElementById('stats-chart').getContext('2d');
   statsChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       datasets: [{
-        label: 'Star Rating',
-        data: plotData,
-        borderColor: '#A65239', // Terracotta
-        backgroundColor: '#DDA750', // Gold stars
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        showLine: true,
-        tension: 0.3
+        data: plotData, borderColor: '#A65239', backgroundColor: '#DDA750', pointRadius: 6, pointHoverRadius: 8, showLine: true, tension: 0.3
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: (context) => context[0].raw.title,
-            label: (context) => `Rating: ${context.raw.y} Stars (Day ${context.raw.x})`
-          },
-          backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: '#A65239', borderColor: '#8B5E34', borderWidth: 1, titleFont: { family: 'Georgia' }, bodyFont: { family: 'Courier New', weight: 'bold' }, displayColors: false
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => {
+        if (elements.length > 0) {
+          const clickedData = plotData[elements[0].index];
+          // Filter matching day/rating
+          const matches = monthlyBooks.filter(b => parseInt(b.read_date.split('T')[0].split('-')[2]) === clickedData.x && Number(b.rating) === clickedData.y);
+          if (matches.length === 1) openDetails(matches[0]);
+          else renderStatsList(matches, `Day ${clickedData.x} - ${clickedData.y} Stars`);
         }
       },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => ctx[0].raw.book.title, label: (ctx) => `Rating: ${ctx.raw.y} Stars` } } },
       scales: {
         y: { min: 0, max: 5, ticks: { stepSize: 1, font: { family: 'Courier New' }, callback: (val) => val > 0 ? '★'.repeat(val) : '' }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
-        x: { min: 1, max: 31, ticks: { stepSize: 5, font: { family: 'Courier New' } }, title: { display: true, text: 'Day of Month', font: { family: 'Georgia', style: 'italic' } }, grid: { display: false } }
+        x: { min: 1, max: 31, ticks: { autoSkip: false, maxTicksLimit: 31, font: { family: 'Courier New' } }, grid: { display: false } }
       }
     }
   });
 
   document.getElementById('stats-drilldown-nav').classList.remove('hidden');
+  document.getElementById('btn-stats-back').onclick = () => renderAnnualStats(yearStr);
 }
 
-// Initialization & Event Listeners
 function initStatsPage() {
   const yearSelect = document.getElementById('stats-year-select');
-  const backBtn = document.getElementById('btn-stats-back');
-
-  // Populate Year Dropdown dynamically
   const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
-  const years = [...new Set(finishedBooks.map(b => new Date(b.read_date).getFullYear()))].sort((a, b) => b - a);
+  const years = [...new Set(finishedBooks.map(b => b.read_date.split('-')[0]))].sort((a, b) => b - a);
   
+  yearSelect.innerHTML = '<option value="all">All Time</option>';
   years.forEach(y => {
-    if (!yearSelect.querySelector(`option[value="${y}"]`)) {
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = y;
-      yearSelect.appendChild(opt);
-    }
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSelect.appendChild(opt);
   });
 
-  // Default to current year if it exists, otherwise 'all'
-  const currentYear = new Date().getFullYear().toString();
-  yearSelect.value = years.includes(parseInt(currentYear)) ? currentYear : 'all';
-
   yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
-  backBtn.addEventListener('click', () => renderAnnualStats(yearSelect.value));
+
+  // "View in Stacks" Routing Logic
+  document.getElementById('btn-view-in-stacks').addEventListener('click', () => {
+    // 1. Switch Tabs
+    document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-library').classList.add('active');
+    
+    // 2. Update the visual Nav Bar active state
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
+    lastActiveTab = 'view-library';
+
+    // 3. Force filter to Finished
+    document.getElementById('library-sort-select').value = 'date_finished_desc';
+    applyLibraryFilters();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 }
 
 
@@ -1535,16 +1539,21 @@ if (layoutBtns.length > 0 && mainGrid) {
 // ==========================================
 
 // 1. History API (Fixes Native Edge-Swipe Back)
+let lastActiveTab = 'view-library'; // Tracks origin
+
+// Listen for bottom nav clicks to update the origin
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => lastActiveTab = btn.getAttribute('data-target'));
+});
+
 window.addEventListener('popstate', (event) => {
-  // If the wander menu is open, close it
   if (wanderSheet && wanderSheet.classList.contains('open')) {
     wanderSheet.classList.remove('open');
     return;
   }
-  // If Details view is open, close it and return to Library
   if (viewDetails && viewDetails.classList.contains('active')) {
     pageViews.forEach(view => view.classList.remove('active'));
-    document.getElementById('view-library').classList.add('active');
+    document.getElementById(lastActiveTab).classList.add('active'); // Returns to correct tab!
   }
 });
 
