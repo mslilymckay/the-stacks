@@ -8,6 +8,7 @@ const supabaseKey = 'sb_publishable_H2EPwvAaziQVz8T4yExdEw_bQrB5f3V';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let globalLibraryData = [];
+let libraryYearFilter = 'all'; // Tracks if the library is currently filtered by a specific year
 let currentOpenBookId = null;
 
 // Common DOM Elements
@@ -22,8 +23,13 @@ const searchResultsContainer = document.getElementById('search-results-container
 const wanderSelects = document.querySelectorAll('#wander-sheet select');
 wanderSelects.forEach(select => {
   select.addEventListener('change', () => {
+    // CLEAR the year filter anytime Sarah manually changes views!
+    libraryYearFilter = 'all';
     // If Sarah manually changes a dropdown, strip the 'active' green color from all quick buttons
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    btn.classList.add('active');
+    applyLibraryFilters();
+    if (wanderSheet) wanderSheet.classList.remove('open');
   });
 });
 
@@ -335,7 +341,7 @@ function initStatsPage() {
 
   yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
 
-  // "View in Stacks" Smart Routing Logic
+  // "View in Stacks" - Bulletproof Handoff Logic
   document.getElementById('btn-view-in-stacks').addEventListener('click', () => {
     
     // 1. Switch Tabs visually
@@ -345,40 +351,17 @@ function initStatsPage() {
     document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
     lastActiveTab = 'view-library';
 
-    // 2. Hijack the Wander Drawer! Physically "click" the Finished quick-filter button
+    // 2. Set the global Year Filter based on what the chart is showing
+    libraryYearFilter = currentStatsYear; // Will be 'all' or a specific year like '2026'
+
+    // 3. Visually highlight the "Finished" Quick Filter button
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
     const finishedBtn = document.querySelector('.filter-btn[data-sort="date_finished_desc"]');
-    if (finishedBtn) {
-       // This properly sets the green highlight AND updates the hidden dropdowns
-       finishedBtn.click(); 
-    } else {
-       // Safe fallback if the button isn't found
-       const statusSelect = document.getElementById('filter-status');
-       const sortSelect = document.getElementById('sort-library');
-       if (statusSelect) statusSelect.value = '2';
-       if (sortSelect) sortSelect.value = 'date_finished_desc';
-    }
+    if (finishedBtn) finishedBtn.classList.add('active');
 
-    // 3. THE CRITICAL FIX: Explicitly command the library to run the search and render!
+    // 4. Render the grid instantly and scroll to the absolute top
     applyLibraryFilters(); 
-
-    // 4. Smooth Scroll to Target 
-    setTimeout(() => {
-      if (currentStatsYear !== 'all') {
-        const targetHeader = document.getElementById(`year-header-${currentStatsYear}`);
-        if (targetHeader) {
-          const y = targetHeader.getBoundingClientRect().top + window.scrollY - 80;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-          return; // Stop here if we successfully scrolled
-        }
-      }
-      
-      // Fallback: If "All Time" or missing year header, scroll to Your Stacks
-      const stacksHeading = document.getElementById('your-stacks-heading') || document.getElementById('book-grid');
-      if (stacksHeading) {
-          const y = stacksHeading.getBoundingClientRect().top + window.scrollY - 80;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-    }, 250); // 250ms gives the DOM plenty of time to draw the headers before scrolling
+    window.scrollTo({ top: 0, behavior: 'instant' });
   });
 }
 
@@ -523,73 +506,52 @@ async function loadBooks() {
   renderAnnualStats(document.getElementById('stats-year-select').value);
 }
 
-// --- BATCH 7 & 8: MASTER FILTER & SORT LOGIC ---
+// ==========================================
+// LIBRARY FILTERING & SORTING ENGINE
+// ==========================================
 function applyLibraryFilters() {
-  const searchTerm = (document.getElementById('local-search')?.value || '').toLowerCase();
-  const statusFilter = document.getElementById('filter-status')?.value || 'all';
-  const sortMethod = document.getElementById('sort-library')?.value || 'date_added_desc';
+  let filteredBooks = [...globalLibraryData];
 
-  // 1. FILTERING
-  let filteredBooks = globalLibraryData.filter(book => {
-    // Search Filter (Title or Author)
-    const title = (getField(book, 'title') || '').toLowerCase();
-    const author = (getField(book, 'author') || '').toLowerCase();
-    const matchesSearch = title.includes(searchTerm) || author.includes(searchTerm);
+  // 1. Find which Quick Filter button is active
+  const activeBtn = document.querySelector('.filter-btn.active');
+  const statusFilter = activeBtn ? activeBtn.getAttribute('data-status') : '';
+  const sortMethod = activeBtn ? activeBtn.getAttribute('data-sort') : 'date_added_desc';
 
-    // Status Filter
-    const status = getField(book, 'status');
-    const matchesStatus = statusFilter === 'all' || Number(status) === Number(statusFilter);
+  // 2. Apply Status Filter (0=TBR, 1=Reading, 2=Finished)
+  if (statusFilter !== '') {
+    filteredBooks = filteredBooks.filter(b => String(b.status) === statusFilter);
+  }
 
-    return matchesSearch && matchesStatus;
+  // 3. Apply the Smart Year Filter (Triggered by the Stats Page)
+  if (libraryYearFilter !== 'all') {
+    filteredBooks = filteredBooks.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(libraryYearFilter));
+  }
+
+  // 4. Sort the Data
+  filteredBooks.sort((a, b) => {
+    if (sortMethod === 'title_asc') {
+      return (getField(a, 'title') || 'Z').toLowerCase().localeCompare((getField(b, 'title') || 'Z').toLowerCase());
+    } else if (sortMethod === 'author_asc') {
+      return (getField(a, 'author') || 'Z').toLowerCase().localeCompare((getField(b, 'author') || 'Z').toLowerCase());
+    } else if (sortMethod === 'rating_desc') {
+      return (Number(getField(b, 'rating')) || 0) - (Number(getField(a, 'rating')) || 0);
+    } else if (sortMethod === 'date_finished_desc') {
+      return new Date(b.read_date || 0).getTime() - new Date(a.read_date || 0).getTime();
+    } else if (sortMethod === 'date_started_desc') {
+      return new Date(b.date_started || 0).getTime() - new Date(a.date_started || 0).getTime();
+    } else {
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(); // Newest Added
+    }
   });
 
-  // 2. SORTING
-    filteredBooks.sort((a, b) => {
-      // Title (A-Z)
-      if (sortMethod === 'title_asc') {
-        const titleA = (getField(a, 'title') || 'Z').toLowerCase(); 
-        const titleB = (getField(b, 'title') || 'Z').toLowerCase();
-        return titleA.localeCompare(titleB);
-      }
-      // Author (A-Z)
-      else if (sortMethod === 'author_asc') {
-        const authorA = (getField(a, 'author') || 'Z').toLowerCase(); 
-        const authorB = (getField(b, 'author') || 'Z').toLowerCase();
-        return authorA.localeCompare(authorB);
-      } 
-      // Highest Rated
-      else if (sortMethod === 'rating_desc') {
-        const ratingA = Number(getField(a, 'rating')) || 0;
-        const ratingB = Number(getField(b, 'rating')) || 0;
-        return ratingB - ratingA;
-      }
-      // Date Finished (Matches Wander Drawer HTML)
-      else if (sortMethod === 'date_finished_desc') {
-        // We still pull from 'read_date' in the database!
-        const dateA = new Date(getField(a, 'read_date') || 0).getTime();
-        const dateB = new Date(getField(b, 'read_date') || 0).getTime();
-        return dateB - dateA;
-      }
-      // Date Started (Added for Current Reads!)
-      else if (sortMethod === 'date_started_desc') {
-        const dateA = new Date(getField(a, 'date_started') || 0).getTime();
-        const dateB = new Date(getField(b, 'date_started') || 0).getTime();
-        return dateB - dateA;
-      }
-      // Date Added (Default Fallback)
-      else {
-        const dateA = new Date(getField(a, 'date_added') || getField(a, 'created_at') || 0).getTime();
-        const dateB = new Date(getField(b, 'date_added') || getField(b, 'created_at') || 0).getTime();
-        return dateB - dateA;
-      }
-    });
+  // 5. Update the Subheading UI
+  let headingText = activeBtn ? activeBtn.textContent : 'All Books';
+  if (libraryYearFilter !== 'all') headingText = `Finished in ${libraryYearFilter}`;
+  document.getElementById('library-subheading').textContent = headingText;
 
-  // Fix 1 - Library Grouping
-  window.lastAppliedSort = sortMethod;
-  
-  // Pass the final sliced-and-diced array to the renderer
+  // Track state for the renderer
+  window.lastAppliedSort = sortMethod; 
   renderGrid(filteredBooks);
-  updateLibrarySubheading();
 }
 
 function updateLibrarySubheading() {
