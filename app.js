@@ -327,25 +327,42 @@ function initStatsPage() {
 
   yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
 
+  // "View in Stacks" Smart Routing Logic
   document.getElementById('btn-view-in-stacks').addEventListener('click', () => {
+    // 1. Switch Tabs visually
     document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-library').classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
     lastActiveTab = 'view-library';
 
-    // THE FIX: Safe targeting of sort dropdown
+    // 2. Force filters to show Finished Books properly
     const sortSelect = document.getElementById('library-sort-select') || document.querySelector('.bottom-sheet select');
     if (sortSelect) sortSelect.value = 'date_finished_desc';
     
+    // 3. Apply the filters (which injects our new Year Headers!)
     applyLibraryFilters();
     
-    // THE FIX: Smooth scroll to the library grid
-    const libraryGrid = document.getElementById('book-grid');
-    if (libraryGrid) {
-        const y = libraryGrid.getBoundingClientRect().top + window.scrollY - 100; // offsets fixed header
-        window.scrollTo({ top: y, behavior: 'smooth' });
-    }
+    // 4. Smooth Scroll to Target
+    setTimeout(() => {
+      // If looking at a specific year in Stats, scroll to that specific divider
+      if (currentStatsYear !== 'all') {
+        const targetHeader = document.getElementById(`year-header-${currentStatsYear}`);
+        if (targetHeader) {
+          // Scroll to the header, offset by 80px so the sticky nav doesn't cover it
+          const y = targetHeader.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+          return;
+        }
+      }
+      
+      // Fallback: If "All Time", just scroll to the top of the grid
+      const libraryGrid = document.getElementById('book-grid');
+      if (libraryGrid) {
+          const y = libraryGrid.getBoundingClientRect().top + window.scrollY - 100;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 50); // 50ms delay gives the DOM time to render the headers
   });
 }
 
@@ -603,10 +620,35 @@ function renderGrid(booksToRender) {
     return;
   }
 
+  // PHASE 5 Setup: Grab current sort method to know if we need dividers
+  const sortSelect = document.getElementById('library-sort-select') || document.querySelector('.bottom-sheet select');
+  const sortMethod = sortSelect ? sortSelect.value : '';
+  let currentRenderYear = null;
+
   // Draw the covers
   for (const book of booksToRender) {
+    
+    // --- PHASE 5: INJECT CHRONOLOGICAL DIVIDERS ---
+    if (sortMethod === 'date_finished_desc' && book.status === 2 && book.read_date) {
+      const bookYear = book.read_date.split('-')[0];
+      if (bookYear !== currentRenderYear) {
+        currentRenderYear = bookYear;
+        const divider = document.createElement('div');
+        divider.className = 'year-divider';
+        divider.id = `year-header-${currentRenderYear}`; // Target for the Stats button!
+        divider.textContent = currentRenderYear;
+        bookGrid.appendChild(divider);
+      }
+    }
+    // ----------------------------------------------
+
     const bookDiv = document.createElement('div');
-    bookDiv.className = 'book-card'; // Updated wrapper class
+    bookDiv.className = 'book-card'; 
+    
+    // Keep active state styling if this book is currently open
+    if (typeof currentOpenBookId !== 'undefined' && book.uuid === currentOpenBookId && viewDetails && viewDetails.classList.contains('active')) {
+       bookDiv.classList.add('active');
+    }
     
     const savedCover = getField(book, 'cover_url');
     const isbn = getField(book, 'isbn');
