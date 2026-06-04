@@ -128,98 +128,204 @@ function calculateStats() {
   }
 }
 
-// --- BATCH 8: STATS LIST VIEW LOGIC ---
-function openStatsList(listType) {
-  // 1. Force navigation to the Stats Tab if we aren't there already
-  const statsNav = document.querySelector('.nav-item[data-target="view-stats"]');
-  if (statsNav && !statsNav.classList.contains('active')) statsNav.click();
+// ==========================================
+// PHASE 4: STATS DASHBOARD 2.0
+// ==========================================
+let statsChartInstance = null; // Holds the active Chart.js object
 
-  const dashboard = document.getElementById('stats-dashboard');
-  const listView = document.getElementById('stats-list-view');
-  const listTitle = document.getElementById('stats-list-title');
-  const listContainer = document.getElementById('stats-list-container');
+// Standard formatting helper for the dynamic list
+const renderStatsList = (booksArray, listTitle) => {
+  document.getElementById('stats-list-title').textContent = listTitle;
+  const listContainer = document.getElementById('stats-book-list');
+  listContainer.innerHTML = '';
 
-  if (!dashboard || !listView || !listContainer) return;
-
-  // 2. Toggle the UI
-  dashboard.classList.add('hidden');
-  listView.classList.remove('hidden');
-  listContainer.innerHTML = ''; 
-
-  // 3. Filter Data Based on the Request
-  let booksToShow = [];
-  if (listType === 'tbr') {
-    listTitle.textContent = 'To Be Read';
-    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 0);
-  } else if (listType === 'active') {
-    listTitle.textContent = 'Current Reads';
-    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
-  } else if (listType === 'read') {
-    listTitle.textContent = 'Completed Books';
-    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 2);
-  } else if (listType === 'read_again') {
-    listTitle.textContent = 'Read Again (Favorites)';
-    // Pulls Finished books that are rated exactly 5 Stars!
-    booksToShow = globalLibraryData.filter(b => Number(getField(b, 'status')) === 2 && Number(getField(b, 'rating')) === 5);
-  }
-
-  // 4. Render the Data using the Search Result HTML structure
-  if (booksToShow.length === 0) {
-    listContainer.innerHTML = '<p style="text-align:center; margin-top: 40px; color: var(--sage-green); font-family: Courier New;">Nothing here yet!</p>';
+  if (booksArray.length === 0) {
+    listContainer.innerHTML = `<p style="text-align: center; color: var(--sage-green); font-family: 'Courier New'; margin-top: 20px;">No books finished in this timeframe.</p>`;
     return;
   }
 
-  booksToShow.forEach(book => {
-    const title = getField(book, 'title') || 'Unknown Title';
-    const author = getField(book, 'author') || 'Unknown Author';
-    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/60x90?text=No+Cover';
-    const statusVal = Number(getField(book, 'status'));
+  booksArray.forEach(book => {
+    const title = getField(book, 'title') || 'Unknown';
+    const author = getField(book, 'author') || 'Unknown';
+    const coverUrl = getField(book, 'cover_url') || 'empty.png';
+    const ratingNum = Number(getField(book, 'rating')) || 0;
     
-    let statusLabel = 'Waiting';
-    if (statusVal === 1) statusLabel = 'Reading';
-    if (statusVal === 2) statusLabel = 'Finished';
-    if (statusVal === 3) statusLabel = 'Gave Up';
+    let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
+    if (ratingNum > 0) ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
 
     const card = document.createElement('div');
-    card.className = 'search-result-card';
-    card.style.cursor = 'pointer'; 
-    card.style.marginBottom = '15px'; // Breathing room
-    
+    card.className = 'book-card';
     card.innerHTML = `
-      <img src="${coverUrl}" alt="Cover" style="width: 60px; height: 90px; object-fit: cover; border-radius: 4px;">
-      <div class="search-result-info">
-        <h3 style="margin: 0 0 5px 0;">${title}</h3>
-        <p style="margin: 0; color: var(--text-dark);">${author}</p>
-        <span style="display: inline-block; margin-top: 8px; font-size: 11px; font-family: 'Courier New'; color: var(--terracotta); border: 1px solid var(--terracotta); padding: 2px 6px; border-radius: 4px;">${statusLabel}</span>
+      <img src="${coverUrl}" alt="${title}" class="book-cover" onerror="this.src='empty.png'">
+      <div class="book-info">
+        <p class="book-title">${title}</p>
+        <p class="book-author">${author}</p>
+        <div class="book-rating" style="display: block; margin-top: auto; color: #DDA750; font-size: 12px; letter-spacing: 2px;">${ratingDisplay}</div>
       </div>
     `;
-    
-    // Tapping the card opens the details sheet!
     card.addEventListener('click', () => openDetails(book));
     listContainer.appendChild(card);
   });
-}
+};
 
-// 5. Wire up the List Back Button & Stat Boxes
-const closeStatsListBtn = document.getElementById('close-stats-list');
-if (closeStatsListBtn) {
-  closeStatsListBtn.addEventListener('click', () => {
-    document.getElementById('stats-list-view').classList.add('hidden');
-    document.getElementById('stats-dashboard').classList.remove('hidden');
+// State A: Annual Overview (Bar Chart)
+function renderAnnualStats(targetYear) {
+  const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
+  
+  // Filter by year if not 'all'
+  const filtered = targetYear === 'all' 
+    ? finishedBooks 
+    : finishedBooks.filter(b => new Date(b.read_date).getFullYear().toString() === targetYear);
+
+  // Group by Month (0-11)
+  const monthlyCounts = Array(12).fill(0);
+  filtered.forEach(b => {
+    const m = new Date(b.read_date).getMonth();
+    monthlyCounts[m]++;
   });
+
+  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Render List
+  const yearText = targetYear === 'all' ? 'All Time' : targetYear;
+  renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${yearText} (${filtered.length})`);
+
+  // Destroy old chart if it exists
+  if (statsChartInstance) statsChartInstance.destroy();
+
+  // Draw Chart
+  const ctx = document.getElementById('stats-chart').getContext('2d');
+  statsChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: monthLabels,
+      datasets: [{
+        label: 'Books Finished',
+        data: monthlyCounts,
+        backgroundColor: '#597755', // Sage Green
+        borderRadius: 4,
+        barPercentage: 0.7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: (e, activeElements) => {
+        // Drill-Down Trigger! If they click a bar, go to that month.
+        if (activeElements.length > 0) {
+          const monthIndex = activeElements[0].index;
+          renderMonthlyStats(monthIndex, targetYear === 'all' ? new Date().getFullYear().toString() : targetYear);
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#FAF8F2',
+          titleColor: '#2C3E2D',
+          bodyColor: '#597755',
+          borderColor: '#8B5E34',
+          borderWidth: 1,
+          titleFont: { family: 'Georgia', size: 14 },
+          bodyFont: { family: 'Courier New', size: 13, weight: 'bold' },
+          displayColors: false
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
+        x: { ticks: { font: { family: 'Georgia' } }, grid: { display: false } }
+      }
+    }
+  });
+
+  document.getElementById('stats-drilldown-nav').classList.add('hidden');
 }
 
-const activeStatBox = document.getElementById('active-stat-box');
-if (activeStatBox) activeStatBox.addEventListener('click', () => openStatsList('active'));
+// State B: Monthly Drill-Down (Line/Scatter Chart)
+function renderMonthlyStats(monthIndex, yearStr) {
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  // Filter for specific month and year
+  const monthlyBooks = globalLibraryData.filter(b => {
+    if (b.status !== 2 || !b.read_date) return false;
+    const d = new Date(b.read_date);
+    return d.getMonth() === monthIndex && d.getFullYear().toString() === yearStr;
+  }).sort((a, b) => new Date(a.read_date) - new Date(b.read_date));
 
-const completedStatBox = document.getElementById('completed-stat-box');
-if (completedStatBox) completedStatBox.addEventListener('click', () => openStatsList('read'));
+  renderStatsList(monthlyBooks, `${monthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
 
-// Time filter listener
-const timeFilterEl = document.getElementById('stats-timefilter');
-if (timeFilterEl) {
-  timeFilterEl.addEventListener('change', calculateStats);
+  // Prepare Data for Line Chart (X = Day of Month, Y = Star Rating)
+  const plotData = monthlyBooks.map(b => ({
+    x: new Date(b.read_date).getDate(),
+    y: Number(b.rating) || 0,
+    title: b.title
+  }));
+
+  if (statsChartInstance) statsChartInstance.destroy();
+
+  const ctx = document.getElementById('stats-chart').getContext('2d');
+  statsChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'Star Rating',
+        data: plotData,
+        borderColor: '#A65239', // Terracotta
+        backgroundColor: '#DDA750', // Gold stars
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        showLine: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (context) => context[0].raw.title,
+            label: (context) => `Rating: ${context.raw.y} Stars (Day ${context.raw.x})`
+          },
+          backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: '#A65239', borderColor: '#8B5E34', borderWidth: 1, titleFont: { family: 'Georgia' }, bodyFont: { family: 'Courier New', weight: 'bold' }, displayColors: false
+        }
+      },
+      scales: {
+        y: { min: 0, max: 5, ticks: { stepSize: 1, font: { family: 'Courier New' }, callback: (val) => val > 0 ? '★'.repeat(val) : '' }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
+        x: { min: 1, max: 31, ticks: { stepSize: 5, font: { family: 'Courier New' } }, title: { display: true, text: 'Day of Month', font: { family: 'Georgia', style: 'italic' } }, grid: { display: false } }
+      }
+    }
+  });
+
+  document.getElementById('stats-drilldown-nav').classList.remove('hidden');
 }
+
+// Initialization & Event Listeners
+function initStatsPage() {
+  const yearSelect = document.getElementById('stats-year-select');
+  const backBtn = document.getElementById('btn-stats-back');
+
+  // Populate Year Dropdown dynamically
+  const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
+  const years = [...new Set(finishedBooks.map(b => new Date(b.read_date).getFullYear()))].sort((a, b) => b - a);
+  
+  years.forEach(y => {
+    if (!yearSelect.querySelector(`option[value="${y}"]`)) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      yearSelect.appendChild(opt);
+    }
+  });
+
+  // Default to current year if it exists, otherwise 'all'
+  const currentYear = new Date().getFullYear().toString();
+  yearSelect.value = years.includes(parseInt(currentYear)) ? currentYear : 'all';
+
+  yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
+  backBtn.addEventListener('click', () => renderAnnualStats(yearSelect.value));
+}
+
 
 // Dynamic Active Reads Carousel
 function renderHeroSection() {
@@ -355,6 +461,10 @@ async function loadBooks() {
   
   // Instead of drawing the grid here, we trigger the Master Filter!
   applyLibraryFilters();
+  
+  // Trigger Phase 4 Stats Render
+  initStatsPage(); 
+  renderAnnualStats(document.getElementById('stats-year-select').value);
 }
 
 // --- BATCH 7 & 8: MASTER FILTER & SORT LOGIC ---
@@ -420,7 +530,7 @@ function applyLibraryFilters() {
 
   // Pass the final sliced-and-diced array to the renderer
   renderGrid(filteredBooks);
-  updateLibrarySubheading()
+  updateLibrarySubheading();
 }
 
 function updateLibrarySubheading() {
