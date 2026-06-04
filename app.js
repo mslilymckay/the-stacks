@@ -337,6 +337,7 @@ function initStatsPage() {
 
   // "View in Stacks" Smart Routing Logic
   document.getElementById('btn-view-in-stacks').addEventListener('click', () => {
+    
     // 1. Switch Tabs visually
     document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-library').classList.add('active');
@@ -344,33 +345,40 @@ function initStatsPage() {
     document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
     lastActiveTab = 'view-library';
 
-    // 2. Force filters to show Finished Books properly
-    const sortSelect = document.getElementById('library-sort-select') || document.querySelector('.bottom-sheet select');
-    if (sortSelect) sortSelect.value = 'date_finished_desc';
+    // 2. FORCE THE STATE: Manually update the Wander Drawer Selects
+    // (This assumes Status is the first select, and Sort is the second select)
+    const selects = document.querySelectorAll('#wander-sheet select');
+    if (selects.length >= 2) {
+      selects[0].value = '2'; // Status -> Finished
+      selects[1].value = 'date_finished_desc'; // Sort -> Date Finished
+    }
     
-    // 3. Apply the filters (which injects our new Year Headers!)
+    // 3. FORCE THE UI: Color the correct Quick Filter button
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    const finishedBtn = document.querySelector('.filter-btn[data-sort="date_finished_desc"]');
+    if (finishedBtn) finishedBtn.classList.add('active');
+
+    // 4. Render the grid with our new forced parameters
     applyLibraryFilters();
     
-    // 4. Smooth Scroll to Target
+    // 5. Smooth Scroll to Target (Wait 150ms for the DOM to draw the dividers)
     setTimeout(() => {
-      // If looking at a specific year in Stats, scroll to that specific divider
       if (currentStatsYear !== 'all') {
         const targetHeader = document.getElementById(`year-header-${currentStatsYear}`);
         if (targetHeader) {
-          // Scroll to the header, offset by 80px so the sticky nav doesn't cover it
           const y = targetHeader.getBoundingClientRect().top + window.scrollY - 80;
           window.scrollTo({ top: y, behavior: 'smooth' });
-          return;
+          return; // Stop here if we successfully scrolled
         }
       }
       
-      // Fallback: If "All Time", just scroll to the top of the grid
+      // Fallback: If "All Time" or year isn't found, scroll to top of grid
       const libraryGrid = document.getElementById('book-grid');
       if (libraryGrid) {
           const y = libraryGrid.getBoundingClientRect().top + window.scrollY - 100;
           window.scrollTo({ top: y, behavior: 'smooth' });
       }
-    }, 50); // 50ms delay gives the DOM time to render the headers
+    }, 150);
   });
 }
 
