@@ -44,7 +44,7 @@
     
     <section id="view-library" class="page-view active">
       <div class="hero-wrapper">
-        <h2 class="section-label" id="hero-label">Current Read</h2>
+        <h2 class="section-label" id="hero-label">Your Current Read</h2>
         <div class="current-read-section" id="current-read-section">
           
           <div class="carousel-container" id="active-reads-carousel">
@@ -82,6 +82,7 @@
             </p>
           </button>
         </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-bottom: 1px solid var(--text-dark); padding-bottom: 10px;">
       </div>
       
       <div class="book-grid" id="book-grid">
@@ -121,33 +122,47 @@
           </div>
         </div>
       </div>
+
+      <div style="padding: 15px 15px 10px 15px; border-bottom: 1px solid var(--text-dark); margin-bottom: 15px;">
+        <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+          Results from Google Books
+        </h2>
+      </div>
       
       <div id="search-results-container" class="search-results-list"></div>
     </section>
 
     <section id="view-stats" class="page-view">
-      <div style="padding: 15px 15px 0 15px; display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">Reading Data</h2>
+      <div style="padding: 15px 15px 10px 15px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">Your Reading Journey</h2>
         
-        <select id="stats-year-select" style="background: var(--card-bg); border: 1px solid var(--detail-line); border-radius: 6px; padding: 5px 10px; font-family: 'Georgia', serif; font-weight: bold; color: var(--text-dark); outline: none;">
+        <select id="stats-year-select" style="background: transparent; border: 1px solid var(--sage-green); color: var(--sage-green); border-radius: 6px; padding: 4px 8px; font-family: 'Courier New', Courier, monospace; font-weight: bold; outline: none; cursor: pointer;">
           <option value="all">All Time</option>
-          </select>
+        </select>
       </div>
 
-      <div style="position: relative; padding: 15px; width: 100%; height: 280px;">
+      <div id="stats-chart-container" style="position: relative; padding: 0 15px 15px 15px; width: 100%; height: 250px;">
         <canvas id="stats-chart"></canvas>
       </div>
 
       <div id="stats-drilldown-nav" class="hidden" style="padding: 0 15px 10px 15px; text-align: center;">
         <button id="btn-stats-back" style="background: transparent; color: var(--terracotta); border: 1px solid var(--terracotta); border-radius: 6px; padding: 5px 15px; font-family: 'Courier New'; font-weight: bold; cursor: pointer; font-size: 0.85rem;">
-          ↑ Back to Annual Overview
+          ↑ Back to Overview
         </button>
       </div>
 
       <div style="padding: 0 15px 80px 15px;">
-        <h3 id="stats-list-title" style="font-family: 'Georgia', serif; font-size: 1rem; color: var(--sage-green); border-bottom: 1px solid var(--detail-line); padding-bottom: 5px; margin-bottom: 15px;">Books Read</h3>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--text-dark); padding-bottom: 5px; margin-bottom: 15px;">
+          <h2 id="stats-list-title" style="font-family: 'Georgia', serif; font-size: 1rem; color: var(--text-dark); margin: 0;">
+            Books Read
+          </h2>
+          <button id="btn-view-in-stacks" style="background: transparent; border: none; color: var(--terracotta); font-family: 'Courier New', monospace; font-size: 0.8rem; font-weight: bold; cursor: pointer; padding: 0;">
+            View in Stacks ↗
+          </button>
+        </div>
+        
         <div id="stats-book-list" class="book-grid layout-list" style="display: flex; flex-direction: column; gap: 10px;">
-          </div>
+        </div>
       </div>
     </section>
 
