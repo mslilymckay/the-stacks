@@ -1556,25 +1556,6 @@ if (layoutBtns.length > 0 && mainGrid) {
 // NAVIGATION & GESTURE FIXES
 // ==========================================
 
-// 1. History API (Fixes Native Edge-Swipe Back)
-let lastActiveTab = 'view-library'; // Tracks origin
-
-// Listen for bottom nav clicks to update the origin
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => lastActiveTab = btn.getAttribute('data-target'));
-});
-
-window.addEventListener('popstate', (event) => {
-  if (wanderSheet && wanderSheet.classList.contains('open')) {
-    wanderSheet.classList.remove('open');
-    return;
-  }
-  if (viewDetails && viewDetails.classList.contains('active')) {
-    pageViews.forEach(view => view.classList.remove('active'));
-    document.getElementById(lastActiveTab).classList.add('active'); // Returns to correct tab!
-  }
-});
-
 // 2. Restore Wander Drawer Swipe-to-Close
 let touchStartY = 0;
 let touchCurrentY = 0;
