@@ -18,6 +18,14 @@ const topFab = document.getElementById('top-fab');
 const bookshelfContainer = document.querySelector('.bookshelf');
 const searchResultsContainer = document.getElementById('search-results-container');
 
+// Sync manual dropdowns with pre-built Quick Filters
+const wanderSelects = document.querySelectorAll('#wander-sheet select');
+wanderSelects.forEach(select => {
+  select.addEventListener('change', () => {
+    // If a manual select is changed, strip the 'active' class from all quick buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  });
+});
 
 // ==========================================
 // 2. UTILITY & HELPER FUNCTIONS
@@ -568,6 +576,9 @@ function applyLibraryFilters() {
       }
     });
 
+  // Fix 1 - Library Grouping
+  window.lastAppliedSort = sortMethod;
+  
   // Pass the final sliced-and-diced array to the renderer
   renderGrid(filteredBooks);
   updateLibrarySubheading();
@@ -620,9 +631,8 @@ function renderGrid(booksToRender) {
     return;
   }
 
-  // PHASE 5 Setup: Grab current sort method to know if we need dividers
-  const sortSelect = document.getElementById('library-sort-select') || document.querySelector('.bottom-sheet select');
-  const sortMethod = sortSelect ? sortSelect.value : '';
+  // PHASE 5 Setup: Use the globally tracked sort method to guarantee accuracy!
+  const sortMethod = window.lastAppliedSort || '';
   let currentRenderYear = null;
 
   // Draw the covers
