@@ -22,7 +22,7 @@ const searchResultsContainer = document.getElementById('search-results-container
 const wanderSelects = document.querySelectorAll('#wander-sheet select');
 wanderSelects.forEach(select => {
   select.addEventListener('change', () => {
-    // If a manual select is changed, strip the 'active' class from all quick buttons
+    // If Sarah manually changes a dropdown, strip the 'active' green color from all quick buttons
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
   });
 });
@@ -345,40 +345,39 @@ function initStatsPage() {
     document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
     lastActiveTab = 'view-library';
 
-    // 2. FORCE THE STATE: Manually update the Wander Drawer Selects
-    // (This assumes Status is the first select, and Sort is the second select)
+    // 2. Clear manual selects (prevents them from overriding the quick buttons)
     const selects = document.querySelectorAll('#wander-sheet select');
     if (selects.length >= 2) {
-      selects[0].value = '2'; // Status -> Finished
-      selects[1].value = 'date_finished_desc'; // Sort -> Date Finished
+      selects[0].value = ''; // Reset Status
+      selects[1].value = ''; // Reset Sort
     }
-    
-    // 3. FORCE THE UI: Color the correct Quick Filter button
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    const finishedBtn = document.querySelector('.filter-btn[data-sort="date_finished_desc"]');
-    if (finishedBtn) finishedBtn.classList.add('active');
 
-    // 4. Render the grid with our new forced parameters
-    applyLibraryFilters();
-    
-    // 5. Smooth Scroll to Target (Wait 150ms for the DOM to draw the dividers)
+    // 3. Hijack the native UI! Physically "click" the Finished quick-filter button
+    const finishedBtn = document.querySelector('.filter-btn[data-sort="date_finished_desc"]');
+    if (finishedBtn) {
+       finishedBtn.click(); // This perfectly triggers all your active states & filters!
+    } else {
+       applyLibraryFilters(); // Safe fallback
+    }
+
+    // 4. Smooth Scroll to Target (Increased to 250ms to ensure grid rendering is complete)
     setTimeout(() => {
       if (currentStatsYear !== 'all') {
         const targetHeader = document.getElementById(`year-header-${currentStatsYear}`);
         if (targetHeader) {
           const y = targetHeader.getBoundingClientRect().top + window.scrollY - 80;
           window.scrollTo({ top: y, behavior: 'smooth' });
-          return; // Stop here if we successfully scrolled
+          return; 
         }
       }
       
-      // Fallback: If "All Time" or year isn't found, scroll to top of grid
-      const libraryGrid = document.getElementById('book-grid');
-      if (libraryGrid) {
-          const y = libraryGrid.getBoundingClientRect().top + window.scrollY - 100;
+      // Fallback: If "All Time", scroll right to the "Your Stacks" header
+      const stacksHeading = document.getElementById('your-stacks-heading') || document.getElementById('book-grid');
+      if (stacksHeading) {
+          const y = stacksHeading.getBoundingClientRect().top + window.scrollY - 80;
           window.scrollTo({ top: y, behavior: 'smooth' });
       }
-    }, 150);
+    }, 250);
   });
 }
 
