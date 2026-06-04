@@ -345,39 +345,40 @@ function initStatsPage() {
     document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
     lastActiveTab = 'view-library';
 
-    // 2. Clear manual selects (prevents them from overriding the quick buttons)
-    const selects = document.querySelectorAll('#wander-sheet select');
-    if (selects.length >= 2) {
-      selects[0].value = ''; // Reset Status
-      selects[1].value = ''; // Reset Sort
-    }
-
-    // 3. Hijack the native UI! Physically "click" the Finished quick-filter button
+    // 2. Hijack the Wander Drawer! Physically "click" the Finished quick-filter button
     const finishedBtn = document.querySelector('.filter-btn[data-sort="date_finished_desc"]');
     if (finishedBtn) {
-       finishedBtn.click(); // This perfectly triggers all your active states & filters!
+       // This properly sets the green highlight AND updates the hidden dropdowns
+       finishedBtn.click(); 
     } else {
-       applyLibraryFilters(); // Safe fallback
+       // Safe fallback if the button isn't found
+       const statusSelect = document.getElementById('filter-status');
+       const sortSelect = document.getElementById('sort-library');
+       if (statusSelect) statusSelect.value = '2';
+       if (sortSelect) sortSelect.value = 'date_finished_desc';
     }
 
-    // 4. Smooth Scroll to Target (Increased to 250ms to ensure grid rendering is complete)
+    // 3. THE CRITICAL FIX: Explicitly command the library to run the search and render!
+    applyLibraryFilters(); 
+
+    // 4. Smooth Scroll to Target 
     setTimeout(() => {
       if (currentStatsYear !== 'all') {
         const targetHeader = document.getElementById(`year-header-${currentStatsYear}`);
         if (targetHeader) {
           const y = targetHeader.getBoundingClientRect().top + window.scrollY - 80;
           window.scrollTo({ top: y, behavior: 'smooth' });
-          return; 
+          return; // Stop here if we successfully scrolled
         }
       }
       
-      // Fallback: If "All Time", scroll right to the "Your Stacks" header
+      // Fallback: If "All Time" or missing year header, scroll to Your Stacks
       const stacksHeading = document.getElementById('your-stacks-heading') || document.getElementById('book-grid');
       if (stacksHeading) {
           const y = stacksHeading.getBoundingClientRect().top + window.scrollY - 80;
           window.scrollTo({ top: y, behavior: 'smooth' });
       }
-    }, 250);
+    }, 250); // 250ms gives the DOM plenty of time to draw the headers before scrolling
   });
 }
 
