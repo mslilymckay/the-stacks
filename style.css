@@ -1622,3 +1622,17 @@ body {
   border-color: var(--terracotta); 
   background: transparent;
 }
+
+/* --- PHASE 5: CHRONOLOGICAL DIVIDERS --- */
+.year-divider {
+  grid-column: 1 / -1; /* Forces it to span all columns in the grid */
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--terracotta);
+  border-bottom: 2px dashed rgba(139, 94, 52, 0.3); /* Soft terracotta dash */
+  margin: 15px 0 5px 0;
+  padding-bottom: 5px;
+  text-align: left;
+  width: 100%;
+}
