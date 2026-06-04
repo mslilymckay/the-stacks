@@ -265,7 +265,16 @@ function renderMonthlyStats(monthIndex, yearStr) {
       },
       plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => ctx[0].raw.book.title, label: (ctx) => `Rating: ${ctx.raw.y} Stars` } } },
       scales: {
-        y: { min: 0, max: 5, ticks: { stepSize: 1, font: { family: 'Courier New' }, callback: (val) => val > 0 ? '★'.repeat(val) : '' }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
+        y: { 
+          min: 0, 
+          max: 6, 
+          ticks: { 
+            stepSize: 1, 
+            font: { family: 'Courier New' }, 
+            callback: (val) => (val > 0 && val <=5) ? '★'.repeat(val) : '' 
+          }, 
+          grid: { color: 'rgba(139, 94, 52, 0.1)' } 
+        },
         x: { 
           type: 'linear', // <--- THE FIX: Tells Chart.js to treat the X-axis as actual numbers!
           min: 1, 
