@@ -133,6 +133,7 @@ function calculateStats() {
 // ==========================================
 let statsChartInstance = null; 
 let currentStatsYear = 'all';
+let currentStatsMonth = null;
 
 const renderStatsList = (booksArray, listTitle) => {
   document.getElementById('stats-list-title').textContent = listTitle;
@@ -147,7 +148,7 @@ const renderStatsList = (booksArray, listTitle) => {
   booksArray.forEach(book => {
     const title = getField(book, 'title') || 'Unknown';
     const author = getField(book, 'author') || 'Unknown';
-    const coverUrl = getField(book, 'cover_url') || 'empty.png';
+    const coverUrl = getField(book, 'cover_url') || 'empty.png'; // Make sure this matches your actual placeholder filename!
     const ratingNum = Number(getField(book, 'rating')) || 0;
     
     let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
@@ -170,118 +171,94 @@ const renderStatsList = (booksArray, listTitle) => {
 
 function renderAnnualStats(targetYear) {
   currentStatsYear = targetYear;
+  currentStatsMonth = null;
   const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
+  const container = document.getElementById('stats-chart-container');
   
-  // ALL TIME VIEW (Years)
   if (targetYear === 'all') {
     const yearsMap = {};
     finishedBooks.forEach(b => {
-      const y = b.read_date.split('-')[0]; // Safe string split
+      const y = b.read_date.split('-')[0]; 
       yearsMap[y] = (yearsMap[y] || 0) + 1;
     });
     
     const labels = Object.keys(yearsMap).sort();
     const data = labels.map(y => yearsMap[y]);
     
-    drawBarChart(labels, data, '#A65239', (clickedIndex) => {
+    // Fixed height and Y-axis step 10 for All Time
+    container.style.height = '280px';
+    drawChart('bar', labels, data, '#A65239', 10, (clickedIndex) => {
       const selectedYear = labels[clickedIndex];
       document.getElementById('stats-year-select').value = selectedYear;
-      renderAnnualStats(selectedYear); // Drill to Year
+      renderAnnualStats(selectedYear);
     });
     
     renderStatsList(finishedBooks.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `All Time Books (${finishedBooks.length})`);
     document.getElementById('stats-drilldown-nav').classList.add('hidden');
-    document.getElementById('btn-view-in-stacks').style.display = 'block';
+    document.getElementById('btn-view-in-stacks').style.display = 'flex';
   } 
-  // SPECIFIC YEAR VIEW (Months)
   else {
     const filtered = finishedBooks.filter(b => b.read_date.startsWith(targetYear));
     const monthlyCounts = Array(12).fill(0);
     
     filtered.forEach(b => {
-      const m = parseInt(b.read_date.split('-')[1]) - 1; // Safe month extraction
+      const m = parseInt(b.read_date.split('-')[1]) - 1; 
       monthlyCounts[m]++;
     });
 
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    drawBarChart(monthLabels, monthlyCounts, '#597755', (clickedIndex) => {
-      renderMonthlyStats(clickedIndex, targetYear); // Drill to Month
+    // Dynamic height and Y-axis step 1 for specific year
+    const maxValue = Math.max(5, ...monthlyCounts); 
+    container.style.height = `${Math.max(250, (maxValue * 25) + 50)}px`; 
+
+    drawChart('bar', monthLabels, monthlyCounts, '#597755', 1, (clickedIndex) => {
+      renderMonthlyStats(clickedIndex, targetYear); 
     });
 
     renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${targetYear} (${filtered.length})`);
-    
-    // Show back button only if we started from 'all'
-    if (document.getElementById('stats-year-select').querySelector('option[value="all"]')) {
-      document.getElementById('stats-drilldown-nav').classList.remove('hidden');
-      document.getElementById('btn-stats-back').onclick = () => {
-        document.getElementById('stats-year-select').value = 'all';
-        renderAnnualStats('all');
-      };
-    }
-    document.getElementById('btn-view-in-stacks').style.display = 'block';
+    document.getElementById('stats-drilldown-nav').classList.add('hidden');
+    document.getElementById('btn-view-in-stacks').style.display = 'flex';
   }
 }
 
-function drawBarChart(labels, data, color, onClickCallback) {
-  if (statsChartInstance) statsChartInstance.destroy();
-  
-  // Dynamic Height Calculation!
-  const maxValue = Math.max(5, ...data); // Minimum 5 rows
-  const container = document.getElementById('stats-chart-container');
-  container.style.height = `${Math.max(250, (maxValue * 25) + 50)}px`; // 25px per row
-
-  const ctx = document.getElementById('stats-chart').getContext('2d');
-  statsChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      onClick: (e, elements) => { if (elements.length > 0) onClickCallback(elements[0].index); },
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: color, borderColor: '#8B5E34', borderWidth: 1 } },
-      scales: {
-        y: { suggestedMax: 5, ticks: { stepSize: 1, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
-        x: { ticks: { font: { family: 'Georgia' } }, grid: { display: false } }
-      }
-    }
-  });
-}
-
 function renderMonthlyStats(monthIndex, yearStr) {
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  currentStatsMonth = monthIndex;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   
-  // Safe parsing: YYYY-MM
   const targetPrefix = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`;
   const monthlyBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(targetPrefix));
 
-  renderStatsList(monthlyBooks, `${monthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
-  document.getElementById('btn-view-in-stacks').style.display = 'none'; // Hide on line charts
+  renderStatsList(monthlyBooks.sort((a, b) => new Date(a.read_date) - new Date(b.read_date)), `${fullMonthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
+  document.getElementById('btn-view-in-stacks').style.display = 'none'; 
 
-  // Plot Data (Safely extract exact day string, ignore timezones)
-  const plotData = monthlyBooks.map(b => ({
-    x: parseInt(b.read_date.split('T')[0].split('-')[2]), 
-    y: Number(b.rating) || 0,
-    book: b
-  }));
+  // THE FIX: Safe parsing for Day 0 bug
+  const plotData = monthlyBooks.map(b => {
+    const dateStr = b.read_date.includes('T') ? b.read_date.split('T')[0] : b.read_date;
+    return {
+      x: parseInt(dateStr.split('-')[2], 10), 
+      y: Number(b.rating) || 0,
+      book: b
+    };
+  });
 
+  document.getElementById('stats-chart-container').style.height = '280px'; 
+  
   if (statsChartInstance) statsChartInstance.destroy();
-  document.getElementById('stats-chart-container').style.height = '280px'; // Fixed height for Line Chart
-
   const ctx = document.getElementById('stats-chart').getContext('2d');
   statsChartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      datasets: [{
-        data: plotData, borderColor: '#A65239', backgroundColor: '#DDA750', pointRadius: 6, pointHoverRadius: 8, showLine: true, tension: 0.3
-      }]
-    },
+    data: { datasets: [{ data: plotData, borderColor: '#A65239', backgroundColor: '#DDA750', pointRadius: 6, pointHoverRadius: 8, showLine: true, tension: 0.3 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       onClick: (e, elements) => {
         if (elements.length > 0) {
           const clickedData = plotData[elements[0].index];
-          // Filter matching day/rating
-          const matches = monthlyBooks.filter(b => parseInt(b.read_date.split('T')[0].split('-')[2]) === clickedData.x && Number(b.rating) === clickedData.y);
+          const matches = monthlyBooks.filter(b => {
+            const d = b.read_date.includes('T') ? b.read_date.split('T')[0] : b.read_date;
+            return parseInt(d.split('-')[2], 10) === clickedData.x && Number(b.rating) === clickedData.y;
+          });
           if (matches.length === 1) openDetails(matches[0]);
           else renderStatsList(matches, `Day ${clickedData.x} - ${clickedData.y} Stars`);
         }
@@ -294,8 +271,31 @@ function renderMonthlyStats(monthIndex, yearStr) {
     }
   });
 
-  document.getElementById('stats-drilldown-nav').classList.remove('hidden');
-  document.getElementById('btn-stats-back').onclick = () => renderAnnualStats(yearStr);
+  // THE FIX: Dynamic Pill Button Setup
+  const navDiv = document.getElementById('stats-drilldown-nav');
+  const backBtn = document.getElementById('btn-stats-back');
+  backBtn.innerHTML = `<span style="font-size:12px;">✕</span> ${monthNames[monthIndex]} ${yearStr}`;
+  backBtn.onclick = () => renderAnnualStats(yearStr);
+  navDiv.classList.remove('hidden');
+}
+
+// Chart Helper for Bars
+function drawChart(type, labels, data, color, stepSize, onClickCallback) {
+  if (statsChartInstance) statsChartInstance.destroy();
+  const ctx = document.getElementById('stats-chart').getContext('2d');
+  statsChartInstance = new Chart(ctx, {
+    type: type,
+    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => { if (elements.length > 0) onClickCallback(elements[0].index); },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: color, borderColor: '#8B5E34', borderWidth: 1 } },
+      scales: {
+        y: { suggestedMax: stepSize === 10 ? undefined : 5, ticks: { stepSize: stepSize, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
+        x: { ticks: { font: { family: 'Georgia' } }, grid: { display: false } }
+      }
+    }
+  });
 }
 
 function initStatsPage() {
@@ -312,21 +312,25 @@ function initStatsPage() {
 
   yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
 
-  // "View in Stacks" Routing Logic
   document.getElementById('btn-view-in-stacks').addEventListener('click', () => {
-    // 1. Switch Tabs
     document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-library').classList.add('active');
-    
-    // 2. Update the visual Nav Bar active state
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
     lastActiveTab = 'view-library';
 
-    // 3. Force filter to Finished
-    document.getElementById('library-sort-select').value = 'date_finished_desc';
+    // THE FIX: Safe targeting of sort dropdown
+    const sortSelect = document.getElementById('library-sort-select') || document.querySelector('.bottom-sheet select');
+    if (sortSelect) sortSelect.value = 'date_finished_desc';
+    
     applyLibraryFilters();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // THE FIX: Smooth scroll to the library grid
+    const libraryGrid = document.getElementById('book-grid');
+    if (libraryGrid) {
+        const y = libraryGrid.getBoundingClientRect().top + window.scrollY - 100; // offsets fixed header
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    }
   });
 }
 
@@ -1086,7 +1090,9 @@ async function searchGoogleBooks(query) {
     
     const data = await response.json();
 
-    if(searchResultsContainer) searchResultsContainer.innerHTML = ''; 
+    if(searchResultsContainer) searchResultsContainer.innerHTML = '';
+
+    document.getElementById('search-results-header').classList.remove('hidden');
 
     if (!data.items || data.items.length === 0) {
       if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">No books found. Try a different search.</p>';
@@ -1388,21 +1394,33 @@ if (topFab && bookshelfContainer) {
   });
 }
 
-// History API for Native Back Swipe
+// 1. History API & Context Routing
+let lastActiveTab = 'view-library'; // Default
+
+// Ensure nav clicks ALWAYS update the origin tracker
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    lastActiveTab = e.currentTarget.getAttribute('data-target');
+  });
+});
+
 window.addEventListener('popstate', (event) => {
-  if (sheet && sheet.classList.contains('open')) {
-    sheet.classList.remove('open');
-    if (bookshelfContainer && bookshelfContainer.scrollTop > 300 && topFab) topFab.classList.add('visible');
-    return; 
+  if (wanderSheet && wanderSheet.classList.contains('open')) {
+    wanderSheet.classList.remove('open');
+    return;
   }
-  
-  if (event.state && event.state.view) {
-    const navBtn = document.querySelector(`.nav-item[data-target="${event.state.view}"]`);
-    if (navBtn) {
-      navItems.forEach(btn => btn.classList.remove('active'));
-      navBtn.classList.add('active');
-      pageViews.forEach(view => view.classList.remove('active'));
-      document.getElementById(event.state.view).classList.add('active');
+  if (viewDetails && viewDetails.classList.contains('active')) {
+    pageViews.forEach(view => view.classList.remove('active'));
+    document.getElementById(lastActiveTab).classList.add('active'); 
+    
+    // THE FIX: If we returned to the Stats tab, refresh the chart/list!
+    if (lastActiveTab === 'view-stats') {
+      const isMonthView = !document.getElementById('stats-drilldown-nav').classList.contains('hidden');
+      if (isMonthView && typeof currentStatsMonth !== 'undefined') {
+        renderMonthlyStats(currentStatsMonth, currentStatsYear);
+      } else {
+        renderAnnualStats(currentStatsYear);
+      }
     }
   }
 });
