@@ -43,22 +43,6 @@
   transition: opacity 0.8s ease-in-out;
 }
 
-/* ==========================================
-   APP CROSSFADE SEQUENCE
-   ========================================== */
-/* Hides the app content initially */
-body.is-loading > *:not(#loading-screen) {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Fades the app in smoothly when the class changes */
-body.is-loaded > *:not(#loading-screen) {
-  opacity: 1;
-  pointer-events: auto;
-  transition: opacity 1.5s ease-in-out; /* Matches the 1.5s loading screen fade */
-}
-
 body {
   margin: 0; /* Kills the default side gaps instantly! */
   padding-top: 60px; /* Accommodates the fixed header */
