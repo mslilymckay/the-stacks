@@ -98,9 +98,6 @@ function navigateToQuickFilter(status, sort) {
   window.lastAppliedSort = sort; 
   applyLibraryFilters();
   
-  // 5. Scroll down to the grid
-  const bookshelfContainer = document.querySelector('.bookshelf');
-  if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 300, behavior: 'smooth' });
 }
 
 // ==========================================
@@ -432,7 +429,7 @@ function renderHeroSection() {
     const pillContainer = document.createElement('div');
     pillContainer.style.display = 'flex';
     pillContainer.style.gap = '10px';
-    pillContainer.style.padding = '5px 15px';
+    pillContainer.style.padding = '5px 0 0 0';
     pillContainer.style.width = '100%';
     pillContainer.style.overflowX = 'auto';
 
@@ -652,13 +649,6 @@ function renderGrid(booksToRender) {
       const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const displayMonthYear = `${monthNames[parseInt(monthStr, 10) - 1]} ${yearStr}`;
 
-      if (displayMonthYear !== currentRenderYear) {
-        currentRenderYear = displayMonthYear; 
-        const divider = document.createElement('div');
-        divider.className = 'year-divider'; 
-        divider.textContent = displayMonthYear;
-        bookGrid.appendChild(divider);
-      }
     }
     // ----------------------------------------------
 
