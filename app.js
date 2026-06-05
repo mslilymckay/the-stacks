@@ -441,12 +441,12 @@ function renderHeroSection() {
     const tbrPill = document.createElement('button');
     tbrPill.className = 'hero-pill-btn';
     tbrPill.innerHTML = `TBR List`;
-    tbrPill.addEventListener('click', () => navigateToQuickFilter('0', 'date_added_desc'));
+    tbrPill.addEventListener('click', () => hero-pill-btn.classList.add('active'));
 
     const againPill = document.createElement('button');
     againPill.className = 'hero-pill-btn';
     againPill.innerHTML = `Read Again`;
-    againPill.addEventListener('click', () => navigateToQuickFilter('2', 'rating_desc'));
+    againPill.addEventListener('click', () => hero-pill-btn.classList.add('active'));
 
     pillContainer.appendChild(addPill);
     pillContainer.appendChild(tbrPill);
