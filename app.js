@@ -561,9 +561,10 @@ function applyLibraryFilters() {
   // 5. Update the Subheading UI
   const subheading = document.getElementById('library-subheading');
   if (subheading) {
-    let headingText = activeBtn ? activeBtn.textContent.trim() : 'All Books';
+    // THE FIX: Change the fallback text to match your default app state
+    let headingText = activeBtn ? activeBtn.textContent.trim() : 'All Books, by Title (A-Z)'; 
     if (libraryYearFilter !== 'all') headingText = `Finished in ${libraryYearFilter}`;
-    if (searchTerm) headingText += ` (Searching: "${searchTerm}")`; // Show search status
+    if (searchTerm) headingText += ` (Searching: "${searchTerm}")`; 
     subheading.textContent = headingText;
   }
 
@@ -1511,7 +1512,7 @@ if (wanderTriggerBtn && wanderSheet) {
   if (applyWanderBtn) {
     applyWanderBtn.addEventListener('click', () => {
       applyLibraryFilters(); 
-      updateLibrarySubheading(); // Updates the text under "Your Stacks"
+      
       wanderSheet.classList.remove('open');
       if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -1536,7 +1537,7 @@ if (wanderTriggerBtn && wanderSheet) {
 
       // 3. Execute and stay open
       applyLibraryFilters();
-      updateLibrarySubheading();
+      
       if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
