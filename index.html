@@ -17,7 +17,14 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
+  <div id="loading-screen" class="loading-screen">
+    <video autoplay muted playsinline id="loading-video">
+      <source src="loading.mp4#t=4,7" type="video/mp4">
+    </video>
+  </div>
+  
   <header class="app-header">
     <div id="header-scroll-trigger" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;">
       <img src="icon_small.png" alt="The Stacks Logo" class="header-logo">
