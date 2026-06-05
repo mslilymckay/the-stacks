@@ -1551,16 +1551,12 @@ if (wanderTriggerBtn && wanderSheet) {
   // WANDER DRAWER INTERACTION LOGIC
   // ==========================================
   const quickBtns = document.querySelectorAll('.quick-btn, .filter-btn');
-  const clearWanderBtn = document.getElementById('clear-wander-btn');
-  const applyWanderBtn = document.getElementById('apply-wander-btn'); // "Wander" bottom button
   
   // 1. Quick Filter Button Clicks
   quickBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Clear the Stats year lock if Sarah is manually changing views
       libraryYearFilter = 'all'; 
       
-      // Strip active classes AND any lingering inline styles from all buttons
       quickBtns.forEach(b => {
         b.classList.remove('active');
         b.style.background = '';
@@ -1568,38 +1564,23 @@ if (wanderTriggerBtn && wanderSheet) {
       });
 
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-
-      // NEW: Auto-close the Wander Drawer for a native feel
-      const wanderSheet = document.getElementById('wander-sheet');
-      const overlay = document.getElementById('sheet-overlay'); // Assuming this is your overlay ID
-      if (wanderSheet) {
-        wanderSheet.style.transform = 'translateY(100%)';
-        if (overlay) overlay.classList.remove('active');
-      }
       
-      // Add the active class (green highlight) to the clicked button
+      // Highlight the clicked button
       btn.classList.add('active');
+
+      // Instantly apply the filter and elegantly close the drawer
+      applyLibraryFilters(); 
+      if (wanderSheet) wanderSheet.classList.remove('open');
+      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
   
   // 2. "Wander" (Apply) Logic
   if (applyWanderBtn) {
     applyWanderBtn.addEventListener('click', () => {
-      // Run the filter engine!
       applyLibraryFilters(); 
-      
-      // Close the drawer and scroll to top
-      if (typeof wanderSheet !== 'undefined' && wanderSheet) wanderSheet.classList.remove('open');
-      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // NEW: Auto-close the Wander Drawer for a native feel
-      const wanderSheet = document.getElementById('wander-sheet');
-      const overlay = document.getElementById('sheet-overlay'); // Assuming this is your overlay ID
-      if (wanderSheet) {
-        wanderSheet.style.transform = 'translateY(100%)';
-        if (overlay) overlay.classList.remove('active');
-      }
-      
+      if (wanderSheet) wanderSheet.classList.remove('open');
+      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
   
@@ -1607,18 +1588,10 @@ if (wanderTriggerBtn && wanderSheet) {
   if (clearWanderBtn) {
     clearWanderBtn.addEventListener('click', () => {
       const localSearchInput = document.getElementById('local-search');
-      const clearSearchBtn = document.getElementById('clear-search-btn');
+      if (localSearchInput) localSearchInput.value = '';
       
-      // Reset Search
-      if (localSearchInput) {
-        localSearchInput.value = '';
-        if (clearSearchBtn) clearSearchBtn.style.display = 'none';
-      }
-      
-      // Reset Year Lock
       libraryYearFilter = 'all';
       
-      // Strip active states and inline styles from all quick buttons
       quickBtns.forEach(b => {
         b.classList.remove('active');
         b.style.background = '';
@@ -1627,19 +1600,11 @@ if (wanderTriggerBtn && wanderSheet) {
 
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
   
-      // NEW: Auto-close the Wander Drawer for a native feel
-      const wanderSheet = document.getElementById('wander-sheet');
-      const overlay = document.getElementById('sheet-overlay'); // Assuming this is your overlay ID
-      if (wanderSheet) {
-        wanderSheet.style.transform = 'translateY(100%)';
-        if (overlay) overlay.classList.remove('active');
-      }
-      
       applyLibraryFilters();
-      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      if (wanderSheet) wanderSheet.classList.remove('open');
+      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
-}
 
 // ==========================================
 // 10. PHASE 2: JOURNEY VIEW TOGGLES
