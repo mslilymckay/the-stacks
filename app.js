@@ -834,7 +834,7 @@ function openDetails(book, clickedElement) {
       <div style="display: flex; flex-direction: column; gap: 10px; justify-content: space-between; margin-top: 15px;">
         <button id="btn-refresh-book" class="journal-action-btn" title="Refresh Data">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z"/>
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
           </svg>
         </button>
         <button id="btn-read-again" class="journal-action-btn" title="Read Again">
