@@ -12,8 +12,8 @@ window.addEventListener('load', () => {
   }
 
   // Set your desired timings in milliseconds
-  const videoFadeTime = 2500; // When the video starts dissolving
-  const totalDuration = 4000; // When the cream background dissolves into the app
+  const videoFadeTime = 3000; // When the video starts dissolving
+  const totalDuration = 4500; // When the cream background dissolves into the app
 
   // 1. Softly dissolve the video element first
   setTimeout(() => {
