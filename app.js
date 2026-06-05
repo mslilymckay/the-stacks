@@ -16,7 +16,7 @@ window.addEventListener('load', async () => {
   if (session) {
     // She is logged in! Run the smooth loading sequence
     const videoFadeTime = 2000; 
-    const backgroundFadeTime = 2500; 
+    const backgroundFadeTime = 3000; 
 
     setTimeout(() => { if (loadingVideo) loadingVideo.style.opacity = '0'; }, videoFadeTime);
     setTimeout(() => { if (loadingScreen) loadingScreen.classList.add('hidden'); }, backgroundFadeTime);
