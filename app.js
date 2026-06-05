@@ -7,6 +7,11 @@ window.addEventListener('load', () => {
   // Set this duration to match your HTML Media Fragment (e.g., 2500ms = 2.5s)
   const loadingDuration = 7000; 
 
+  // 1. Set the video speed (1.0 is normal, 1.5 is 50% faster, 2.0 is double speed)
+  if (loadingVideo) {
+    loadingVideo.playbackRate = 1.5; 
+  }
+
   setTimeout(() => {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen) {
