@@ -55,7 +55,7 @@
 
       <div style="padding: 15px 15px 10px 15px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 id="your-stacks-heading" class="section-label" style="align: left;">
+          <h2 id="your-stacks-heading" class="stacks-section-heading" style="align: left;">
             Your Stacks
           </h2>
           <div class="layout-toggles" style="display: flex; gap: 10px;">
@@ -82,8 +82,7 @@
             </p>
           </button>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-bottom: 1px solid var(--text-dark); padding-bottom: 25px;">
-      </div>
+        <div style="border-bottom: 1px solid var(--detail-line); padding-bottom: 5px;"></div>
       
       <div class="book-grid" id="book-grid">
         </div>
@@ -103,7 +102,7 @@
 
     <section id="view-search" class="page-view">
       <div class="hero-wrapper">
-        <h2 class="section-label">Find a Book</h2>
+        <h2 class="stacks-section-heading">Find a Book</h2>
         <div class="search-form-container">
           
           <div class="search-input-wrapper" style="position: relative; width: 100%; margin-bottom: 5px;">
@@ -124,9 +123,10 @@
       </div>
 
       <div id="search-results-header" class="hidden" style="padding: 25px 15px 10px 15px; border-bottom: 1px solid var(--text-dark); margin-bottom: 15px;">
-        <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+        <h2 class="stacks-section-heading" style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
           Results from Google Books
         </h2>
+        <div> style="border-bottom: 1px solid var(--header-text); padding-bottom: 5px;"></div>
       </div>
       
       <div id="search-results-container" class="search-results-list"></div>
@@ -134,7 +134,9 @@
 
     <section id="view-stats" class="page-view">
       <div style="padding: 25px 15px 10px 15px; display: flex; justify-content: space-between; align-items: center;">
-        <h2 style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">Your Reading Journey</h2>
+        <h2 class="stacks-section-heading" style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+          Your Reading Journey
+        </h2>
     
         <select id="stats-year-select" style="appearance: none; background: var(--sage-green); border: none; color: var(--bg-color); border-radius: 20px; padding: 6px 16px; font-family: 'Courier New', Courier, monospace; font-weight: bold; outline: none; cursor: pointer; text-align: center;">
           <option value="all">All Time</option>
@@ -151,9 +153,11 @@
       </div>
     
       <div style="padding: 0 15px 25px 15px;">
-        <h3 id="stats-list-title" style="font-family: 'Georgia', serif; font-size: 1rem; color: var(--sage-green); margin: 0 0 10px 0; border-bottom: 1px solid var(--detail-line); padding-bottom: 5px;">
+        <h2 class="stacks-section-heading" id="stats-list-title" style="font-family: 'Georgia', serif; font-size: 1rem; margin: 0 0 10px 0;">
           Finished Books
-        </h3>
+        </h2>
+
+        <div style-"border-bottom: 1px solid var(--header-text); padding-bottom: 5px;"></div>
     
         <button id="btn-view-in-stacks" style="background: transparent; border: none; color: var(--terracotta); font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold; cursor: pointer; padding: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 4px;">
           View in Stacks ↗
