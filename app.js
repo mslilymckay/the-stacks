@@ -11,9 +11,9 @@ window.addEventListener('load', () => {
     loadingVideo.playbackRate = 1.5; 
   }
 
-  // Set your desired timings in milliseconds
-  const videoFadeTime = 3000; // When the video starts dissolving
-  const totalDuration = 4500; // When the cream background dissolves into the app
+  // Adjusted timings for a perfect sequential fade
+  const videoFadeTime = 3500; // Time before the video starts dissolving
+  const backgroundFadeTime = 5000; // Time before the cream veil lifts
 
   // 1. Softly dissolve the video element first
   setTimeout(() => {
@@ -22,16 +22,12 @@ window.addEventListener('load', () => {
     }
   }, videoFadeTime);
 
-  // 2. Crossfade: Fade the background out AND fade the app in
+  // 2. Lift the veil: Fade out the background overlay to reveal the app
   setTimeout(() => {
     if (loadingScreen) {
       loadingScreen.classList.add('hidden');
     }
-    
-    // Swap the body classes to trigger the app fade-in
-    document.body.classList.remove('is-loading');
-    document.body.classList.add('is-loaded');
-  }, totalDuration);
+  }, backgroundFadeTime);
 });
 
 // ==========================================
