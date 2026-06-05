@@ -810,6 +810,10 @@ body {
   grid-column: span 2;
 }
 
+#stats-book-list.book-grid {
+  padding: 0 !important; 
+}
+
 .stat-card h3 {
   font-family: 'Courier New', Courier, monospace;
   font-size: 32px;
@@ -1335,6 +1339,8 @@ body {
 .book-grid {
   transition: opacity 0.2s ease;
   width: 100%;
+  box-sizing: border-box !important;
+  margin: 0 !important;
 }
 
 /* 1. Default Grid (3-Column Cover Only) */
