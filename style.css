@@ -31,21 +31,20 @@ body {
   font-family: 'Courier New', Courier, monospace;
   font-size: 1.1rem;
   color: var(--text-dark);
-  margin: 0 0 15px 0;
+  margin: 15px 0 15px 0;
   font-weight: bold;
-  border-bottom: 1px solid var(--text-dark);
-  padding-bottom: 5px;
+  padding: 5px 0 5px 0;
   width: 100%;
 }
 
 .stacks-subheading {
-  font-family: 'Georgia', serif;
-  font-size: 1rem;
-  color: var(--sage-green);
-  margin: 0 0 15px 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  margin: 15px 0 15px 0;
   font-weight: bold;
-  border-bottom: 1px solid var(--detail-line);
-  padding-bottom: 5px;
+  border-bottom: 1px solid var(--text-dark);
+  padding: 5px 0 5px 0;
   width: 100%;
 }
 
@@ -349,6 +348,8 @@ body {
 .library-toolbar {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: right;
   gap: 10px;
   margin-bottom: 0; /* Flushed perfectly against the grid below */
   padding: 20px 15px; /* Added vertical padding for breathing room */
