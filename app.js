@@ -355,8 +355,8 @@ function initStatsPage() {
     libraryYearFilter = currentStatsYear; // Will be 'all' or a specific year like '2026'
 
     // 3. Visually highlight the "Finished" Quick Filter button
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    const finishedBtn = document.querySelector('.filter-btn[data-sort="date_finished_desc"]');
+    document.querySelectorAll('.quick-btn, .filter-btn').forEach(btn => btn.classList.remove('active'));
+    const finishedBtn = document.querySelector('[data-sort="date_finished_desc"]'); // Finds it regardless of class
     if (finishedBtn) finishedBtn.classList.add('active');
 
     // 4. Render the grid instantly and scroll to the absolute top
@@ -512,20 +512,34 @@ async function loadBooks() {
 function applyLibraryFilters() {
   let filteredBooks = [...globalLibraryData];
 
-  // 1. Find which Quick Filter button is active
-  const activeBtn = document.querySelector('.filter-btn.active');
-  const statusFilter = activeBtn ? activeBtn.getAttribute('data-status') : '';
+  // 1. Get Local Search Term
+  const searchInput = document.getElementById('local-search');
+  const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+  // 2. Find the active Quick Filter button (checking both potential class names)
+  const activeBtn = document.querySelector('.quick-btn.active, .filter-btn.active');
+  const statusFilter = activeBtn ? activeBtn.getAttribute('data-status') : 'all';
   const sortMethod = activeBtn ? activeBtn.getAttribute('data-sort') : 'date_added_desc';
 
-  // 2. Apply Status Filter (0=TBR, 1=Reading, 2=Finished)
-  if (statusFilter !== '') {
-    filteredBooks = filteredBooks.filter(b => String(b.status) === statusFilter);
-  }
+  // 3. Apply All Filters
+  filteredBooks = filteredBooks.filter(book => {
+    // A. Text Search (Title or Author)
+    const title = (getField(book, 'title') || '').toLowerCase();
+    const author = (getField(book, 'author') || '').toLowerCase();
+    const matchesSearch = title.includes(searchTerm) || author.includes(searchTerm);
 
-  // 3. Apply the Smart Year Filter (Triggered by the Stats Page)
-  if (libraryYearFilter !== 'all') {
-    filteredBooks = filteredBooks.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(libraryYearFilter));
-  }
+    // B. Status Filter
+    const status = getField(book, 'status');
+    const matchesStatus = (statusFilter === 'all' || !statusFilter) ? true : Number(status) === Number(statusFilter);
+
+    // C. Year Filter (Triggered strictly by the Stats Page handoff)
+    let matchesYear = true;
+    if (libraryYearFilter !== 'all') {
+      matchesYear = (book.status === 2 && book.read_date && book.read_date.startsWith(libraryYearFilter));
+    }
+
+    return matchesSearch && matchesStatus && matchesYear;
+  });
 
   // 4. Sort the Data
   filteredBooks.sort((a, b) => {
@@ -545,39 +559,17 @@ function applyLibraryFilters() {
   });
 
   // 5. Update the Subheading UI
-  let headingText = activeBtn ? activeBtn.textContent : 'All Books';
-  if (libraryYearFilter !== 'all') headingText = `Finished in ${libraryYearFilter}`;
-  document.getElementById('library-subheading').textContent = headingText;
+  const subheading = document.getElementById('library-subheading');
+  if (subheading) {
+    let headingText = activeBtn ? activeBtn.textContent.trim() : 'All Books';
+    if (libraryYearFilter !== 'all') headingText = `Finished in ${libraryYearFilter}`;
+    if (searchTerm) headingText += ` (Searching: "${searchTerm}")`; // Show search status
+    subheading.textContent = headingText;
+  }
 
-  // Track state for the renderer
+  // 6. Track state for the renderer and Draw!
   window.lastAppliedSort = sortMethod; 
   renderGrid(filteredBooks);
-}
-
-function updateLibrarySubheading() {
-  const subheading = document.getElementById('library-subheading');
-  if (!subheading) return;
-
-  const statusMap = {
-    'all': 'All Books',
-    '1': 'Current Reads',
-    '0': 'TBR List',
-    '2': 'Finished',
-    '3': 'Gave Up'
-  };
-
-  const sortMap = {
-    'title_asc': 'Title (A-Z)',
-    'author_asc': 'Author (A-Z)',
-    'date_added_desc': 'Date Added',
-    'date_started_desc': 'Date Started',
-    'date_finished_desc': 'Date Finished'
-  };
-
-  const currentStatus = document.getElementById('filter-status') ? document.getElementById('filter-status').value : 'all';
-  const currentSort = document.getElementById('sort-library') ? document.getElementById('sort-library').value : 'title_asc';
-
-  subheading.textContent = `${statusMap[currentStatus] || 'All Books'}, by ${sortMap[currentSort] || 'Title'}`;
 }
 
 // --- BATCH 7: GRID RENDERER & EMPTY STATE ---
