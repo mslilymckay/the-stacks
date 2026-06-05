@@ -29,7 +29,7 @@ body {
 /* --- UNIFIED HEADINGS --- */
 .stacks-section-heading {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text-dark);
   margin: 15px 0 15px 0;
   font-weight: 800;
@@ -39,7 +39,7 @@ body {
 
 .stacks-subheading {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text-dark);
   margin: 15px 0 15px 0;
   font-weight: 800;
