@@ -44,7 +44,9 @@
     
     <section id="view-library" class="page-view active">
       <div class="hero-wrapper">
-        <h2 class="section-label" id="hero-label">Your Current Read</h2>
+        <h2 class="stacks-section-heading" style="border-bottom: 0;" id="hero-label">
+          Your Current Read
+        </h2>
         <div class="current-read-section" id="current-read-section">
           
           <div class="carousel-container" id="active-reads-carousel">
@@ -58,17 +60,6 @@
           <h2 id="your-stacks-heading" class="stacks-section-heading" style="align: left;">
             Your Stacks
           </h2>
-          <div class="layout-toggles" style="display: flex; gap: 10px;">
-            <button class="layout-btn active" data-layout="layout-grid" title="3-Column Grid">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="4"></rect><rect x="10" y="3" width="4" height="4"></rect><rect x="17" y="3" width="4" height="4"></rect><rect x="3" y="10" width="4" height="4"></rect><rect x="10" y="10" width="4" height="4"></rect><rect x="17" y="10" width="4" height="4"></rect><rect x="3" y="17" width="4" height="4"></rect><rect x="10" y="17" width="4" height="4"></rect><rect x="17" y="17" width="4" height="4"></rect></svg>
-            </button>
-            <button class="layout-btn" data-layout="layout-cards" title="2-Column Cards">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </button>
-            <button class="layout-btn" data-layout="layout-list" title="1-Column List">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            </button>
-          </div>
         </div>
         <div style="display: flex; align-items: flex-start; margin-top: 5px; justify-content: flex-start; gap: 10px;">
           <button id="wander-trigger-btn" title="Wander Stacks" class="wander">
@@ -81,11 +72,20 @@
               All Books, by Title (A-Z)
             </p>
           </button>
+          <div class="layout-toggles" style="display: flex; gap: 10px;">
+            <button class="layout-btn active" data-layout="layout-grid" title="3-Column Grid">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="4"></rect><rect x="10" y="3" width="4" height="4"></rect><rect x="17" y="3" width="4" height="4"></rect><rect x="3" y="10" width="4" height="4"></rect><rect x="10" y="10" width="4" height="4"></rect><rect x="17" y="10" width="4" height="4"></rect><rect x="3" y="17" width="4" height="4"></rect><rect x="10" y="17" width="4" height="4"></rect><rect x="17" y="17" width="4" height="4"></rect></svg>
+            </button>
+            <button class="layout-btn" data-layout="layout-cards" title="2-Column Cards">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
+            <button class="layout-btn" data-layout="layout-list" title="1-Column List">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </button>
+          </div>
         </div>
-        <div style="border-bottom: 1px solid var(--detail-line); padding-bottom: 5px;"></div>
       
-      <div class="book-grid" id="book-grid">
-        </div>
+      <div class="book-grid" id="book-grid"></div>
     </section>
 
     <section id="view-details" class="page-view">
@@ -102,7 +102,7 @@
 
     <section id="view-search" class="page-view">
       <div class="hero-wrapper">
-        <h2 class="stacks-section-heading">Find a Book</h2>
+        <h2 class="stacks-section-heading" style="border-bottom: 0;">Find a Book</h2>
         <div class="search-form-container">
           
           <div class="search-input-wrapper" style="position: relative; width: 100%; margin-bottom: 5px;">
@@ -123,10 +123,9 @@
       </div>
 
       <div id="search-results-header" class="hidden" style="padding: 25px 15px 10px 15px; border-bottom: 1px solid var(--text-dark); margin-bottom: 15px;">
-        <h2 class="stacks-section-heading" style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+        <h2 class="stacks-section-heading">
           Results from Google Books
         </h2>
-        <div> style="border-bottom: 1px solid var(--header-text); padding-bottom: 5px;"></div>
       </div>
       
       <div id="search-results-container" class="search-results-list"></div>
@@ -134,7 +133,7 @@
 
     <section id="view-stats" class="page-view">
       <div style="padding: 25px 15px 10px 15px; display: flex; justify-content: space-between; align-items: center;">
-        <h2 class="stacks-section-heading" style="font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; color: var(--text-dark); margin: 0; font-weight: bold;">
+        <h2 class="stacks-section-heading" style="border-bottom: 0;">
           Your Reading Journey
         </h2>
     
@@ -153,11 +152,9 @@
       </div>
     
       <div style="padding: 0 15px 25px 15px;">
-        <h2 class="stacks-section-heading" id="stats-list-title" style="font-family: 'Georgia', serif; font-size: 1rem; margin: 0 0 10px 0;">
+        <h2 class="stacks-section-heading" id="stats-list-title">
           Finished Books
         </h2>
-
-        <div style-"border-bottom: 1px solid var(--header-text); padding-bottom: 5px;"></div>
     
         <button id="btn-view-in-stacks" style="background: transparent; border: none; color: var(--terracotta); font-family: 'Courier New', monospace; font-size: 0.85rem; font-weight: bold; cursor: pointer; padding: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 4px;">
           View in Stacks ↗
