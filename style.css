@@ -1571,8 +1571,18 @@ body {
   flex-grow: 1;
 }
 
-/* Inline Edit Inputs */
+/* Inline Edit Inputs & Layout */
+.input-with-icon {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-grow: 1;
+  color: var(--sage-green); 
+}
+
 .inline-edit-input {
+  flex-grow: 0; /* Lets the wrapper handle the spacing */
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
@@ -1586,8 +1596,7 @@ body {
   cursor: pointer;
   padding: 0;
   width: auto;
-  flex-grow: 1;
-  direction: ltr; /* Revert the RTL trick */
+  direction: ltr; 
 }
 
 /* 1. Force iOS/Safari/Chrome text to align right inside the Shadow DOM */
@@ -1645,8 +1654,15 @@ body {
 .journal-notes-input:focus { outline: none; border-color: var(--sage-green); }
 
 /* Stamps */
+.stamp-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 15px;
+}
+
 .stamp {
-  display: inline-flex; /* fit contents */
+  display: inline-flex; 
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1656,16 +1672,19 @@ body {
   text-transform: uppercase;
   padding: 6px 12px;
   border-radius: 4px;
-  border: 3px solid;
-  border-bottom: 1px solid;
+  
+  /* Top 3px, Right 1px, Bottom 1px, Left 3px */
+  border-width: 3px 1px 1px 3px; 
+  border-style: solid;
+  
   transform: rotate(-12deg);
   opacity: 0.75;
-  margin-top: 15px;
   line-height: 1.2;
   letter-spacing: 2px;
   width: max-content;
   margin-bottom: 4px;
 }
+
 .stamp-started {
   color: var(--sage-green); 
   border-color: var(--sage-green); 
