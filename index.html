@@ -61,19 +61,23 @@
             Your Stacks
           </h2>
         </div>
-        <div style="display: flex; align-items: center; margin-top: 5px; justify-content: space-between; gap: 10px;">
-          <div>
-            <button id="wander-trigger-btn" title="Wander Stacks" class="wander">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div style="padding: 15px 15px 0 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--text-dark); padding-bottom: 15px;">
+          
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <h2 id="your-stacks-heading" class="section-label" style="margin: 0;">Your Stacks</h2>
+            <button id="wander-trigger-btn" title="Wander Stacks" class="wander" style="background: transparent; border: none; padding: 0; box-shadow: none; display: flex; align-items: center; gap: 6px; justify-content: flex-start;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--terracotta)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="4" y="9" width="16" height="4" rx="1" transform="rotate(-12 12 11)" />
                 <rect x="4" y="14" width="16" height="4" rx="1" />
                 <rect x="4" y="4" width="16" height="4" rx="1" transform="rotate(8 12 6)" />
               </svg>
-              <p id="library-subheading" style="font-family: 'Georgia', serif; font-size: 0.85rem; color: var(--header-text); margin: 0; font-style: italic;">
+              <p id="library-subheading" style="font-family: 'Georgia', serif; font-size: 0.85rem; color: var(--text-dark); margin: 0; font-style: italic;">
                 All Books, by Title (A-Z)
               </p>
             </button>
           </div>
+
           <div class="layout-toggles" style="display: flex; gap: 10px;">
             <button class="layout-btn active" data-layout="layout-grid" title="3-Column Grid">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="4"></rect><rect x="10" y="3" width="4" height="4"></rect><rect x="17" y="3" width="4" height="4"></rect><rect x="3" y="10" width="4" height="4"></rect><rect x="10" y="10" width="4" height="4"></rect><rect x="17" y="10" width="4" height="4"></rect><rect x="3" y="17" width="4" height="4"></rect><rect x="10" y="17" width="4" height="4"></rect><rect x="17" y="17" width="4" height="4"></rect></svg>
@@ -85,7 +89,9 @@
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
             </button>
           </div>
+          
         </div>
+      </div>
       
       <div class="book-grid" id="book-grid"></div>
     </section>
