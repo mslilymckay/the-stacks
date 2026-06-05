@@ -1,6 +1,21 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // ==========================================
+// LOADING SCREEN LOGIC
+// ==========================================
+window.addEventListener('load', () => {
+  // Set this duration to match your HTML Media Fragment (e.g., 2500ms = 2.5s)
+  const loadingDuration = 3000; 
+
+  setTimeout(() => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+      loadingScreen.classList.add('hidden');
+    }
+  }, loadingDuration);
+});
+
+// ==========================================
 // 1. SETUP, STATE & GLOBAL VARIABLES
 // ==========================================
 const supabaseUrl = 'https://jvsjzlvabtffhsnvmcto.supabase.co';
