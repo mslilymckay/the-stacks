@@ -82,7 +82,7 @@ async function updateBookData(columnName, newValue) {
 }
 
 // Navigates from the Hero Section to a specific filtered Library view
-function navigateToQuickFilter(status, sort) {
+function navigateToQuickFilter(status, sort, sourceBtn = null) {
   // 1. Switch to Library tab
   document.querySelector('.nav-item[data-target="view-library"]').click();
   
@@ -435,7 +435,8 @@ function renderHeroSection() {
     pillContainer.style.gap = '10px';
     pillContainer.style.padding = '5px 0 0 0';
     pillContainer.style.width = '100%';
-    pillContainer.style.justify-content = 'center';
+    pillContainer.style.justifyContent = 'center';
+    pillContainer.style.flexWrap = 'wrap';
 
     const addPill = document.createElement('button');
     addPill.className = 'hero-pill-btn';
