@@ -94,7 +94,11 @@ function navigateToQuickFilter(status, sort) {
   const targetBtn = document.querySelector(`.quick-btn[data-status="${status}"]`);
   if (targetBtn) targetBtn.classList.add('active');
 
-  // 4. Apply the sort and filter
+  // 4. Update the Pill Buttons to stay highlighted
+  document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+  if (sourceBtn) sourceBtn.classList.add('active');
+
+  // 5. Apply the sort and filter (Removed the scroll logic!)
   window.lastAppliedSort = sort; 
   applyLibraryFilters();
   
@@ -441,16 +445,13 @@ function renderHeroSection() {
     const tbrPill = document.createElement('button');
     tbrPill.className = 'hero-pill-btn';
     tbrPill.innerHTML = `TBR List`;
-    tbrPill.addEventListener('click', () => {
-      hero-pill-btn.classList.add('active')
-    });
+    // Pass the button itself (e.currentTarget) to trigger the active state
+    tbrPill.addEventListener('click', (e) => navigateToQuickFilter('0', 'date_added_desc', e.currentTarget));
 
     const againPill = document.createElement('button');
     againPill.className = 'hero-pill-btn';
     againPill.innerHTML = `Read Again`;
-    againPill.addEventListener('click', () => {
-      hero-pill-btn.classList.add('active')
-    });
+    againPill.addEventListener('click', (e) => navigateToQuickFilter('2', 'rating_desc', e.currentTarget));
 
     pillContainer.appendChild(addPill);
     pillContainer.appendChild(tbrPill);
@@ -646,13 +647,18 @@ function renderGrid(booksToRender) {
   for (const book of booksToRender) {
     
     // --- PHASE 5: INJECT CHRONOLOGICAL DIVIDERS ---
-    if (sortMethod === 'date_finished_desc' && book.status === 2 && book.read_date) {
-      const dateObj = new Date(book.read_date);
-      // Ensure we don't hit timezone offset bugs by parsing the raw string safely
-      const [yearStr, monthStr] = book.read_date.split('-'); 
-      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      const displayMonthYear = `${monthNames[parseInt(monthStr, 10) - 1]} ${yearStr}`;
-
+    if (sortMethod === 'date_finished_desc' && Number(book.status) === 2 && book.read_date) {
+      // Force string and extract YYYY safely
+      const bookYear = String(book.read_date).split('-')[0]; 
+      
+      if (bookYear !== currentRenderYear) {
+        currentRenderYear = bookYear;
+        const divider = document.createElement('div');
+        divider.className = 'year-divider';
+        divider.id = `year-header-${currentRenderYear}`; 
+        divider.textContent = currentRenderYear;
+        bookGrid.appendChild(divider);
+      }
     }
     // ----------------------------------------------
 
