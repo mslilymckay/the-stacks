@@ -1738,3 +1738,44 @@ body {
   text-align: left;
   width: 100%;
 }
+
+/* ==========================================
+   AUTHENTICATION SCREEN
+   ========================================== */
+.auth-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998; /* Sits just below the loading screen */
+}
+
+.auth-screen.hidden {
+  display: none;
+}
+
+.auth-card {
+  width: 90%;
+  max-width: 350px;
+  padding: 30px 20px;
+  text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--detail-line);
+  border-radius: 8px;
+}
+
+.stacks-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid var(--sage-green);
+  border-radius: 4px;
+  font-family: 'Georgia', serif;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+}
