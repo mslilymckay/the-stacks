@@ -26,7 +26,7 @@ body {
   overflow: hidden; /* Stops the double-scrolling elastic bounce! */
 }
 
-/* --- UNIFIED SECTION HEADINGS --- */
+/* --- UNIFIED HEADINGS --- */
 .stacks-section-heading {
   font-family: 'Courier New', Courier, monospace;
   font-size: 1.1rem;
@@ -34,6 +34,17 @@ body {
   margin: 0 0 15px 0;
   font-weight: bold;
   border-bottom: 1px solid var(--text-dark);
+  padding-bottom: 5px;
+  width: 100%;
+}
+
+.stacks-subheading {
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  color: var(--sage-green);
+  margin: 0 0 15px 0;
+  font-weight: bold;
+  border-bottom: 1px solid var(--detail-line);
   padding-bottom: 5px;
   width: 100%;
 }
