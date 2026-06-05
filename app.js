@@ -1,33 +1,64 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // ==========================================
-// LOADING SCREEN LOGIC
+// AUTHENTICATION & LOADING SEQUENCE
 // ==========================================
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   const loadingVideo = document.getElementById('loading-video');
   const loadingScreen = document.getElementById('loading-screen');
+  const authScreen = document.getElementById('auth-screen');
   
-  if (loadingVideo) {
-    loadingVideo.playbackRate = 1.5; 
+  if (loadingVideo) loadingVideo.playbackRate = 1.5; 
+
+  // 1. Check if Sarah is already logged in
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session) {
+    // She is logged in! Run the smooth loading sequence
+    const videoFadeTime = 1200; 
+    const backgroundFadeTime = 1800; 
+
+    setTimeout(() => { if (loadingVideo) loadingVideo.style.opacity = '0'; }, videoFadeTime);
+    setTimeout(() => { if (loadingScreen) loadingScreen.classList.add('hidden'); }, backgroundFadeTime);
+    
+    // --> Call your function to fetch the books here! <--
+    // fetchLibraryData(); 
+
+  } else {
+    // She is NOT logged in. Instantly hide the loading screen and show the login card.
+    if (loadingScreen) loadingScreen.classList.add('hidden');
+    if (authScreen) authScreen.classList.remove('hidden');
   }
+});
 
-  // Adjusted timings for a perfect sequential fade
-  const videoFadeTime = 3500; // Time before the video starts dissolving
-  const backgroundFadeTime = 5000; // Time before the cream veil lifts
+// ==========================================
+// LOGIN BUTTON LOGIC
+// ==========================================
+document.getElementById('auth-login-btn').addEventListener('click', async () => {
+  const email = document.getElementById('auth-email').value;
+  const password = document.getElementById('auth-password').value;
+  const errorText = document.getElementById('auth-error');
+  const loginBtn = document.getElementById('auth-login-btn');
+  
+  errorText.style.display = 'none';
+  loginBtn.textContent = 'Verifying...';
 
-  // 1. Softly dissolve the video element first
-  setTimeout(() => {
-    if (loadingVideo) {
-      loadingVideo.style.opacity = '0';
-    }
-  }, videoFadeTime);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
 
-  // 2. Lift the veil: Fade out the background overlay to reveal the app
-  setTimeout(() => {
-    if (loadingScreen) {
-      loadingScreen.classList.add('hidden');
-    }
-  }, backgroundFadeTime);
+  if (error) {
+    errorText.textContent = "Oops! " + error.message;
+    errorText.style.display = 'block';
+    loginBtn.textContent = 'Open Library';
+  } else {
+    // Success! Hide the login screen and load the app
+    document.getElementById('auth-screen').classList.add('hidden');
+    
+    // --> Call your function to fetch the books here! <--
+    loadBooks(); 
+  }
 });
 
 // ==========================================
