@@ -5,7 +5,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ==========================================
 window.addEventListener('load', () => {
   // Set this duration to match your HTML Media Fragment (e.g., 2500ms = 2.5s)
-  const loadingDuration = 5000; 
+  const loadingDuration = 7000; 
 
   setTimeout(() => {
     const loadingScreen = document.getElementById('loading-screen');
