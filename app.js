@@ -244,22 +244,30 @@ function renderAnnualStats(targetYear) {
     });
 
     const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Dynamic height and Y-axis step 1 for specific year
     const maxValue = Math.max(5, ...monthlyCounts); 
     container.style.height = `${Math.max(250, (maxValue * 25) + 50)}px`; 
 
-    drawChart('bar', monthLabels, monthlyCounts, '#597755', 1, (clickedIndex) => {
-      renderMonthlyStats(clickedIndex, targetYear); 
+    let barColors = Array(12).fill('#597755'); // Default sage green
+
+    drawChart('bar', monthLabels, monthlyCounts, barColors, 1, (clickedIndex) => {
+      // Highlight tapped bar orange
+      barColors = Array(12).fill('#597755');
+      barColors[clickedIndex] = '#A65239';
+      statsChartInstance.data.datasets[0].backgroundColor = barColors;
+      statsChartInstance.update();
+
+      // Update the list below
+      renderMonthlyStatsList(clickedIndex, targetYear); 
     });
 
     renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${targetYear} (${filtered.length})`);
     document.getElementById('stats-drilldown-nav').classList.add('hidden');
     document.getElementById('btn-view-in-stacks').style.display = 'flex';
-  }
+  };
 }
 
-function renderMonthlyStats(monthIndex, yearStr) {
+// Replaces the line chart logic with a simple list update for the tapped bar
+function renderMonthlyStatsList(monthIndex, yearStr) {
   currentStatsMonth = monthIndex;
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -267,67 +275,28 @@ function renderMonthlyStats(monthIndex, yearStr) {
   const targetPrefix = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`;
   const monthlyBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(targetPrefix));
 
-  renderStatsList(monthlyBooks.sort((a, b) => new Date(a.read_date) - new Date(b.read_date)), `${fullMonthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
+  // Update the list and hide the Stacks handoff button
+  renderStatsList(monthlyBooks.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `${fullMonthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
   document.getElementById('btn-view-in-stacks').style.display = 'none'; 
 
-  // THE FIX: Safe parsing for Day 0 bug
-  const plotData = monthlyBooks.map(b => {
-    const dateStr = b.read_date.includes('T') ? b.read_date.split('T')[0] : b.read_date;
-    return {
-      x: parseInt(dateStr.split('-')[2], 10), 
-      y: Number(b.rating) || 0,
-      book: b
-    };
-  });
-
-  document.getElementById('stats-chart-container').style.height = '280px'; 
-  
-  if (statsChartInstance) statsChartInstance.destroy();
-  const ctx = document.getElementById('stats-chart').getContext('2d');
-  statsChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: { datasets: [{ data: plotData, borderColor: '#A65239', backgroundColor: '#DDA750', pointRadius: 6, pointHoverRadius: 8, showLine: true, tension: 0.3 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      onClick: (e, elements) => {
-        if (elements.length > 0) {
-          const clickedData = plotData[elements[0].index];
-          const matches = monthlyBooks.filter(b => {
-            const d = b.read_date.includes('T') ? b.read_date.split('T')[0] : b.read_date;
-            return parseInt(d.split('-')[2], 10) === clickedData.x && Number(b.rating) === clickedData.y;
-          });
-          if (matches.length === 1) openDetails(matches[0]);
-          else renderStatsList(matches, `Day ${clickedData.x} - ${clickedData.y} Stars`);
-        }
-      },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => ctx[0].raw.book.title, label: (ctx) => `Rating: ${ctx.raw.y} Stars` } } },
-      scales: {
-        y: { 
-          min: 0, 
-          max: 6, 
-          ticks: { 
-            stepSize: 1, 
-            font: { family: 'Courier New' }, 
-            callback: (val) => (val > 0 && val <=5) ? '★'.repeat(val) : '' 
-          }, 
-          grid: { color: 'rgba(139, 94, 52, 0.1)' } 
-        },
-        x: { 
-          type: 'linear', // <--- THE FIX: Tells Chart.js to treat the X-axis as actual numbers!
-          min: 1, 
-          max: 31, 
-          ticks: { autoSkip: false, maxTicksLimit: 31, font: { family: 'Courier New' } }, 
-          grid: { display: false } 
-        }
-      }
-    }
-  });
-
-  // THE FIX: Dynamic Pill Button Setup
+  // Setup the drilldown back button
   const navDiv = document.getElementById('stats-drilldown-nav');
   const backBtn = document.getElementById('btn-stats-back');
-  backBtn.innerHTML = `<span style="font-size:12px;">✕</span> ${monthNames[monthIndex]} ${yearStr}`;
-  backBtn.onclick = () => renderAnnualStats(yearStr);
+  backBtn.innerHTML = `<span style="font-size:12px;">✕</span> Clear ${monthNames[monthIndex]}`;
+  
+  backBtn.onclick = () => {
+    // Reset bar colors back to Sage Green
+    statsChartInstance.data.datasets[0].backgroundColor = Array(12).fill('#597755');
+    statsChartInstance.update();
+    
+    // Re-render the full year list and restore the Stacks button
+    const filtered = globalLibraryData.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(yearStr));
+    renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${yearStr} (${filtered.length})`);
+    document.getElementById('btn-view-in-stacks').style.display = 'flex';
+    navDiv.classList.add('hidden');
+    currentStatsMonth = null;
+  };
+  
   navDiv.classList.remove('hidden');
 }
 
@@ -796,12 +765,12 @@ function openDetails(book, clickedElement) {
     return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${String(d.getFullYear()).slice(-2)}`;
   };
 
-  // 1. Conditional Stamps (One stamp only!)
+  // 1. Conditional Stamps (One stamp only, wrapped for centering!)
   let stampsHtml = '';
-  if (statusNum === '1') { // Reading
-    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-started">STARTED<br/>${formatVintageDate(rawStarted)}</span></div>`;
-  } else if (statusNum === '2') { // Finished
-    stampsHtml = `<div style="margin-top: 10px;"><span class="stamp stamp-finished">FINISHED<br/>${formatVintageDate(rawFinished)}</span></div>`;
+  if (statusNum === '1') { 
+    stampsHtml = `<div class="stamp-container"><span class="stamp stamp-started">STARTED<br/>${formatVintageDate(rawStarted)}</span></div>`;
+  } else if (statusNum === '2') { 
+    stampsHtml = `<div class="stamp-container"><span class="stamp stamp-finished">FINISHED<br/>${formatVintageDate(rawFinished)}</span></div>`;
   }
 
   // 2. Interactive Stars HTML
@@ -811,7 +780,9 @@ function openDetails(book, clickedElement) {
   }
   starsHtml += `</div>`;
 
-  // 3. Inject Layout HTML
+  // 3. Inject Layout HTML (With Pencil Icons and Magic Wand)
+  const pencilSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+
   journalContent.innerHTML = `
     <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 10px;">
       <img src="${coverUrl}" style="width: 110px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0;" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
@@ -828,30 +799,41 @@ function openDetails(book, clickedElement) {
       <div class="journal-meta-card" style="flex-grow: 1;">
         <div class="meta-row">
           <span class="meta-label">Status:</span> 
-          <select id="inline-status" class="inline-edit-input">
-            <option value="0" ${statusNum === '0' ? 'selected' : ''}>TBR</option>
-            <option value="1" ${statusNum === '1' ? 'selected' : ''}>Reading</option>
-            <option value="2" ${statusNum === '2' ? 'selected' : ''}>Finished</option>
-            <option value="3" ${statusNum === '3' ? 'selected' : ''}>Gave Up</option>
-          </select>
+          <div class="input-with-icon">
+            <select id="inline-status" class="inline-edit-input">
+              <option value="0" ${statusNum === '0' ? 'selected' : ''}>TBR</option>
+              <option value="1" ${statusNum === '1' ? 'selected' : ''}>Reading</option>
+              <option value="2" ${statusNum === '2' ? 'selected' : ''}>Finished</option>
+              <option value="3" ${statusNum === '3' ? 'selected' : ''}>Gave Up</option>
+            </select>
+            ${pencilSvg}
+          </div>
         </div>
         <div class="meta-row">
           <span class="meta-label">Added:</span> 
-          <span class="meta-value">${dateAdded}</span>
+          <div class="input-with-icon">
+            <span class="meta-value" style="font-weight: bold;">${dateAdded}</span>
+            <svg width="14" height="14" style="opacity: 0;"></svg> </div>
         </div>
         <div class="meta-row">
           <span class="meta-label">Started:</span> 
-          <input type="date" id="inline-started" class="inline-edit-input" value="${startedVal}">
+          <div class="input-with-icon">
+            <input type="date" id="inline-started" class="inline-edit-input" value="${startedVal}">
+            ${pencilSvg}
+          </div>
         </div>
         <div class="meta-row">
           <span class="meta-label">Finished:</span> 
-          <input type="date" id="inline-finished" class="inline-edit-input" value="${finishedVal}">
+          <div class="input-with-icon">
+            <input type="date" id="inline-finished" class="inline-edit-input" value="${finishedVal}">
+            ${pencilSvg}
+          </div>
         </div>
       </div>
       
       <div style="display: flex; flex-direction: column; gap: 10px; justify-content: space-between; margin-top: 15px;">
         <button id="btn-refresh-book" class="journal-action-btn" title="Refresh Data">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5 4 4"/><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m2 22 5.5-5.5"/><path d="m11.1 14.1 2.4 2.4"/><path d="M17.5 15.5 22 20"/><path d="M15.5 17.5 20 22"/></svg>
         </button>
         <button id="btn-read-again" class="journal-action-btn" title="Read Again">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
@@ -870,7 +852,7 @@ function openDetails(book, clickedElement) {
       </div>
     </div>
   `;
-
+  
   pageViews.forEach(view => view.classList.remove('active'));
   viewDetails.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
