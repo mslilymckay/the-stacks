@@ -38,7 +38,7 @@
 }
 
 #loading-video {
-  width: 100%; /* Adjust this based on how large you want the animation */
+  height: 110%; /* Adjust this based on how large you want the animation */
   pointer-events: none; /* Prevents users from accidentally pausing it */
 }
 
