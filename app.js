@@ -431,7 +431,7 @@ function renderHeroSection() {
     pillContainer.style.gap = '10px';
     pillContainer.style.padding = '5px 0 0 0';
     pillContainer.style.width = '100%';
-    pillContainer.style.overflowX = 'auto';
+    pillContainer.style.justify-content = 'center';
 
     const addPill = document.createElement('button');
     addPill.className = 'hero-pill-btn';
@@ -441,12 +441,16 @@ function renderHeroSection() {
     const tbrPill = document.createElement('button');
     tbrPill.className = 'hero-pill-btn';
     tbrPill.innerHTML = `TBR List`;
-    tbrPill.addEventListener('click', () => hero-pill-btn.classList.add('active'));
+    tbrPill.addEventListener('click', () => {
+      hero-pill-btn.classList.add('active')
+    });
 
     const againPill = document.createElement('button');
     againPill.className = 'hero-pill-btn';
     againPill.innerHTML = `Read Again`;
-    againPill.addEventListener('click', () => hero-pill-btn.classList.add('active'));
+    againPill.addEventListener('click', () => {
+      hero-pill-btn.classList.add('active')
+    });
 
     pillContainer.appendChild(addPill);
     pillContainer.appendChild(tbrPill);
