@@ -185,7 +185,7 @@ const renderStatsList = (booksArray, listTitle) => {
   booksArray.forEach(book => {
     const title = getField(book, 'title') || 'Unknown';
     const author = getField(book, 'author') || 'Unknown';
-    const coverUrl = getField(book, 'cover_url') || 'empty.png'; // Make sure this matches your actual placeholder filename!
+    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover'; // Make sure this matches your actual placeholder filename!
     const ratingNum = Number(getField(book, 'rating')) || 0;
     
     let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
@@ -194,7 +194,7 @@ const renderStatsList = (booksArray, listTitle) => {
     const card = document.createElement('div');
     card.className = 'book-card';
     card.innerHTML = `
-      <img src="${coverUrl}" alt="${title}" class="book-cover" onerror="this.src='empty.png'">
+      <img src="${coverUrl}" alt="${title}" class="book-cover" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
       <div class="book-info">
         <p class="book-title">${title}</p>
         <p class="book-author">${author}</p>
