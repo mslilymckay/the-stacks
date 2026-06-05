@@ -375,74 +375,45 @@ function renderHeroSection() {
 
   carousel.innerHTML = ''; 
 
-  const createSlimAddBtn = () => {
-    const btn = document.createElement('div');
-    btn.className = 'carousel-item slim-add-btn';
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
-    btn.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-search"]').click());
-    return btn;
-  };
-
   const activeReads = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
 
-  // SCENARIO A: Empty State
+  // SCENARIO A: Empty State (Pill Buttons)
   if (activeReads.length === 0) {
     heroLabel.textContent = "Start Reading";
     
-    const tbrCard = document.createElement('div');
-    tbrCard.className = 'carousel-item special-card';
-    tbrCard.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-      <h3>TBR</h3>
-      <p>Check your To Be Read list</p>
-    `;
-    tbrCard.addEventListener('click', () => openStatsList('tbr'));
-    carousel.appendChild(tbrCard);
+    const pillContainer = document.createElement('div');
+    pillContainer.style.display = 'flex';
+    pillContainer.style.gap = '10px';
+    pillContainer.style.padding = '5px 15px';
+    pillContainer.style.width = '100%';
+    pillContainer.style.overflowX = 'auto';
 
-    const readAgainCard = document.createElement('div');
-    readAgainCard.className = 'carousel-item special-card';
-    readAgainCard.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-        <circle cx="12" cy="9" r="5" fill="var(--card-bg)"></circle>
-        <line x1="12" y1="7" x2="12" y2="11" stroke="var(--sage-green)" stroke-width="2"></line>
-        <line x1="10" y1="9" x2="14" y2="9" stroke="var(--sage-green)" stroke-width="2"></line>
-      </svg>
-      <h3>Read Again</h3>
-      <p>Revisit an old favorite</p>
-    `;
-    readAgainCard.addEventListener('click', () => openStatsList('read_again'));
-    carousel.appendChild(readAgainCard);
-    carousel.appendChild(createSlimAddBtn());
+    const addPill = document.createElement('button');
+    addPill.className = 'hero-pill-btn';
+    addPill.innerHTML = `+ Add Book`;
+    addPill.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-search"]').click());
 
-  // SCENARIO B: Exactly 1 Active Read
-  } else if (activeReads.length === 1) {
-    heroLabel.textContent = "Current Read";
-    
-    const book = activeReads[0];
-    const card = document.createElement('div');
-    card.className = 'carousel-item';
-    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
-    card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
-    card.addEventListener('click', () => openDetails(book, card)); 
-    carousel.appendChild(card);
+    const tbrPill = document.createElement('button');
+    tbrPill.className = 'hero-pill-btn';
+    tbrPill.innerHTML = `TBR List`;
+    tbrPill.addEventListener('click', () => openStatsList('tbr'));
 
-    const tbrCard = document.createElement('div');
-    tbrCard.className = 'carousel-item special-card';
-    tbrCard.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-      <h3>TBR</h3>
-      <p>Next up...</p>
-    `;
-    tbrCard.addEventListener('click', () => openStatsList('tbr'));
-    carousel.appendChild(tbrCard);
-    carousel.appendChild(createSlimAddBtn());
+    const againPill = document.createElement('button');
+    againPill.className = 'hero-pill-btn';
+    againPill.innerHTML = `Read Again`;
+    againPill.addEventListener('click', () => openStatsList('read_again'));
 
-  // SCENARIO C: 2 to 4 Active Reads
+    pillContainer.appendChild(addPill);
+    pillContainer.appendChild(tbrPill);
+    pillContainer.appendChild(againPill);
+    carousel.appendChild(pillContainer);
+
+  // SCENARIO B: Active Reads Exist
   } else {
-    heroLabel.textContent = "Current Reads";
-    const displayReads = activeReads.slice(0, 4); 
+    heroLabel.textContent = activeReads.length === 1 ? "Current Read" : "Current Reads";
+    
+    // Truncate at 3 books
+    const displayReads = activeReads.slice(0, 3); 
 
     displayReads.forEach(book => {
       const card = document.createElement('div');
@@ -453,21 +424,26 @@ function renderHeroSection() {
       carousel.appendChild(card);
     });
 
-    if (activeReads.length > 4) {
+    // Add "See All" if there are more than 3, otherwise just a simple add button
+    if (activeReads.length > 3) {
       const seeAllCard = document.createElement('div');
       seeAllCard.className = 'carousel-item special-card';
       seeAllCard.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
         <h3>See All</h3>
       `;
       seeAllCard.addEventListener('click', () => openStatsList('active'));
       carousel.appendChild(seeAllCard);
     } else {
-      carousel.appendChild(createSlimAddBtn());
+      const slimAdd = document.createElement('div');
+      slimAdd.className = 'carousel-item slim-add-btn';
+      slimAdd.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+      slimAdd.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-search"]').click());
+      carousel.appendChild(slimAdd);
     }
   }
 
-  // Floating scroll-back arrow logic
+  // Floating scroll-back arrow logic (unchanged)
   let backArrow = document.getElementById('carousel-back-arrow');
   if (!backArrow) {
     backArrow = document.createElement('button');
@@ -603,13 +579,17 @@ function renderGrid(booksToRender) {
     
     // --- PHASE 5: INJECT CHRONOLOGICAL DIVIDERS ---
     if (sortMethod === 'date_finished_desc' && book.status === 2 && book.read_date) {
-      const bookYear = book.read_date.split('-')[0];
-      if (bookYear !== currentRenderYear) {
-        currentRenderYear = bookYear;
+      const dateObj = new Date(book.read_date);
+      // Ensure we don't hit timezone offset bugs by parsing the raw string safely
+      const [yearStr, monthStr] = book.read_date.split('-'); 
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const displayMonthYear = `${monthNames[parseInt(monthStr, 10) - 1]} ${yearStr}`;
+
+      if (displayMonthYear !== currentRenderYear) {
+        currentRenderYear = displayMonthYear; 
         const divider = document.createElement('div');
-        divider.className = 'year-divider';
-        divider.id = `year-header-${currentRenderYear}`; // Target for the Stats button!
-        divider.textContent = currentRenderYear;
+        divider.className = 'year-divider'; 
+        divider.textContent = displayMonthYear;
         bookGrid.appendChild(divider);
       }
     }
