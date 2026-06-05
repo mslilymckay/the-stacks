@@ -382,10 +382,10 @@ function initStatsPage() {
     const finishedBtn = document.querySelector('[data-sort="date_finished_desc"]'); // Finds it regardless of class
     if (finishedBtn) finishedBtn.classList.add('active');
 
+    applyLibraryFilters(); 
+    
     document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
     
-    // 4. Render the grid instantly and scroll to the absolute top
-    applyLibraryFilters(); 
     window.scrollTo({ top: 0, behavior: 'instant' });
   });
 }
