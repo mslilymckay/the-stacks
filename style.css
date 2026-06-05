@@ -1020,7 +1020,7 @@ body {
   gap: 15px; /* Tightly controlled gap */
   overflow-x: auto;
   scroll-snap-type: x mandatory; 
-  padding: 0 15px; /* Matches the bookshelf grid margins */
+  /* padding: 0 15px; - Matches the bookshelf grid margins */
   scrollbar-width: none; 
   -ms-overflow-style: none;  
 }
