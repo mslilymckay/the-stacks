@@ -486,10 +486,10 @@ function renderHeroSection() {
 
     carousel.appendChild(createSlimAddBtn());
 
-  // SCENARIO 3+: 3 or more Active Reads
+  // SCENARIO 4+: 4 or more Active Reads
   } else {
     heroLabel.textContent = "Current Reads";
-    const displayReads = activeReads.slice(0, 2); // Cap at 2 covers
+    const displayReads = activeReads.slice(0, 3); // Cap at 3 covers
 
     displayReads.forEach(book => {
       const card = document.createElement('div');
