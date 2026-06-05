@@ -28,7 +28,7 @@
   justify-content: center;
   align-items: center;
   z-index: 9999; /* Keeps it on top of the header and grid */
-  transition: opacity 1.5s ease-out, visibility 2s ease-out;
+  transition: opacity 1.5s ease-out, visibility 2.2s ease-out;
 }
 
 /* We use this class to smoothly fade out the screen */
