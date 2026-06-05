@@ -444,7 +444,21 @@ function renderHeroSection() {
     addPill.className = 'hero-pill-btn';
     addPill.innerHTML = `+ Add Book`;
     addPill.addEventListener('click', () => {
+      // 1. Clear visual active state from hero pills
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+      
+      // 2. Clear visual active state from Wander Drawer buttons
+      document.querySelectorAll('.quick-btn, .filter-btn').forEach(b => b.classList.remove('active'));
+      
+      // 3. Reset any manual dropdowns in the Wander Drawer to their defaults
+      document.querySelectorAll('#wander-sheet select').forEach(select => select.selectedIndex = 0);
+      
+      // 4. Reset the underlying data filters
+      libraryYearFilter = 'all';
+      window.lastAppliedSort = 'title_asc'; // Or whatever default sort you prefer for "All Books"
+      applyLibraryFilters();
+
+      // 5. Route to the Search view
       document.querySelector('.nav-item[data-target="view-search"]').click();
     });
 
@@ -1554,6 +1568,14 @@ if (wanderTriggerBtn && wanderSheet) {
       });
 
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+
+      // NEW: Auto-close the Wander Drawer for a native feel
+      const wanderSheet = document.getElementById('wander-sheet');
+      const overlay = document.getElementById('sheet-overlay'); // Assuming this is your overlay ID
+      if (wanderSheet) {
+        wanderSheet.style.transform = 'translateY(100%)';
+        if (overlay) overlay.classList.remove('active');
+      }
       
       // Add the active class (green highlight) to the clicked button
       btn.classList.add('active');
@@ -1569,6 +1591,15 @@ if (wanderTriggerBtn && wanderSheet) {
       // Close the drawer and scroll to top
       if (typeof wanderSheet !== 'undefined' && wanderSheet) wanderSheet.classList.remove('open');
       if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // NEW: Auto-close the Wander Drawer for a native feel
+      const wanderSheet = document.getElementById('wander-sheet');
+      const overlay = document.getElementById('sheet-overlay'); // Assuming this is your overlay ID
+      if (wanderSheet) {
+        wanderSheet.style.transform = 'translateY(100%)';
+        if (overlay) overlay.classList.remove('active');
+      }
+      
     });
   }
   
@@ -1596,7 +1627,14 @@ if (wanderTriggerBtn && wanderSheet) {
 
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
   
-      // Execute the reset view and stay open
+      // NEW: Auto-close the Wander Drawer for a native feel
+      const wanderSheet = document.getElementById('wander-sheet');
+      const overlay = document.getElementById('sheet-overlay'); // Assuming this is your overlay ID
+      if (wanderSheet) {
+        wanderSheet.style.transform = 'translateY(100%)';
+        if (overlay) overlay.classList.remove('active');
+      }
+      
       applyLibraryFilters();
       if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
