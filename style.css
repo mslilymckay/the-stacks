@@ -28,7 +28,7 @@
   justify-content: center;
   align-items: center;
   z-index: 9999; /* Keeps it on top of the header and grid */
-  transition: opacity 1.5s ease-out, visibility 1.5s ease-out;
+  transition: opacity 1.5s ease-out, visibility 2s ease-out;
 }
 
 /* We use this class to smoothly fade out the screen */
@@ -40,7 +40,7 @@
 #loading-video {
   height: 125%; /* Adjust this based on how large you want the animation */
   pointer-events: none; /* Prevents users from accidentally pausing it */
-  transition: opacity 0.8s ease-in-out;
+  transition: opacity 1s ease-in-out;
 }
 
 body {
