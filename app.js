@@ -4,22 +4,30 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // LOADING SCREEN LOGIC
 // ==========================================
 window.addEventListener('load', () => {
-  // Set this duration to match your HTML Media Fragment (e.g., 2500ms = 2.5s)
-  const loadingDuration = 4000; 
   const loadingVideo = document.getElementById('loading-video');
   const loadingScreen = document.getElementById('loading-screen');
-
-  // 1. Set the video speed (1.0 is normal, 1.5 is 50% faster, 2.0 is double speed)
+  
   if (loadingVideo) {
     loadingVideo.playbackRate = 1.5; 
   }
 
+  // Set your desired timings in milliseconds
+  const videoFadeTime = 3500; // When the video starts dissolving
+  const totalDuration = 4000; // When the cream background dissolves into the app
+
+  // 1. Softly dissolve the video element first
   setTimeout(() => {
-    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingVideo) {
+      loadingVideo.style.opacity = '0';
+    }
+  }, videoFadeTime);
+
+  // 2. Fade the entire background overlay out a moment later
+  setTimeout(() => {
     if (loadingScreen) {
       loadingScreen.classList.add('hidden');
     }
-  }, loadingDuration);
+  }, totalDuration);
 });
 
 // ==========================================
