@@ -22,11 +22,15 @@ window.addEventListener('load', () => {
     }
   }, videoFadeTime);
 
-  // 2. Fade the entire background overlay out a moment later
+  // 2. Crossfade: Fade the background out AND fade the app in
   setTimeout(() => {
     if (loadingScreen) {
       loadingScreen.classList.add('hidden');
     }
+    
+    // Swap the body classes to trigger the app fade-in
+    document.body.classList.remove('is-loading');
+    document.body.classList.add('is-loaded');
   }, totalDuration);
 });
 
