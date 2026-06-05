@@ -1288,7 +1288,7 @@ body {
   transition: background 0.2s, color 0.2s;
 }
 
-.quick-btn:active {
+.quick-btn:active, .quick-btn.active {
   background: var(--sage-green);
   color: var(--header-text);
 }
