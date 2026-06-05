@@ -81,6 +81,28 @@ async function updateBookData(columnName, newValue) {
   }
 }
 
+// Navigates from the Hero Section to a specific filtered Library view
+function navigateToQuickFilter(status, sort) {
+  // 1. Switch to Library tab
+  document.querySelector('.nav-item[data-target="view-library"]').click();
+  
+  // 2. Clear Stats year lock
+  libraryYearFilter = 'all';
+
+  // 3. Visually update the Quick Filters in the Wander Drawer
+  document.querySelectorAll('.quick-btn, .filter-btn').forEach(b => b.classList.remove('active'));
+  const targetBtn = document.querySelector(`.quick-btn[data-status="${status}"]`);
+  if (targetBtn) targetBtn.classList.add('active');
+
+  // 4. Apply the sort and filter
+  window.lastAppliedSort = sort; 
+  applyLibraryFilters();
+  
+  // 5. Scroll down to the grid
+  const bookshelfContainer = document.querySelector('.bookshelf');
+  if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 300, behavior: 'smooth' });
+}
+
 // ==========================================
 // 3. CORE LIBRARY RENDERING (Grid, Hero, Stats)
 // ==========================================
@@ -375,9 +397,35 @@ function renderHeroSection() {
 
   carousel.innerHTML = ''; 
 
+  const createSlimAddBtn = () => {
+    const btn = document.createElement('div');
+    btn.className = 'carousel-item slim-add-btn';
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+    btn.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-search"]').click());
+    return btn;
+  };
+
+  const createReadAgainCard = () => {
+    const card = document.createElement('div');
+    card.className = 'carousel-item special-card';
+    card.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        <circle cx="12" cy="9" r="5" fill="var(--card-bg)"></circle>
+        <line x1="12" y1="7" x2="12" y2="11" stroke="var(--sage-green)" stroke-width="2"></line>
+        <line x1="10" y1="9" x2="14" y2="9" stroke="var(--sage-green)" stroke-width="2"></line>
+      </svg>
+      <h3>Read Again</h3>
+      <p>Revisit an old favorite</p>
+    `;
+    card.addEventListener('click', () => navigateToQuickFilter('2', 'rating_desc')); // Routes to Finished + Highest Rated
+    return card;
+  };
+
   const activeReads = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
 
-  // SCENARIO A: Empty State (Pill Buttons)
+  // SCENARIO 0: No Active Reads (Pill Buttons)
   if (activeReads.length === 0) {
     heroLabel.textContent = "Start Reading";
     
@@ -396,24 +444,52 @@ function renderHeroSection() {
     const tbrPill = document.createElement('button');
     tbrPill.className = 'hero-pill-btn';
     tbrPill.innerHTML = `TBR List`;
-    tbrPill.addEventListener('click', () => openStatsList('tbr'));
+    tbrPill.addEventListener('click', () => navigateToQuickFilter('0', 'date_added_desc'));
 
     const againPill = document.createElement('button');
     againPill.className = 'hero-pill-btn';
     againPill.innerHTML = `Read Again`;
-    againPill.addEventListener('click', () => openStatsList('read_again'));
+    againPill.addEventListener('click', () => navigateToQuickFilter('2', 'rating_desc'));
 
     pillContainer.appendChild(addPill);
     pillContainer.appendChild(tbrPill);
     pillContainer.appendChild(againPill);
     carousel.appendChild(pillContainer);
 
-  // SCENARIO B: Active Reads Exist
-  } else {
-    heroLabel.textContent = activeReads.length === 1 ? "Current Read" : "Current Reads";
+  // SCENARIO 1: Exactly 1 Active Read
+  } else if (activeReads.length === 1) {
+    heroLabel.textContent = "Current Read";
     
-    // Truncate at 3 books
-    const displayReads = activeReads.slice(0, 3); 
+    const book = activeReads[0];
+    const card = document.createElement('div');
+    card.className = 'carousel-item';
+    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+    card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
+    card.addEventListener('click', () => openDetails(book, card)); 
+    
+    carousel.appendChild(card);
+    carousel.appendChild(createReadAgainCard());
+    carousel.appendChild(createSlimAddBtn());
+
+  // SCENARIO 2: Exactly 2 Active Reads
+  } else if (activeReads.length === 2) {
+    heroLabel.textContent = "Current Reads";
+    
+    activeReads.forEach(book => {
+      const card = document.createElement('div');
+      card.className = 'carousel-item';
+      const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+      card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
+      card.addEventListener('click', () => openDetails(book, card)); 
+      carousel.appendChild(card);
+    });
+
+    carousel.appendChild(createSlimAddBtn());
+
+  // SCENARIO 3+: 3 or more Active Reads
+  } else {
+    heroLabel.textContent = "Current Reads";
+    const displayReads = activeReads.slice(0, 2); // Cap at 2 covers
 
     displayReads.forEach(book => {
       const card = document.createElement('div');
@@ -424,26 +500,17 @@ function renderHeroSection() {
       carousel.appendChild(card);
     });
 
-    // Add "See All" if there are more than 3, otherwise just a simple add button
-    if (activeReads.length > 3) {
-      const seeAllCard = document.createElement('div');
-      seeAllCard.className = 'carousel-item special-card';
-      seeAllCard.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-        <h3>See All</h3>
-      `;
-      seeAllCard.addEventListener('click', () => openStatsList('active'));
-      carousel.appendChild(seeAllCard);
-    } else {
-      const slimAdd = document.createElement('div');
-      slimAdd.className = 'carousel-item slim-add-btn';
-      slimAdd.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
-      slimAdd.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-search"]').click());
-      carousel.appendChild(slimAdd);
-    }
+    const seeAllCard = document.createElement('div');
+    seeAllCard.className = 'carousel-item special-card';
+    seeAllCard.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+      <h3>See All (${activeReads.length})</h3>
+    `;
+    seeAllCard.addEventListener('click', () => navigateToQuickFilter('1', 'date_started_desc'));
+    carousel.appendChild(seeAllCard);
   }
 
-  // Floating scroll-back arrow logic (unchanged)
+  // Floating scroll-back arrow logic
   let backArrow = document.getElementById('carousel-back-arrow');
   if (!backArrow) {
     backArrow = document.createElement('button');
