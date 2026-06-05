@@ -1570,8 +1570,8 @@ if (wanderTriggerBtn && wanderSheet) {
 
       // Instantly apply the filter and elegantly close the drawer
       applyLibraryFilters(); 
-      if (wanderSheet) wanderSheet.classList.remove('open');
-      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      wanderSheet.classList.remove('open');
+      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
   
@@ -1579,15 +1579,14 @@ if (wanderTriggerBtn && wanderSheet) {
   if (applyWanderBtn) {
     applyWanderBtn.addEventListener('click', () => {
       applyLibraryFilters(); 
-      if (wanderSheet) wanderSheet.classList.remove('open');
-      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      wanderSheet.classList.remove('open');
+      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
   
   // 3. "Clear" Defaults Logic
   if (clearWanderBtn) {
     clearWanderBtn.addEventListener('click', () => {
-      const localSearchInput = document.getElementById('local-search');
       if (localSearchInput) localSearchInput.value = '';
       
       libraryYearFilter = 'all';
@@ -1601,10 +1600,11 @@ if (wanderTriggerBtn && wanderSheet) {
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
   
       applyLibraryFilters();
-      if (wanderSheet) wanderSheet.classList.remove('open');
-      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      wanderSheet.classList.remove('open');
+      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
+}
 
 // ==========================================
 // 10. PHASE 2: JOURNEY VIEW TOGGLES
@@ -1612,60 +1612,49 @@ if (wanderTriggerBtn && wanderSheet) {
 
 const layoutBtns = document.querySelectorAll('.layout-btn');
 const mainGrid = document.getElementById('book-grid');
-
-// Pull saved layout from memory, or default to the 3-column grid
 let currentLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
 
 if (layoutBtns.length > 0 && mainGrid) {
-  // 1. Initialize the correct active button on load
   layoutBtns.forEach(b => {
     b.classList.remove('active');
-    if (b.getAttribute('data-layout') === currentLayout) {
-      b.classList.add('active');
-    }
+    if (b.getAttribute('data-layout') === currentLayout) b.classList.add('active');
   });
 
   layoutBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // 2. Update button visual state
       layoutBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
-      // 3. Save the choice to memory!
       currentLayout = btn.getAttribute('data-layout');
       localStorage.setItem('stacksLayout', currentLayout);
       
-      // 4. Apply directly to the grid
       mainGrid.className = 'book-grid ' + currentLayout;
-      
       mainGrid.style.opacity = 0;
       setTimeout(() => { mainGrid.style.opacity = 1; }, 50);
     });
   });
 }
 
-
 // ==========================================
 // NAVIGATION & GESTURE FIXES
 // ==========================================
 
-// 2. Restore Wander Drawer Swipe-to-Close
 let touchStartY = 0;
 let touchCurrentY = 0;
 let isSwiping = false;
 
-if (wanderSheet) {
+if (wanderSheet) { 
   wanderSheet.addEventListener('touchstart', (e) => {
     touchStartY = e.touches[0].clientY;
     isSwiping = true;
-    wanderSheet.style.transition = 'none'; // Disable snap to allow dragging
+    wanderSheet.style.transition = 'none'; 
   }, { passive: true });
 
   wanderSheet.addEventListener('touchmove', (e) => {
     if (!isSwiping) return;
     touchCurrentY = e.touches[0].clientY;
     const deltaY = touchCurrentY - touchStartY;
-    if (deltaY > 0) { // Only allow dragging downwards
+    if (deltaY > 0) { 
       wanderSheet.style.transform = `translateY(${deltaY}px)`;
     }
   }, { passive: true });
@@ -1675,11 +1664,9 @@ if (wanderSheet) {
     isSwiping = false;
     const deltaY = touchCurrentY - touchStartY;
     
-    // Restore CSS snap transition and clear drag transform
     wanderSheet.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     wanderSheet.style.transform = ''; 
 
-    // If dragged down far enough, close it
     if (deltaY > 80) {
       wanderSheet.classList.remove('open');
     }
