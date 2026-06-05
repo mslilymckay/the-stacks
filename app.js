@@ -382,6 +382,8 @@ function initStatsPage() {
     const finishedBtn = document.querySelector('[data-sort="date_finished_desc"]'); // Finds it regardless of class
     if (finishedBtn) finishedBtn.classList.add('active');
 
+    document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+    
     // 4. Render the grid instantly and scroll to the absolute top
     applyLibraryFilters(); 
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -441,7 +443,10 @@ function renderHeroSection() {
     const addPill = document.createElement('button');
     addPill.className = 'hero-pill-btn';
     addPill.innerHTML = `+ Add Book`;
-    addPill.addEventListener('click', () => document.querySelector('.nav-item[data-target="view-search"]').click());
+    addPill.addEventListener('click', () => {
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.nav-item[data-target="view-search"]').click();
+    });
 
     const tbrPill = document.createElement('button');
     tbrPill.className = 'hero-pill-btn';
@@ -1547,6 +1552,8 @@ if (wanderTriggerBtn && wanderSheet) {
         b.style.background = '';
         b.style.color = '';
       });
+
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
       
       // Add the active class (green highlight) to the clicked button
       btn.classList.add('active');
@@ -1586,6 +1593,8 @@ if (wanderTriggerBtn && wanderSheet) {
         b.style.background = '';
         b.style.color = '';
       });
+
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
   
       // Execute the reset view and stay open
       applyLibraryFilters();
