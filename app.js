@@ -1480,65 +1480,68 @@ if (wanderTriggerBtn && wanderSheet) {
   const wanderHandle = wanderSheet.querySelector('.sheet-handle');
   if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
   
-  // Quick Filters Logic
-  const quickBtns = wanderSheet.querySelectorAll('.quick-btn');
+  // ==========================================
+  // WANDER DRAWER INTERACTION LOGIC
+  // ==========================================
+  const quickBtns = document.querySelectorAll('.quick-btn, .filter-btn');
+  const clearWanderBtn = document.getElementById('clear-wander-btn');
+  const applyWanderBtn = document.getElementById('apply-wander-btn'); // "Wander" bottom button
+  
+  // 1. Quick Filter Button Clicks
   quickBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (statusFilterSelect) statusFilterSelect.value = e.target.getAttribute('data-status');
-      if (sortLibrarySelect) sortLibrarySelect.value = e.target.getAttribute('data-sort');
-
+    btn.addEventListener('click', () => {
+      // Clear the Stats year lock if Sarah is manually changing views
+      libraryYearFilter = 'all'; 
+      
+      // Strip active classes AND any lingering inline styles from all buttons
       quickBtns.forEach(b => {
-        b.style.background = 'var(--bg-color)';
-        b.style.color = 'var(--sage-green)';
+        b.classList.remove('active');
+        b.style.background = '';
+        b.style.color = '';
       });
-      e.target.style.background = 'var(--sage-green)';
-      e.target.style.color = '#fff';
+      
+      // Add the active class (green highlight) to the clicked button
+      btn.classList.add('active');
     });
   });
-
-  // Inline Search Clear Button Logic
-  if (localSearchInput && clearSearchBtn) {
-    localSearchInput.addEventListener('input', () => {
-      clearSearchBtn.style.display = localSearchInput.value.length > 0 ? 'block' : 'none';
-    });
-
-    clearSearchBtn.addEventListener('click', () => {
-      localSearchInput.value = '';
-      clearSearchBtn.style.display = 'none';
-    });
-  }
-
-  // "Wander" (Apply) Logic
+  
+  // 2. "Wander" (Apply) Logic
   if (applyWanderBtn) {
     applyWanderBtn.addEventListener('click', () => {
+      // Run the filter engine!
       applyLibraryFilters(); 
       
-      wanderSheet.classList.remove('open');
-      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      // Close the drawer and scroll to top
+      if (typeof wanderSheet !== 'undefined' && wanderSheet) wanderSheet.classList.remove('open');
+      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
-
-  // "Clear" Defaults Logic
+  
+  // 3. "Clear" Defaults Logic
   if (clearWanderBtn) {
     clearWanderBtn.addEventListener('click', () => {
-      // 1. Reset inputs
+      const localSearchInput = document.getElementById('local-search');
+      const clearSearchBtn = document.getElementById('clear-search-btn');
+      
+      // Reset Search
       if (localSearchInput) {
         localSearchInput.value = '';
         if (clearSearchBtn) clearSearchBtn.style.display = 'none';
       }
-      if (statusFilterSelect) statusFilterSelect.value = 'all';
-      if (sortLibrarySelect) sortLibrarySelect.value = 'title_asc';
       
-      // 2. Remove green highlights from quick buttons
+      // Reset Year Lock
+      libraryYearFilter = 'all';
+      
+      // Strip active states and inline styles from all quick buttons
       quickBtns.forEach(b => {
-        b.style.background = 'var(--bg-color)';
-        b.style.color = 'var(--sage-green)';
+        b.classList.remove('active');
+        b.style.background = '';
+        b.style.color = '';
       });
-
-      // 3. Execute and stay open
+  
+      // Execute the reset view and stay open
       applyLibraryFilters();
-      
-      if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 }
