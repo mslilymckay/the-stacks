@@ -157,7 +157,7 @@ body {
 } /* <-- THE MISSING BRACKET IS BACK! */
 
 .feedback-modal.hidden .stacks-modal-overlay.hidden {
-  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
 }
 
