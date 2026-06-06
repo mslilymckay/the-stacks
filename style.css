@@ -139,29 +139,34 @@ body {
 }
 
 /* Feedback Modal UI */
-.feedback-modal, .stacks-modal-overlay {
+/* OVERLAYS: Grouped with a comma */
+.feedback-modal, 
+.stacks-modal-overlay {
   position: fixed;
-  z-index: 1000;
+  z-index: 10000; /* Keeps it above the nav header */
   left: 0;
   top: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background-color: rgba(44, 62, 45, 0.4); 
   backdrop-filter: blur(3px);
-}
-
-.feedback-modal:not(.hidden), .stacks-modal-overlay:not(.hidden) {
   display: flex;
   align-items: center;
   justify-content: center;
-} /* <-- THE MISSING BRACKET IS BACK! */
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
 
-.feedback-modal.hidden, .stacks-modal-overlay.hidden {
+/* HIDE BEHAVIOR */
+.feedback-modal.hidden, 
+.stacks-modal-overlay.hidden {
+  opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
 
-.feedback-content, .stacks-modal-card {
+/* MODAL CARDS: Grouped with a comma */
+.feedback-content, 
+.stacks-modal-card {
   background-color: var(--card-bg);
   border: 1px solid var(--detail-line);
   border-radius: 12px;
@@ -204,7 +209,7 @@ body {
   border-color: var(--sage-green);
 }
 
-.feedback-content button, .stacks-modal-actions, .stacks-btn {
+.feedback-content button, .stacks-btn {
   background-color: var(--terracotta);
   color: var(--bg-color);
   border: none;
@@ -217,7 +222,7 @@ body {
   transition: opacity 0.2s, transform 0.1s;
   flex: 1; /* Makes the Cancel and Send buttons exactly the same width */
 }
-.feedback-content button:active, .stacks-modal-actions:active {
+.feedback-content button:active, .stacks-btn:active {
   opacity: 0.8;
   transform: scale(0.98);
 }
