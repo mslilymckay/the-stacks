@@ -1737,36 +1737,92 @@ if (layoutBtns.length > 0 && mainGrid) {
 // NAVIGATION & GESTURE FIXES
 // ==========================================
 
+// 1. History API (Fixes Native Edge-Swipe Back)
+// Push an initial state so the browser always has something to "go back" to
+window.history.pushState({ app: 'stacks' }, '');
+
+window.addEventListener('popstate', (event) => {
+  // Instantly push another state to trap the user in the PWA and prevent the app from closing
+  window.history.pushState({ app: 'stacks' }, '');
+
+  // Hierarchy of actions: We check what is open from top (highest z-index) to bottom.
+  // The 'return' statements ensure one swipe only closes one layer at a time.
+
+  // A. Close Custom System Modal (if open)
+  const modalOverlay = document.getElementById('stacks-modal-overlay');
+  if (modalOverlay && !modalOverlay.classList.contains('hidden')) {
+    const cancelBtn = document.getElementById('stacks-modal-cancel');
+    if (cancelBtn && cancelBtn.style.display !== 'none') {
+      cancelBtn.click(); // Triggers your Promise cleanup
+    } else {
+      modalOverlay.classList.add('hidden');
+    }
+    return; 
+  }
+
+  // B. Close Feedback Modal (if open)
+  const feedbackModal = document.querySelector('.feedback-modal');
+  if (feedbackModal && !feedbackModal.classList.contains('hidden')) {
+    feedbackModal.classList.add('hidden');
+    return;
+  }
+
+  // C. Close Wander Drawer (if open)
+  const wanderSheet = document.getElementById('wander-sheet');
+  if (wanderSheet && wanderSheet.classList.contains('open')) {
+    wanderSheet.classList.remove('open');
+    return;
+  }
+
+  // D. Close Details View (The Reading Journal)
+  const viewDetails = document.getElementById('view-details');
+  if (viewDetails && viewDetails.classList.contains('active')) {
+    const closeDetailsBtn = document.getElementById('close-details-btn');
+    if (closeDetailsBtn) closeDetailsBtn.click(); // Safely routes back to the previous tab
+    return;
+  }
+
+  // E. Return to Library View from other main tabs (Search, Stats, Focus)
+  const libraryView = document.getElementById('view-library');
+  if (libraryView && !libraryView.classList.contains('active')) {
+    const libraryNav = document.querySelector('.nav-item[data-target="view-library"]');
+    if (libraryNav) libraryNav.click();
+  }
+});
+
+// 2. Restore Wander Drawer Swipe-to-Close
 let touchStartY = 0;
 let touchCurrentY = 0;
 let isSwiping = false;
 
-if (wanderSheet) { 
-  wanderSheet.addEventListener('touchstart', (e) => {
+const wanderSheetEl = document.getElementById('wander-sheet');
+
+if (wanderSheetEl) { 
+  wanderSheetEl.addEventListener('touchstart', (e) => {
     touchStartY = e.touches[0].clientY;
     isSwiping = true;
-    wanderSheet.style.transition = 'none'; 
+    wanderSheetEl.style.transition = 'none'; 
   }, { passive: true });
 
-  wanderSheet.addEventListener('touchmove', (e) => {
+  wanderSheetEl.addEventListener('touchmove', (e) => {
     if (!isSwiping) return;
     touchCurrentY = e.touches[0].clientY;
     const deltaY = touchCurrentY - touchStartY;
     if (deltaY > 0) { 
-      wanderSheet.style.transform = `translateY(${deltaY}px)`;
+      wanderSheetEl.style.transform = `translateY(${deltaY}px)`;
     }
   }, { passive: true });
 
-  wanderSheet.addEventListener('touchend', () => {
+  wanderSheetEl.addEventListener('touchend', () => {
     if (!isSwiping) return;
     isSwiping = false;
     const deltaY = touchCurrentY - touchStartY;
     
-    wanderSheet.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    wanderSheet.style.transform = ''; 
+    wanderSheetEl.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    wanderSheetEl.style.transform = ''; 
 
     if (deltaY > 80) {
-      wanderSheet.classList.remove('open');
+      wanderSheetEl.classList.remove('open');
     }
   });
 }
