@@ -5,12 +5,22 @@
   <title>Import Utility</title>
   <style>
     body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-    #status { margin-top: 20px; font-family: monospace; white-space: pre-wrap; }
+    #status { 
+      margin-top: 20px; 
+      font-family: monospace; 
+      white-space: pre-wrap; 
+      background: #f4f4f4; 
+      padding: 15px; 
+      border-radius: 4px; 
+      max-height: 400px; 
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
   <h1>Book Import Utility</h1>
-  <input type="file" id="fileInput" multiple accept=".book">
+  <p>Select your .book JSON files to upload to the database.</p>
+  <input type="file" id="fileInput" multiple accept=".book,.json">
   <button id="uploadBtn">Process and Upload</button>
   <div id="status"></div>
 
@@ -27,37 +37,79 @@
 
     uploadBtn.addEventListener('click', async () => {
       const files = Array.from(fileInput.files);
+      if (files.length === 0) {
+        statusDiv.textContent = 'Please select files first.\n';
+        return;
+      }
+      
       statusDiv.textContent = 'Starting upload...\n';
 
       for (const file of files) {
         try {
           const text = await file.text();
           const json = JSON.parse(text);
+          
+          let coverUrl = null;
+          
+          // Roadmap Request: Fetch cover from Google Books and throttle to prevent 429 errors
+          if (json.isbn) {
+            const cleanIsbn = String(json.isbn).replace(/[-\s]/g, '');
+            const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+            
+            try {
+              const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}&key=${apiKey}`);
+              if (res.ok) {
+                const googleData = await res.json();
+                if (googleData.items && googleData.items.length > 0) {
+                  const info = googleData.items[0].volumeInfo;
+                  if (info.imageLinks && info.imageLinks.thumbnail) {
+                    coverUrl = info.imageLinks.thumbnail.replace('http:', 'https:');
+                  }
+                }
+              }
+            } catch (apiErr) {
+              console.warn(`Could not fetch cover for ${json.title}`, apiErr);
+            }
+            
+            // Throttle: Wait 800ms between API calls to ensure no rate limit blocks
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
 
-          // Map the JSON backup to match our Supabase schema
+          // Map the JSON backup to match the exact Supabase schema
           const bookEntry = {
             uuid: json.uuid,
             title: json.title,
             author: json.author,
             category: json.category || 'Uncategorized',
-            pages: json.pages,
-            rating: json.rating,
-            activities: json.activities,
-            isbn: json.isbn,
-            status: json.status,
-            // Convert the Unix timestamp (seconds) to a standard ISO date string
-            read_date: json.readDate ? new Date(json.readDate * 1000).toISOString() : null
+            pages: json.pages || 0,
+            rating: json.rating || 0,
+            activities: json.activities || null,
+            isbn: json.isbn || null,
+            status: json.status || 0,
+            
+            // Convert the Unix timestamps (seconds) to standard ISO date strings
+            read_date: json.readDate ? new Date(json.readDate * 1000).toISOString() : null,
+            date_added: json.date ? new Date(json.date * 1000).toISOString() : new Date().toISOString(),
+            
+            // Explicitly set new columns for a clean insert
+            cover_url: coverUrl,
+            notes: null,
+            date_started: null 
           };
 
           const { error } = await supabase.from('books').upsert([bookEntry]);
           
           if (error) throw error;
-          statusDiv.textContent += `Successfully uploaded: ${json.title}\n`;
+          statusDiv.textContent += `✓ Uploaded: ${json.title}\n`;
+          
+          // Auto-scroll to the bottom of the status log
+          statusDiv.scrollTop = statusDiv.scrollHeight;
+          
         } catch (err) {
-          statusDiv.textContent += `Error uploading ${file.name}: ${err.message}\n`;
+          statusDiv.textContent += `✕ Error uploading ${file.name}: ${err.message}\n`;
         }
       }
-      statusDiv.textContent += '\nImport complete!';
+      statusDiv.textContent += '\nImport completely finished! You are ready to open The Stacks.';
     });
   </script>
 </body>
