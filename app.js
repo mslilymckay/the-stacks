@@ -1213,7 +1213,7 @@ document.getElementById('btn-delete-book').addEventListener('click', async () =>
       // 3. Update the UI
       loadBooks();
       closeBookDetails();
-  });
+  }
 
 // Ensure the Close button functions
 if (closeDetailsBtn) {
