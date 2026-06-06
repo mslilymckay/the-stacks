@@ -139,7 +139,7 @@ body {
 }
 
 /* Feedback Modal UI */
-.feedback-modal .stacks-modal-overlay.hidden {
+.feedback-modal .stacks-modal-overlay {
   position: fixed;
   z-index: 1000;
   left: 0;
