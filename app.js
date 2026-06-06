@@ -1580,8 +1580,7 @@ if (feedbackModal && feedbackTriggerBtn) {
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const targetId = item.getAttribute('data-target');
-    window.history.pushState({ view: targetId }, '');
-    
+        
     const currentActive = document.querySelector('.page-view.active');
     if (currentActive && currentActive.id !== 'view-focus' && targetId === 'view-focus') {
       previousViewId = currentActive.id;
@@ -1626,15 +1625,16 @@ window.addEventListener('popstate', (event) => {
     wanderSheet.classList.remove('open');
     return;
   }
+  
   if (viewDetails && viewDetails.classList.contains('active')) {
     pageViews.forEach(view => view.classList.remove('active'));
     document.getElementById(lastActiveTab).classList.add('active'); 
     
-    // THE FIX: If we returned to the Stats tab, refresh the chart/list!
+    // If we returned to the Stats tab, elegantly refresh the chart/list
     if (lastActiveTab === 'view-stats') {
       const isMonthView = !document.getElementById('stats-drilldown-nav').classList.contains('hidden');
       if (isMonthView && typeof currentStatsMonth !== 'undefined') {
-        renderMonthlyStats(currentStatsMonth, currentStatsYear);
+        renderMonthlyStatsList(currentStatsMonth, currentStatsYear); // Typo fixed here!
       } else {
         renderAnnualStats(currentStatsYear);
       }
