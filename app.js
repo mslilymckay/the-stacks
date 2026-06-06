@@ -1639,7 +1639,7 @@ window.addEventListener('popstate', (event) => {
   }
 
   // 3. THE TRAP: If she swiped back on a main tab, push a new state so the app doesn't close!
-  window.history.pushState({ view: 'main' }, '');
+  window.history.pushState({ view: 'lastActiveTab' }, '');
   
   // 4. Elegantly refresh the Stats page if she swiped back to it
   if (typeof lastActiveTab !== 'undefined' && lastActiveTab === 'view-stats') {
