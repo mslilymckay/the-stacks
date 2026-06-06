@@ -1742,8 +1742,12 @@ if (layoutBtns.length > 0 && mainGrid) {
 window.history.pushState({ app: 'stacks' }, '');
 
 window.addEventListener('popstate', (event) => {
-  // Instantly push another state to trap the user in the PWA and prevent the app from closing
-  window.history.pushState({ app: 'stacks' }, '');
+  // 1. Delay the trap state to allow the native backward swipe animation to finish.
+  // This completely eliminates the "forward slide" and prevents ghost screenshots.
+  setTimeout(() => {
+    window.history.pushState({ app: 'stacks' }, '');
+  }, 300); // 300ms covers standard native gesture transition times
+
 
   // Hierarchy of actions: We check what is open from top (highest z-index) to bottom.
   // The 'return' statements ensure one swipe only closes one layer at a time.
