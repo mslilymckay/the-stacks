@@ -1152,7 +1152,7 @@ function closeBookDetails() {
   });
 
   document.getElementById('btn-read-again').addEventListener('click', async () => {
-    if(confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) 
+    if (confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) 
     {
        
      const duplicate = {
@@ -1221,6 +1221,7 @@ if (closeDetailsBtn) {
     closeBookDetails(); 
   });
 }
+});
 }
 
 
