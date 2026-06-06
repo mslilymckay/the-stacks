@@ -51,7 +51,7 @@
           
           let coverUrl = null;
           
-          // Roadmap Request: Fetch cover from Google Books and throttle to prevent 429 errors
+          // Google Books API Fetch & Throttle
           if (json.isbn) {
             const cleanIsbn = String(json.isbn).replace(/[-\s]/g, '');
             const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
@@ -71,8 +71,18 @@
               console.warn(`Could not fetch cover for ${json.title}`, apiErr);
             }
             
-            // Throttle: Wait 800ms between API calls to ensure no rate limit blocks
             await new Promise(resolve => setTimeout(resolve, 800));
+          }
+
+          // ==========================================
+          // STATUS MAPPING LOGIC
+          // ==========================================
+          let mappedStatus = 0; // Default to TBR (0)
+          
+          if (json.status === 1) {
+            mappedStatus = 2; // Old Backup: Finished (1) -> New App: Finished (2)
+          } else if (json.status === 2) {
+            mappedStatus = 1; // Old Backup: Current (2) -> New App: Current (1)
           }
 
           // Map the JSON backup to match the exact Supabase schema
@@ -85,13 +95,11 @@
             rating: json.rating || 0,
             activities: json.activities || null,
             isbn: json.isbn || null,
-            status: json.status || 0,
             
-            // Convert the Unix timestamps (seconds) to standard ISO date strings
+            status: mappedStatus, // <-- Safely insert the translated status here!
+            
             read_date: json.readDate ? new Date(json.readDate * 1000).toISOString() : null,
             date_added: json.date ? new Date(json.date * 1000).toISOString() : new Date().toISOString(),
-            
-            // Explicitly set new columns for a clean insert
             cover_url: coverUrl,
             notes: null,
             date_started: null 
@@ -101,8 +109,6 @@
           
           if (error) throw error;
           statusDiv.textContent += `✓ Uploaded: ${json.title}\n`;
-          
-          // Auto-scroll to the bottom of the status log
           statusDiv.scrollTop = statusDiv.scrollHeight;
           
         } catch (err) {
