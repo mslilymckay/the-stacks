@@ -1773,7 +1773,7 @@ body {
   display: none;
 }
 
-.auth-card .stacks-modal-overlay-card {
+.auth-card .stacks-modal-card {
   width: 90%;
   max-width: 350px;
   padding: 30px 20px;
