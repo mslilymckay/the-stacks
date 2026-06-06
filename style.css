@@ -53,6 +53,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden; /* Stops the double-scrolling elastic bounce! */
+  overscroll-behavior-y: none; 
+  overscroll-behavior-x: none;
 }
 
 /* --- UNIFIED HEADINGS --- */
@@ -1663,8 +1665,15 @@ body {
   transition: transform 0.1s, opacity 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
-.journal-action-btn:active { transform: scale(0.85); opacity: 0.7; }
-.journal-action-btn.delete { color: #A65239; }
+
+.journal-action-btn:active { 
+  transform: scale(0.85); 
+  opacity: 0.7; 
+}
+
+.journal-action-btn.delete { 
+  color: #A65239; 
+}
 
 /* Updated Notes Area: Removed lines */
 .journal-notes-input {
@@ -1680,7 +1689,11 @@ body {
   resize: vertical;
   line-height: 1.5;
 }
-.journal-notes-input:focus { outline: none; border-color: var(--sage-green); }
+
+.journal-notes-input:focus { 
+  outline: none; 
+  border-color: var(--sage-green); 
+}
 
 /* Stamps */
 .stamp-container {
@@ -1740,9 +1753,9 @@ body {
 }
 
 /* ==========================================
-   AUTHENTICATION SCREEN
+   AUTHENTICATION SCREEN AND CUSTOM MODAL
    ========================================== */
-.auth-screen {
+.auth-screen .stacks-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1753,13 +1766,14 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 9998; /* Sits just below the loading screen */
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.auth-screen.hidden {
+.auth-screen.hidden .stacks-modal-overlay.hidden {
   display: none;
 }
 
-.auth-card {
+.auth-card .stacks-modal-overlay-card {
   width: 90%;
   max-width: 350px;
   padding: 30px 20px;
@@ -1767,6 +1781,7 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--detail-line);
   border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .stacks-input {
@@ -1803,4 +1818,11 @@ body {
 .stacks-btn:active {
   opacity: 0.8;
   transform: scale(0.98);
+}
+
+.stacks-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+  justify-content: center;
 }
