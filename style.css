@@ -1671,10 +1671,6 @@ body {
   opacity: 0.7; 
 }
 
-.journal-action-btn.delete { 
-  color: #A65239; 
-}
-
 /* Updated Notes Area: Removed lines */
 .journal-notes-input {
   width: 100%;
