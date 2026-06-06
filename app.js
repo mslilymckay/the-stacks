@@ -1805,4 +1805,4 @@ if (wanderSheet) {
 // PWA NATIVE SWIPE-BACK TRAP
 // ==========================================
 window.history.replaceState({ view: 'base' }, '');
-window.history.pushState({ view: 'main' }, '');
+window.history.pushState({ view: 'view-library' }, '');
