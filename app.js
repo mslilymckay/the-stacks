@@ -98,6 +98,7 @@ wanderSelects.forEach(select => {
 function showStacksModal(title, message, isConfirm = false) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('stacks-modal-overlay');
+    const container = document.getElementById('stacks-modal-card');
     const titleEl = document.getElementById('stacks-modal-title');
     const messageEl = document.getElementById('stacks-modal-message');
     const cancelBtn = document.getElementById('stacks-modal-cancel');
@@ -116,6 +117,7 @@ function showStacksModal(title, message, isConfirm = false) {
     }
 
     overlay.classList.remove('hidden');
+    container.classList.remove('hidden');
 
     const onCancel = () => { cleanup(); resolve(false); };
       const onConfirm = () => { cleanup(); resolve(true); };
@@ -125,6 +127,7 @@ function showStacksModal(title, message, isConfirm = false) {
     
     const cleanup = () => {
       overlay.classList.add('hidden');
+      container.classList.add('hidden');
       cancelBtn.removeEventListener('click', onCancel);
       confirmBtn.removeEventListener('click', onConfirm);
     };
@@ -1515,7 +1518,6 @@ if (feedbackModal && feedbackTriggerBtn) {
   // 1. Open the modal
   feedbackTriggerBtn.addEventListener('click', () => {
     feedbackModal.classList.remove('hidden');
-    feedbackText.focus();
   });
 
   // 2. Reusable Close Function
