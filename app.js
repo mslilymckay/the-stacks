@@ -965,7 +965,7 @@ function closeBookDetails() {
   const libraryContainer = document.getElementById('view-library');// <-- Update this ID if needed!
   
   if (detailsContainer) {
-    detailsContainer.classList.add('hidden'); // Or remove('active'), depending on how you styled it
+    detailsContainer.classList.remove('active'); // Or remove('active'), depending on how you styled it
   }
 
   if (libraryContainer) {
