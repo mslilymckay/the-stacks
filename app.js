@@ -1155,40 +1155,38 @@ function closeBookDetails() {
     if (confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) 
     {
        
-     const duplicate = {
-       uuid: crypto.randomUUID(),
-       title: getField(book, 'title'),
-       author: getField(book, 'author'),
-       isbn: getField(book, 'isbn'),
-       cover_url: getField(book, 'cover_url'),
-       pages: getField(book, 'pages'),
-       category: getField(book, 'category'),
-       status: 1, 
-       date_started: new Date().toISOString(),
-       read_date: null,
-       rating: 0,
-       notes: null
-     };
-     
-     const { data, error } = await supabase.from('books').insert([duplicate]).select();
-     
-     if (error) {
-       console.error('Error duplicating:', error);
-       alert("Oops! Something went wrong communicating with the database.");
-     } else {
-       // Push the new book straight into memory
-       globalLibraryData.push(data[0] || duplicate);
-       
-       // THE FIX: Explicitly redraw the carousel and stats!
-       if (typeof renderHeroSection === 'function') renderHeroSection();
-       if (typeof calculateStats === 'function') calculateStats();
-       applyLibraryFilters(); 
-       
-       alert("New journey added! Check your Current Reads.");
-       closeBookDetails();
-     }
-    }
-});
+      const duplicate = {
+        uuid: crypto.randomUUID(),
+        title: getField(book, 'title'),
+        author: getField(book, 'author'),
+        isbn: getField(book, 'isbn'),
+        cover_url: getField(book, 'cover_url'),
+        pages: getField(book, 'pages'),
+        category: getField(book, 'category'),
+        status: 1, 
+        date_started: new Date().toISOString(),
+        read_date: null,
+        rating: 0,
+        notes: null
+      };
+      
+      const { data, error } = await supabase.from('books').insert([duplicate]).select();
+      
+      if (error) {
+        console.error('Error duplicating:', error);
+        alert("Oops! Something went wrong communicating with the database.");
+      } else {
+        globalLibraryData.push(data[0] || duplicate);
+        
+        if (typeof renderHeroSection === 'function') renderHeroSection();
+        if (typeof calculateStats === 'function') calculateStats();
+        applyLibraryFilters(); 
+        
+        alert("New journey added! Check your Current Reads.");
+        closeBookDetails();
+      }
+    } // <-- This properly closes the if statement
+  }); // <-- This properly closes the event listener
 
 document.getElementById('btn-delete-book').addEventListener('click', async () => {
     // Pass the Title, Message, and 'true' because we want a Confirm/Cancel layout
