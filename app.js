@@ -1037,7 +1037,6 @@ function closeBookDetails() {
       
       const today = new Date();
       today.setHours(23, 59, 59, 999); 
-    }
 
     const startedInput = document.getElementById('inline-started').value;
     let startedDateObj = null;
@@ -1066,6 +1065,7 @@ function closeBookDetails() {
     // Auto-update status to Finished
     await updateBookData('status', 2);
     updatedBook.status = 2;
+  }
 
     if (typeof renderHeroSection === 'function') renderHeroSection();
     if (typeof calculateStats === 'function') calculateStats();
@@ -1187,11 +1187,10 @@ function closeBookDetails() {
        alert("New journey added! Check your Current Reads.");
        closeBookDetails();
      }
-    });
+    }
 });
 
 document.getElementById('btn-delete-book').addEventListener('click', async () => {
-  if(confirm("Are you sure you want to permanently delete this book from your library?")) {
     // Pass the Title, Message, and 'true' because we want a Confirm/Cancel layout
     const userConfirmed = await showStacksModal("Delete Book", "Are you sure you want to delete this book?", true);
     
@@ -1214,7 +1213,6 @@ document.getElementById('btn-delete-book').addEventListener('click', async () =>
       // 3. Update the UI
       loadBooks();
       closeBookDetails();
-    });
   });
 
 // Ensure the Close button functions
@@ -1222,6 +1220,7 @@ if (closeDetailsBtn) {
   closeDetailsBtn.addEventListener('click', () => {
     closeBookDetails(); 
   });
+}
 }
 
 
