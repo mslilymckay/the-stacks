@@ -961,7 +961,8 @@ function openDetails(book, clickedElement) {
 // CLOSE BOOK DETAILS LOGIC
 // ==========================================
 function closeBookDetails() {
-  const detailsContainer = document.getElementById('view-details'); // <-- Update this ID if needed!
+  const detailsContainer = document.getElementById('view-details');
+  const libraryContainer = document.getElementById('view-library');// <-- Update this ID if needed!
   
   if (detailsContainer) {
     detailsContainer.classList.add('hidden'); // Or remove('active'), depending on how you styled it
