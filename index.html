@@ -37,6 +37,17 @@
       <p id="auth-error" style="color: var(--terracotta); font-size: 0.85rem; margin-top: 15px; display: none;"></p>
     </div>
   </div>
+
+  <div id="stacks-modal-overlay" class="stacks-modal-overlay hidden">
+    <div class="stacks-modal-card">
+      <h2 id="stacks-modal-title" class="stacks-section-heading">Notification</h2>
+      <p id="stacks-modal-message"></p>
+      <div class="stacks-modal-actions">
+        <button id="stacks-modal-cancel" class="stacks-btn" style="background-color: transparent; color: var(--text-dark); border: 1px solid var(--detail-line);">Cancel</button>
+        <button id="stacks-modal-confirm" class="stacks-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
   
   <header class="app-header">
     <div id="header-scroll-trigger" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;">
