@@ -953,8 +953,8 @@ function openDetails(book, clickedElement) {
     </div>
   `;
   
-  pageViews.forEach(view => view.classList.add('hidden'));
-  viewDetails.classList.remove('hidden');
+  pageViews.forEach(view => view.classList.remove('active'));
+  viewDetails.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // ==========================================
