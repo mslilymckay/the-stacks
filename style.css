@@ -139,7 +139,7 @@ body {
 }
 
 /* Feedback Modal UI */
-.feedback-modal {
+.feedback-modal .stacks-modal-overlay.hidden {
   position: fixed;
   z-index: 1000;
   left: 0;
@@ -150,18 +150,18 @@ body {
   backdrop-filter: blur(3px);
 }
 
-.feedback-modal:not(.hidden) {
+.feedback-modal:not(.hidden) .stacks-modal-overlay:not(.hidden) {
   display: flex;
   align-items: center;
   justify-content: center;
 } /* <-- THE MISSING BRACKET IS BACK! */
 
-.feedback-modal.hidden {
+.feedback-modal.hidden .stacks-modal-overlay.hidden {
   opacity: 0;
   pointer-events: none;
 }
 
-.feedback-content {
+.feedback-content .stacks-modal-card {
   background-color: var(--card-bg);
   border: 1px solid var(--detail-line);
   border-radius: 12px;
@@ -204,7 +204,7 @@ body {
   border-color: var(--sage-green);
 }
 
-.feedback-content button {
+.feedback-content button .stacks-modal-actions .stacks-btn {
   background-color: var(--terracotta);
   color: var(--bg-color);
   border: none;
@@ -217,7 +217,7 @@ body {
   transition: opacity 0.2s, transform 0.1s;
   flex: 1; /* Makes the Cancel and Send buttons exactly the same width */
 }
-.feedback-content button:active {
+.feedback-content button:active .stacks-modal-actions:active {
   opacity: 0.8;
   transform: scale(0.98);
 }
@@ -1755,7 +1755,7 @@ body {
 /* ==========================================
    AUTHENTICATION SCREEN AND CUSTOM MODAL
    ========================================== */
-.auth-screen .stacks-modal-overlay {
+.auth-screen {
   position: fixed;
   top: 0;
   left: 0;
@@ -1769,11 +1769,11 @@ body {
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.auth-screen.hidden .stacks-modal-overlay.hidden {
+.auth-screen.hidden {
   display: none;
 }
 
-.auth-card .stacks-modal-card {
+.auth-card {
   width: 90%;
   max-width: 350px;
   padding: 30px 20px;
