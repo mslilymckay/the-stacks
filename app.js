@@ -43,7 +43,7 @@ document.getElementById('auth-login-btn').addEventListener('click', async () => 
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: email,
-    password: password
+    password: password;
   });
 
   if (error) {
@@ -57,7 +57,7 @@ document.getElementById('auth-login-btn').addEventListener('click', async () => 
     // --> Call your function to fetch the books here! <--
     loadBooks(); 
   }
-});
+})
 
 // ==========================================
 // 1. SETUP, STATE & GLOBAL VARIABLES
@@ -91,6 +91,45 @@ wanderSelects.forEach(select => {
     if (wanderSheet) wanderSheet.classList.remove('open');
   });
 });
+
+// ==========================================
+// CUSTOM SYSTEM MODAL LOGIC
+// ==========================================
+function showStacksModal(title, message, isConfirm = false) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('stacks-modal-overlay');
+    const titleEl = document.getElementById('stacks-modal-title');
+    const messageEl = document.getElementById('stacks-modal-message');
+    const cancelBtn = document.getElementById('stacks-modal-cancel');
+    const confirmBtn = document.getElementById('stacks-modal-confirm');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+
+    if (isConfirm) {
+      cancelBtn.style.display = 'block';
+      confirmBtn.textContent = 'Yes';
+    } else {
+      // If it is just an alert, hide the cancel button
+      cancelBtn.style.display = 'none';
+      confirmBtn.textContent = 'Okay';
+    }
+
+    overlay.classList.remove('hidden');
+
+    const cleanup = () => {
+      overlay.classList.add('hidden');
+      cancelBtn.removeEventListener('click', onCancel);
+      confirmBtn.removeEventListener('click', onConfirm);
+    };
+
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onConfirm = () => { cleanup(); resolve(true); };
+
+    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.addEventListener('click', onConfirm);
+  });
+}
 
 // ==========================================
 // 2. UTILITY & HELPER FUNCTIONS
@@ -919,6 +958,20 @@ function openDetails(book, clickedElement) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // ==========================================
+// CLOSE BOOK DETAILS LOGIC
+// ==========================================
+function closeBookDetails() {
+  const detailsContainer = document.getElementById('view-details'); // <-- Update this ID if needed!
+  
+  if (detailsContainer) {
+    detailsContainer.classList.add('hidden'); // Or remove('active'), depending on how you styled it
+  }
+
+  // Clear the active book state we established at the top of app.js
+  currentOpenBookId = null; 
+}
+
+  // ==========================================
   // 4. ATTACH INTERACTIVE EVENT LISTENERS
   // ==========================================
   
@@ -984,34 +1037,37 @@ function openDetails(book, clickedElement) {
       
       const today = new Date();
       today.setHours(23, 59, 59, 999); 
-
-      const startedInput = document.getElementById('inline-started').value;
-      let startedDateObj = null;
-      if (startedInput) {
-         const [sYear, sMonth, sDay] = startedInput.split('-');
-         startedDateObj = new Date(sYear, sMonth - 1, sDay);
-      }
-
-      // Validations
-      if (newDateObj > today) {
-        alert("Finished date cannot be in the future.");
-        e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
-        return;
-      }
-      if (startedDateObj && newDateObj < startedDateObj) {
-        alert("Finished date cannot be before the Started date.");
-        e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
-        return;
-      }
-
-      const isoString = newDateObj.toISOString();
-      await updateBookData('read_date', isoString);
-      updatedBook.read_date = isoString;
-
-      // Auto-update status to Finished
-      await updateBookData('status', 2);
-      updatedBook.status = 2;
     }
+
+    const startedInput = document.getElementById('inline-started').value;
+    let startedDateObj = null;
+    if (startedInput) {
+       const [sYear, sMonth, sDay] = startedInput.split('-');
+       startedDateObj = new Date(sYear, sMonth - 1, sDay);
+    }
+
+    // Validations
+    if (newDateObj > today) {
+      alert("Finished date cannot be in the future.");
+      e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
+      return;
+    }
+    
+    if (startedDateObj && newDateObj < startedDateObj) {
+      alert("Finished date cannot be before the Started date.");
+      e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
+      return;
+    }
+  }
+
+    const isoString = newDateObj.toISOString();
+    await updateBookData('read_date', isoString);
+    updatedBook.read_date = isoString;
+
+    // Auto-update status to Finished
+    await updateBookData('status', 2);
+    updatedBook.status = 2;
+    });
 
     if (typeof renderHeroSection === 'function') renderHeroSection();
     if (typeof calculateStats === 'function') calculateStats();
@@ -1097,51 +1153,68 @@ function openDetails(book, clickedElement) {
   });
 
   document.getElementById('btn-read-again').addEventListener('click', async () => {
-    if(confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) {
+    if(confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) 
+    {
        
-       const duplicate = {
-         uuid: crypto.randomUUID(),
-         title: getField(book, 'title'),
-         author: getField(book, 'author'),
-         isbn: getField(book, 'isbn'),
-         cover_url: getField(book, 'cover_url'),
-         pages: getField(book, 'pages'),
-         category: getField(book, 'category'),
-         status: 1, 
-         date_started: new Date().toISOString(),
-         read_date: null,
-         rating: 0,
-         notes: null
-       };
+     const duplicate = {
+       uuid: crypto.randomUUID(),
+       title: getField(book, 'title'),
+       author: getField(book, 'author'),
+       isbn: getField(book, 'isbn'),
+       cover_url: getField(book, 'cover_url'),
+       pages: getField(book, 'pages'),
+       category: getField(book, 'category'),
+       status: 1, 
+       date_started: new Date().toISOString(),
+       read_date: null,
+       rating: 0,
+       notes: null
+     };
+     
+     const { data, error } = await supabase.from('books').insert([duplicate]).select();
+     
+     if (error) {
+       console.error('Error duplicating:', error);
+       alert("Oops! Something went wrong communicating with the database.");
+     } else {
+       // Push the new book straight into memory
+       globalLibraryData.push(data[0] || duplicate);
        
-       const { data, error } = await supabase.from('books').insert([duplicate]).select();
+       // THE FIX: Explicitly redraw the carousel and stats!
+       if (typeof renderHeroSection === 'function') renderHeroSection();
+       if (typeof calculateStats === 'function') calculateStats();
+       applyLibraryFilters(); 
        
-       if (error) {
-         console.error('Error duplicating:', error);
-         alert("Oops! Something went wrong communicating with the database.");
-       } else {
-         // Push the new book straight into memory
-         globalLibraryData.push(data[0] || duplicate);
-         
-         // THE FIX: Explicitly redraw the carousel and stats!
-         if (typeof renderHeroSection === 'function') renderHeroSection();
-         if (typeof calculateStats === 'function') calculateStats();
-         applyLibraryFilters(); 
-         
-         alert("New journey added! Check your Current Reads.");
-         closeDetailsBtn.click();
-       }
-    }
-  });
+       alert("New journey added! Check your Current Reads.");
+       closeBookDetails();
+     }
+  }
+});
+
+document.getElementById('btn-delete-book').addEventListener('click', async () => {
+  if(confirm("Are you sure you want to permanently delete this book from your library?")) {
+    // Pass the Title, Message, and 'true' because we want a Confirm/Cancel layout
+    const userConfirmed = await showStacksModal("Delete Book", "Are you sure you want to delete this book?", true);
+    
+    if (userConfirmed) {
+      // 1. Tell Supabase to delete the row
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('uuid', book.uuid); // Make sure this matches the variable holding the book's UUID in your function
   
-  document.getElementById('btn-delete-book').addEventListener('click', async () => {
-    if(confirm("Are you sure you want to permanently delete this book from your library?")) {
-      await supabase.from('books').delete().eq('uuid', currentOpenBookId);
-      
-      // Remove from local array and update UI
-      globalLibraryData = globalLibraryData.filter(b => b.uuid !== currentOpenBookId);
-      applyLibraryFilters();
-      closeDetailsBtn.click(); 
+      if (error) {
+        // We can use our new custom modal for errors, too! (Passing 'false' so it just shows "Okay")
+        await showStacksModal("Error", "Could not delete the book. Please try again.", false);
+        return;
+      }
+  
+      // 2. Remove the book from the local array so we don't have to fetch the whole database again
+      globalLibraryData = globalLibraryData.filter(b => b.uuid !== book.uuid);
+  
+      // 3. Update the UI
+      loadBooks();
+      closeBookDetails();
     }
   });
 }
@@ -1149,7 +1222,7 @@ function openDetails(book, clickedElement) {
 // Ensure the Close button functions
 if (closeDetailsBtn) {
   closeDetailsBtn.addEventListener('click', () => {
-    window.history.back(); 
+    closeBookDetails(); 
   });
 }
 
