@@ -1773,9 +1773,34 @@ body {
   width: 100%;
   padding: 12px;
   margin-bottom: 15px;
-  border: 1px solid var(--sage-green);
-  border-radius: 4px;
-  font-family: 'Georgia', serif;
-  background-color: var(--bg-color);
+  border: 1px solid var(--detail-line);
+  border-radius: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  background-color: var(--card-bg);
   color: var(--text-dark);
+  box-sizing: border-box;
+}
+
+.stacks-input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+}
+
+.stacks-btn {
+  background-color: var(--terracotta);
+  color: var(--bg-color);
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.stacks-btn:active {
+  opacity: 0.8;
+  transform: scale(0.98);
 }
