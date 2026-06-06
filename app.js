@@ -969,7 +969,7 @@ function closeBookDetails() {
   }
 
   if (libraryContainer) {
-    libraryContainer.classList.remove('hidden'); // <-- FIX: Route safely back to Library
+    libraryContainer.classList.add('active'); // <-- FIX: Route safely back to Library
   }
 
   // Clear the active book state we established at the top of app.js
