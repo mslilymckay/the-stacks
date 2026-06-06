@@ -1724,7 +1724,9 @@ let currentLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
 if (layoutBtns.length > 0 && mainGrid) {
   layoutBtns.forEach(b => {
     b.classList.remove('active');
-    if (b.getAttribute('data-layout') === currentLayout) b.classList.add('active');
+    if (b.getAttribute('data-layout') === currentLayout) {
+      b.classList.add('active');
+    }
   });
 
   layoutBtns.forEach(btn => {
