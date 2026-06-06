@@ -43,7 +43,7 @@ document.getElementById('auth-login-btn').addEventListener('click', async () => 
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: email,
-    password: password;
+    password: password
   });
 
   if (error) {
