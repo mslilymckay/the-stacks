@@ -14,7 +14,7 @@ window.addEventListener('load', async () => {
   const { data: { session } } = await supabase.auth.getSession();
 
   if (session) {
-    // She is logged in. Load the data silently in the background.
+    // She is logged in. Load the data silently in the ground.
     loadBooks(); 
   } else {
     // She is NOT logged in. Remove the hidden class so the card waits under the veil.
@@ -982,7 +982,7 @@ function openDetails(book, clickedElement) {
     }
     
     // Safely route back to whatever view Sarah was previously on!
-    const previousView = document.getElementById(returnViewId);
+    const previousView = document.getElementById(lastActiveTab);
     if (previousView) {
       previousView.classList.add('active'); 
     } else {
@@ -1584,6 +1584,8 @@ if (feedbackModal && feedbackTriggerBtn) {
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const targetId = item.getAttribute('data-target');
+
+    lastActiveTab = targetId;
         
     const currentActive = document.querySelector('.page-view.active');
     if (currentActive && currentActive.id !== 'view-focus' && targetId === 'view-focus') {
