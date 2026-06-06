@@ -1625,23 +1625,31 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 });
 
 window.addEventListener('popstate', (event) => {
-  if (wanderSheet && wanderSheet.classList.contains('open')) {
+  // 1. Close the Wander Drawer if it's open
+  if (typeof wanderSheet !== 'undefined' && wanderSheet.classList.contains('open')) {
     wanderSheet.classList.remove('open');
-    return;
+    return; // Stop here!
   }
   
+  // 2. Close the Book Details if it's active
+  const viewDetails = document.getElementById('view-details');
   if (viewDetails && viewDetails.classList.contains('active')) {
-    pageViews.forEach(view => view.classList.remove('active'));
-    document.getElementById(lastActiveTab).classList.add('active'); 
+    if (typeof closeBookDetails === 'function') closeBookDetails();
+    return; // Stop here!
+  }
+
+  // 3. THE TRAP: If she swiped back on a main tab, push a new state so the app doesn't close!
+  window.history.pushState({ view: 'main' }, '');
+  
+  // 4. Elegantly refresh the Stats page if she swiped back to it
+  if (typeof lastActiveTab !== 'undefined' && lastActiveTab === 'view-stats') {
+    const statsNav = document.getElementById('stats-drilldown-nav');
+    const isMonthView = statsNav && !statsNav.classList.contains('hidden');
     
-    // If we returned to the Stats tab, elegantly refresh the chart/list
-    if (lastActiveTab === 'view-stats') {
-      const isMonthView = !document.getElementById('stats-drilldown-nav').classList.contains('hidden');
-      if (isMonthView && typeof currentStatsMonth !== 'undefined') {
-        renderMonthlyStatsList(currentStatsMonth, currentStatsYear); // Typo fixed here!
-      } else {
-        renderAnnualStats(currentStatsYear);
-      }
+    if (isMonthView && typeof currentStatsMonth !== 'undefined') {
+      if (typeof renderMonthlyStatsList === 'function') renderMonthlyStatsList(currentStatsMonth, currentStatsYear);
+    } else {
+      if (typeof renderAnnualStats === 'function') renderAnnualStats(currentStatsYear);
     }
   }
 });
@@ -1661,7 +1669,7 @@ const clearSearchBtn = document.getElementById('clear-search-btn');
 
 if (wanderTriggerBtn && wanderSheet) {
   wanderTriggerBtn.addEventListener('click', () => wanderSheet.classList.add('open'));
-
+  window.history.pushState({ view: 'wander-sheet' }, '');
   const wanderHandle = wanderSheet.querySelector('.sheet-handle');
   if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
   
@@ -1792,3 +1800,9 @@ if (wanderSheet) {
     }
   });
 }
+
+// ==========================================
+// PWA NATIVE SWIPE-BACK TRAP
+// ==========================================
+window.history.replaceState({ view: 'base' }, '');
+window.history.pushState({ view: 'main' }, '');
