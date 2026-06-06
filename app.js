@@ -1221,7 +1221,7 @@ if (closeDetailsBtn) {
     closeBookDetails(); 
   });
 }
-});
+}
 
 
 // ==========================================
@@ -1781,4 +1781,3 @@ if (wanderSheet) {
     }
   });
 }
-loadBooks();
