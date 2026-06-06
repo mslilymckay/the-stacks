@@ -837,8 +837,6 @@ function openDetails(book, clickedElement) {
   // THE FIX: Use uuid, not id!
   currentOpenBookId = book.uuid; 
   
-  window.history.pushState({ view: 'details' }, '');
-
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
   const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/60x90?text=No+Cover';
@@ -964,8 +962,14 @@ function openDetails(book, clickedElement) {
   `;
   
   pageViews.forEach(view => view.classList.remove('active'));
-  viewDetails.classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const detailsContainer = document.getElementById('view-details');
+    if (detailsContainer) {
+      detailsContainer.classList.add('active');
+    }
+
+    // Add this line right here! 
+    window.history.pushState({ view: 'view-details' }, '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // ==========================================
   // CLOSE BOOK DETAILS LOGIC
