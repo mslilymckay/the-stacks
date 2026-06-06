@@ -98,7 +98,6 @@ wanderSelects.forEach(select => {
 function showStacksModal(title, message, isConfirm = false) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('stacks-modal-overlay');
-    const container = document.getElementById('stacks-modal-card');
     const titleEl = document.getElementById('stacks-modal-title');
     const messageEl = document.getElementById('stacks-modal-message');
     const cancelBtn = document.getElementById('stacks-modal-cancel');
@@ -116,21 +115,19 @@ function showStacksModal(title, message, isConfirm = false) {
       confirmBtn.textContent = 'Okay';
     }
 
-      overlay.classList.remove('hidden');
-      container.classList.remove('hidden');
+    overlay.classList.remove('hidden');
 
-      const onCancel = () => { cleanup(); resolve(false); };
-      const onConfirm = () => { cleanup(); resolve(true); };
-  
-      cancelBtn.addEventListener('click', onCancel);
-      confirmBtn.addEventListener('click', onConfirm);
-    
     const cleanup = () => {
       overlay.classList.add('hidden');
-      container.classList.add('hidden');
       cancelBtn.removeEventListener('click', onCancel);
       confirmBtn.removeEventListener('click', onConfirm);
     };
+
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onConfirm = () => { cleanup(); resolve(true); };
+
+    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.addEventListener('click', onConfirm);
   });
 }
 
@@ -970,6 +967,10 @@ function closeBookDetails() {
     detailsContainer.classList.add('hidden'); // Or remove('active'), depending on how you styled it
   }
 
+  if (libraryContainer) {
+    libraryContainer.classList.remove('hidden'); // <-- FIX: Route safely back to Library
+  }
+
   // Clear the active book state we established at the top of app.js
   currentOpenBookId = null; 
 }
@@ -1155,9 +1156,9 @@ function closeBookDetails() {
   });
 
   document.getElementById('btn-read-again').addEventListener('click', async () => {
-    if (confirm("Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.")) 
-    {
-       
+    const userConfirmed = await showStacksModal("Read Again", "Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.", true);
+    
+    if (userConfirmed) {
       const duplicate = {
         uuid: crypto.randomUUID(),
         title: getField(book, 'title'),
@@ -1177,7 +1178,7 @@ function closeBookDetails() {
       
       if (error) {
         console.error('Error duplicating:', error);
-        alert("Oops! Something went wrong communicating with the database.");
+        await showStacksModal("Error", "Oops! Something went wrong communicating with the database.", false);
       } else {
         globalLibraryData.push(data[0] || duplicate);
         
@@ -1185,45 +1186,36 @@ function closeBookDetails() {
         if (typeof calculateStats === 'function') calculateStats();
         applyLibraryFilters(); 
         
-        alert("New journey added! Check your Current Reads.");
+        await showStacksModal("Success", "New journey added! Check your Current Reads.", false);
         closeBookDetails();
       }
-    } // <-- This properly closes the if statement
-  }); // <-- This properly closes the event listener
+    }
+  });
 
-document.getElementById('btn-delete-book').addEventListener('click', async () => {
-    // Pass the Title, Message, and 'true' because we want a Confirm/Cancel layout
+  document.getElementById('btn-delete-book').addEventListener('click', async () => {
     const userConfirmed = await showStacksModal("Delete Book", "Are you sure you want to delete this book?", true);
     
     if (userConfirmed) {
-      // 1. Tell Supabase to delete the row
-      const { error } = await supabase
-        .from('books')
-        .delete()
-        .eq('uuid', book.uuid); // Make sure this matches the variable holding the book's UUID in your function
+      const { error } = await supabase.from('books').delete().eq('uuid', book.uuid);
   
       if (error) {
-        // We can use our new custom modal for errors, too! (Passing 'false' so it just shows "Okay")
         await showStacksModal("Error", "Could not delete the book. Please try again.", false);
         return;
       }
   
-      // 2. Remove the book from the local array so we don't have to fetch the whole database again
       globalLibraryData = globalLibraryData.filter(b => b.uuid !== book.uuid);
-  
-      // 3. Update the UI
       loadBooks();
       closeBookDetails();
-  }
-
-// Ensure the Close button functions
-if (closeDetailsBtn) {
-  closeDetailsBtn.addEventListener('click', () => {
-    closeBookDetails(); 
+    }
   });
-}
-});
-}
+
+  // Ensure the Close button functions cleanly without memory leaks
+  if (closeDetailsBtn) {
+    closeDetailsBtn.onclick = () => {
+      closeBookDetails(); 
+    };
+  }
+} // <--- This final bracket safely closes the master openDetails() function!
 
 
 // ==========================================
