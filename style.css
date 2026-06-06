@@ -139,7 +139,7 @@ body {
 }
 
 /* Feedback Modal UI */
-.feedback-modal .stacks-modal-overlay {
+.feedback-modal, .stacks-modal-overlay {
   position: fixed;
   z-index: 1000;
   left: 0;
@@ -150,18 +150,18 @@ body {
   backdrop-filter: blur(3px);
 }
 
-.feedback-modal:not(.hidden) .stacks-modal-overlay:not(.hidden) {
+.feedback-modal:not(.hidden), .stacks-modal-overlay:not(.hidden) {
   display: flex;
   align-items: center;
   justify-content: center;
 } /* <-- THE MISSING BRACKET IS BACK! */
 
-.feedback-modal.hidden .stacks-modal-overlay.hidden {
+.feedback-modal.hidden, .stacks-modal-overlay.hidden {
   visibility: hidden;
   pointer-events: none;
 }
 
-.feedback-content .stacks-modal-card {
+.feedback-content, .stacks-modal-card {
   background-color: var(--card-bg);
   border: 1px solid var(--detail-line);
   border-radius: 12px;
