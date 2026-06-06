@@ -116,10 +116,10 @@ function showStacksModal(title, message, isConfirm = false) {
       confirmBtn.textContent = 'Okay';
     }
 
-    overlay.classList.remove('hidden');
-    container.classList.remove('hidden');
+      overlay.classList.remove('hidden');
+      container.classList.remove('hidden');
 
-    const onCancel = () => { cleanup(); resolve(false); };
+      const onCancel = () => { cleanup(); resolve(false); };
       const onConfirm = () => { cleanup(); resolve(true); };
   
       cancelBtn.addEventListener('click', onCancel);
