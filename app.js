@@ -1781,3 +1781,4 @@ if (wanderSheet) {
     }
   });
 }
+loadBooks();
