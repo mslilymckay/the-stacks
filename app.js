@@ -117,17 +117,17 @@ function showStacksModal(title, message, isConfirm = false) {
 
     overlay.classList.remove('hidden');
 
+    const onCancel = () => { cleanup(); resolve(false); };
+      const onConfirm = () => { cleanup(); resolve(true); };
+  
+      cancelBtn.addEventListener('click', onCancel);
+      confirmBtn.addEventListener('click', onConfirm);
+    
     const cleanup = () => {
       overlay.classList.add('hidden');
       cancelBtn.removeEventListener('click', onCancel);
       confirmBtn.removeEventListener('click', onConfirm);
     };
-
-    const onCancel = () => { cleanup(); resolve(false); };
-    const onConfirm = () => { cleanup(); resolve(true); };
-
-    cancelBtn.addEventListener('click', onCancel);
-    confirmBtn.addEventListener('click', onConfirm);
   });
 }
 
