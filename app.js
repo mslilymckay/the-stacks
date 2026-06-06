@@ -14,21 +14,19 @@ window.addEventListener('load', async () => {
   const { data: { session } } = await supabase.auth.getSession();
 
   if (session) {
-    // She is logged in! Run the smooth loading sequence
-    const videoFadeTime = 2000; 
-    const backgroundFadeTime = 3000; 
-
-    setTimeout(() => { if (loadingVideo) loadingVideo.style.opacity = '0'; }, videoFadeTime);
-    setTimeout(() => { if (loadingScreen) loadingScreen.classList.add('hidden'); }, backgroundFadeTime);
-    
-    // --> Call your function to fetch the books here! <--
-    // fetchLibraryData(); 
-
+    // She is logged in. Load the data silently in the background.
+    loadBooks(); 
   } else {
-    // She is NOT logged in. Instantly hide the loading screen and show the login card.
-    if (loadingScreen) loadingScreen.classList.add('hidden');
+    // She is NOT logged in. Remove the hidden class so the card waits under the veil.
     if (authScreen) authScreen.classList.remove('hidden');
   }
+
+  // 2. Run the smooth cinematic fade REGARDLESS of login status
+  const videoFadeTime = 2000; 
+  const backgroundFadeTime = 3000; 
+
+  setTimeout(() => { if (loadingVideo) loadingVideo.style.opacity = '0'; }, videoFadeTime);
+  setTimeout(() => { if (loadingScreen) loadingScreen.classList.add('hidden'); }, backgroundFadeTime);
 });
 
 // ==========================================
@@ -1566,12 +1564,6 @@ window.addEventListener('popstate', (event) => {
     }
   }
 });
-
-
-// ==========================================
-// 8. INITIALIZE APP
-// ==========================================
-loadBooks();
 
 // ==========================================
 // 9. PHASE 1: WANDER DRAWER LOGIC
