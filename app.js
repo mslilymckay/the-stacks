@@ -1058,7 +1058,6 @@ function closeBookDetails() {
       e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
       return;
     }
-  }
 
     const isoString = newDateObj.toISOString();
     await updateBookData('read_date', isoString);
@@ -1067,7 +1066,6 @@ function closeBookDetails() {
     // Auto-update status to Finished
     await updateBookData('status', 2);
     updatedBook.status = 2;
-    });
 
     if (typeof renderHeroSection === 'function') renderHeroSection();
     if (typeof calculateStats === 'function') calculateStats();
@@ -1114,7 +1112,8 @@ function closeBookDetails() {
   });
 
   // D. Action Buttons
-  document.getElementById('btn-refresh-book').addEventListener('click', async (e) => {
+  document.getElementById('btn-refresh-book').addEventListener('click', async (e) => 
+    {
     const btn = e.currentTarget;
     btn.style.opacity = '0.5';
     
@@ -1188,7 +1187,7 @@ function closeBookDetails() {
        alert("New journey added! Check your Current Reads.");
        closeBookDetails();
      }
-  }
+    });
 });
 
 document.getElementById('btn-delete-book').addEventListener('click', async () => {
@@ -1215,9 +1214,8 @@ document.getElementById('btn-delete-book').addEventListener('click', async () =>
       // 3. Update the UI
       loadBooks();
       closeBookDetails();
-    }
+    });
   });
-}
 
 // Ensure the Close button functions
 if (closeDetailsBtn) {
