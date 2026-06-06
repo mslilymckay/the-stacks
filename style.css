@@ -204,7 +204,7 @@ body {
   border-color: var(--sage-green);
 }
 
-.feedback-content button .stacks-modal-actions .stacks-btn {
+.feedback-content button, .stacks-modal-actions, .stacks-btn {
   background-color: var(--terracotta);
   color: var(--bg-color);
   border: none;
@@ -217,7 +217,7 @@ body {
   transition: opacity 0.2s, transform 0.1s;
   flex: 1; /* Makes the Cancel and Send buttons exactly the same width */
 }
-.feedback-content button:active .stacks-modal-actions:active {
+.feedback-content button:active, .stacks-modal-actions:active {
   opacity: 0.8;
   transform: scale(0.98);
 }
