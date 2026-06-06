@@ -69,6 +69,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 let globalLibraryData = [];
 let libraryYearFilter = 'all'; // Tracks if the library is currently filtered by a specific year
 let currentOpenBookId = null;
+let returnViewId = 'view-library';
 
 // Common DOM Elements
 const bookGrid = document.getElementById('book-grid');
@@ -824,6 +825,15 @@ const closeDetailsBtn = document.getElementById('close-details-btn');
 const journalContent = document.getElementById('journal-content');
 
 function openDetails(book, clickedElement) {
+  
+  const possibleViews = ['view-library', 'view-search', 'view-stats'];
+  possibleViews.forEach(viewId => {
+    const viewEl = document.getElementById(viewId);
+    if (viewEl && viewEl.classList.contains('active')) {
+      returnViewId = viewId;
+    }
+  });
+  
   // THE FIX: Use uuid, not id!
   currentOpenBookId = book.uuid; 
   
@@ -958,23 +968,26 @@ function openDetails(book, clickedElement) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // ==========================================
-// CLOSE BOOK DETAILS LOGIC
-// ==========================================
-function closeBookDetails() {
-  const detailsContainer = document.getElementById('view-details');
-  const libraryContainer = document.getElementById('view-library');// <-- Update this ID if needed!
+  // CLOSE BOOK DETAILS LOGIC
+  // ==========================================
+  function closeBookDetails() {
+    const detailsContainer = document.getElementById('view-details'); 
   
-  if (detailsContainer) {
-    detailsContainer.classList.remove('active'); // Or remove('active'), depending on how you styled it
+    if (detailsContainer) {
+      detailsContainer.classList.remove('active'); 
+    }
+    
+    // Safely route back to whatever view Sarah was previously on!
+    const previousView = document.getElementById(returnViewId);
+    if (previousView) {
+      previousView.classList.add('active'); 
+    } else {
+      // Fallback just in case something goes wrong
+      document.getElementById('view-library').classList.add('active'); 
+    }
+  
+    currentOpenBookId = null; 
   }
-
-  if (libraryContainer) {
-    libraryContainer.classList.add('active'); // <-- FIX: Route safely back to Library
-  }
-
-  // Clear the active book state we established at the top of app.js
-  currentOpenBookId = null; 
-}
 
   // ==========================================
   // 4. ATTACH INTERACTIVE EVENT LISTENERS
