@@ -454,7 +454,7 @@ function initStatsPage() {
     
     document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
     
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    // IDK window.scrollTo({ top: 0, behavior: 'instant' });
   });
 }
 
