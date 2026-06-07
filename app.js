@@ -970,7 +970,7 @@ function openDetails(book, clickedElement) {
     }
 
     // Add this line right here! 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // IDK  window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // ==========================================
   // CLOSE BOOK DETAILS LOGIC
