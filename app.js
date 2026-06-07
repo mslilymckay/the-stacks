@@ -1734,30 +1734,26 @@ if (layoutBtns.length > 0 && mainGrid) {
 }
 
 // ==========================================
-// NAVIGATION & GESTURE FIXES
+// NAVIGATION AND GESTURE FIXES
 // ==========================================
 
-// 1. History API (Fixes Native Edge-Swipe Back)
-// Push an initial state so the browser always has something to "go back" to
-window.history.pushState({ app: 'stacks' }, '');
+// 1. Initial Setup: The "Double-Lock"
+// Replace current state with a trap, then push the main state.
+window.history.replaceState({ level: 'trap' }, '');
+window.history.pushState({ level: 'main' }, '');
 
 window.addEventListener('popstate', (event) => {
-  // 1. Delay the trap state to allow the native backward swipe animation to finish.
-  // This completely eliminates the "forward slide" and prevents ghost screenshots.
+  // Delay the re-trap so native animations finish smoothly
   setTimeout(() => {
-    window.history.pushState({ app: 'stacks' }, '');
-  }, 300); // 300ms covers standard native gesture transition times
-
-
-  // Hierarchy of actions: We check what is open from top (highest z-index) to bottom.
-  // The 'return' statements ensure one swipe only closes one layer at a time.
+    window.history.pushState({ level: 'main' }, '');
+  }, 300);
 
   // A. Close Custom System Modal (if open)
   const modalOverlay = document.getElementById('stacks-modal-overlay');
   if (modalOverlay && !modalOverlay.classList.contains('hidden')) {
     const cancelBtn = document.getElementById('stacks-modal-cancel');
     if (cancelBtn && cancelBtn.style.display !== 'none') {
-      cancelBtn.click(); // Triggers your Promise cleanup
+      cancelBtn.click(); 
     } else {
       modalOverlay.classList.add('hidden');
     }
@@ -1782,11 +1778,12 @@ window.addEventListener('popstate', (event) => {
   const viewDetails = document.getElementById('view-details');
   if (viewDetails && viewDetails.classList.contains('active')) {
     const closeDetailsBtn = document.getElementById('close-details-btn');
-    if (closeDetailsBtn) closeDetailsBtn.click(); // Safely routes back to the previous tab
+    if (closeDetailsBtn) closeDetailsBtn.click(); 
     return;
   }
 
-  // E. Return to Library View from other main tabs (Search, Stats, Focus)
+  // E. Return to Library View from other main tabs
+  // (Optional: You can remove this block entirely if you want swiping back on Stats/Focus to just do nothing instead of jumping back to the Library)
   const libraryView = document.getElementById('view-library');
   if (libraryView && !libraryView.classList.contains('active')) {
     const libraryNav = document.querySelector('.nav-item[data-target="view-library"]');
