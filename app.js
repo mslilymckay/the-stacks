@@ -833,6 +833,8 @@ function openDetails(book, clickedElement) {
       returnViewId = viewId;
     }
   });
+
+  window.history.pushState({ level: 'overlay' }, '');
   
   // THE FIX: Use uuid, not id!
   currentOpenBookId = book.uuid; 
@@ -1585,6 +1587,7 @@ navItems.forEach(item => {
     const targetId = item.getAttribute('data-target');
 
     lastActiveTab = targetId;
+    window.history.replaceState({ level: 'main' }, '');
         
     const currentActive = document.querySelector('.page-view.active');
     if (currentActive && currentActive.id !== 'view-focus' && targetId === 'view-focus') {
