@@ -4,7 +4,7 @@
   "start_url": "/the-stacks/",
   "display": "standalone",
   "background_color": "#F5EEDB",
-  "theme_color": "#F5EEDB",
+  "theme_color": "#A65239",
   "icons": [
     {
       "src": "logo.png",

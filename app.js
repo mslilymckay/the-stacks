@@ -1,37 +1,145 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// ==========================================
-// AUTHENTICATION & LOADING SEQUENCE
-// ==========================================
+// =========================================================================
+// MODULE 1: APP INITIALIZATION & DATABASE CLIENT
+// =========================================================================
+
+// Connect to the Supabase Database using client credentials
+const supabaseUrl = 'https://jvsjzlvabtffhsnvmcto.supabase.co';
+const supabaseKey = 'sb_publishable_H2EPwvAaziQVz8T4yExdEw_bQrB5f3V';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Centralized Demo DB Configuration
+const TABLE_NAME = 'books';
+
+// HTML Escaping Helper to prevent XSS injection
+function escapeHtml(unsafe) {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Toast notification display helper
+function showToast(message) {
+  let toast = document.getElementById('stacks-toast-notification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'stacks-toast-notification';
+    toast.className = 'stacks-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  
+  if (window.toastTimeout) clearTimeout(window.toastTimeout);
+  window.toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
+}
+
+// Global Caches and Application State Parameters
+let globalLibraryData = [];
+let libraryYearFilter = 'all'; // Tracks if the library is currently filtered by a specific year
+let currentOpenBookId = null;
+let returnViewId = 'view-library';
+let lastActiveTab = 'view-library';
+let previousViewId = 'view-library';
+const scrollCache = {}; 
+let lazyCoverObserver = null;
+let statsInitialized = false;
+
+
+// Cache common DOM targets to minimize layout thrashing
+const bookGrid = document.getElementById('book-grid');
+const sheet = document.querySelector('.bottom-sheet:not(#wander-sheet)');
+const topFab = document.getElementById('top-fab'); 
+const pageViews = document.querySelectorAll('.page-view');
+const navItems = document.querySelectorAll('.nav-item');
+const searchResultsContainer = document.getElementById('search-results-container');
+
+// =========================================================================
+// MODULE 2: USER AUTHENTICATION & INITIAL LIFE CYCLE
+// =========================================================================
+
+// Runs immediately on window load to authenticate Sarah, register PWA service worker, and manage loading screen
 window.addEventListener('load', async () => {
   const loadingVideo = document.getElementById('loading-video');
   const loadingScreen = document.getElementById('loading-screen');
   const authScreen = document.getElementById('auth-screen');
+  const skipBtn = document.getElementById('skip-loading-btn');
   
+  // Register Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+      .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+  }
+
   if (loadingVideo) loadingVideo.playbackRate = 1.5; 
 
-  // 1. Check if Sarah is already logged in
+  // 1. Silent login checking
   const { data: { session } } = await supabase.auth.getSession();
 
   if (session) {
-    // She is logged in. Load the data silently in the ground.
     loadBooks(); 
   } else {
-    // She is NOT logged in. Remove the hidden class so the card waits under the veil.
+    // Clear sandbox local books cache on logout/no session
+    localStorage.removeItem('the_stacks_local_books');
+    document.dispatchEvent(new CustomEvent('library-loaded'));
     if (authScreen) authScreen.classList.remove('hidden');
   }
 
-  // 2. Run the smooth cinematic fade REGARDLESS of login status
-  const videoFadeTime = 2000; 
-  const backgroundFadeTime = 3000; 
+  // 2. Cinematic Loading Screen State Machine
+  let libraryLoaded = false;
+  let videoEnded = false;
+  let hasFadedOut = false;
 
-  setTimeout(() => { if (loadingVideo) loadingVideo.style.opacity = '0'; }, videoFadeTime);
-  setTimeout(() => { if (loadingScreen) loadingScreen.classList.add('hidden'); }, backgroundFadeTime);
+  const fadeOutLoading = () => {
+    if (hasFadedOut) return;
+    hasFadedOut = true;
+    if (loadingVideo) loadingVideo.style.opacity = '0';
+    if (loadingScreen) {
+      loadingScreen.style.opacity = '0';
+      loadingScreen.style.transition = 'opacity 0.8s ease-in-out, visibility 0.8s ease-in-out';
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+      }, 800);
+    }
+  };
+
+  if (skipBtn) {
+    skipBtn.addEventListener('click', fadeOutLoading);
+  }
+
+  if (loadingVideo) {
+    loadingVideo.addEventListener('ended', fadeOutLoading);
+  }
+
+  document.addEventListener('library-loaded', () => {
+    libraryLoaded = true;
+    if (skipBtn && !hasFadedOut) {
+      skipBtn.style.display = 'flex'; // Skip button matches circular close style in CSS
+    }
+    if (videoEnded) {
+      fadeOutLoading();
+    }
+  });
+
+  // Fallback timeout in case loading takes too long
+  setTimeout(() => {
+    if (libraryLoaded) {
+      fadeOutLoading();
+    } else if (skipBtn) {
+      skipBtn.style.display = 'flex';
+    }
+  }, 6000);
 });
 
-// ==========================================
-// LOGIN BUTTON LOGIC
-// ==========================================
+// Authenticate user via Supabase and route to library dashboard
 document.getElementById('auth-login-btn').addEventListener('click', async () => {
   const email = document.getElementById('auth-email').value;
   const password = document.getElementById('auth-password').value;
@@ -49,417 +157,18 @@ document.getElementById('auth-login-btn').addEventListener('click', async () => 
   if (error) {
     errorText.textContent = "Oops! " + error.message;
     errorText.style.display = 'block';
-    loginBtn.textContent = 'Open Library';
+    loginBtn.textContent = "Let's go!";
   } else {
-    // Success! Hide the login screen and load the app
     document.getElementById('auth-screen').classList.add('hidden');
-    
-    // --> Call your function to fetch the books here! <--
     loadBooks(); 
   }
-})
-
-// ==========================================
-// 1. SETUP, STATE & GLOBAL VARIABLES
-// ==========================================
-const supabaseUrl = 'https://jvsjzlvabtffhsnvmcto.supabase.co';
-const supabaseKey = 'sb_publishable_H2EPwvAaziQVz8T4yExdEw_bQrB5f3V';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-let globalLibraryData = [];
-let libraryYearFilter = 'all'; // Tracks if the library is currently filtered by a specific year
-let currentOpenBookId = null;
-let returnViewId = 'view-library';
-
-// Common DOM Elements
-const bookGrid = document.getElementById('book-grid');
-const sheet = document.querySelector('.bottom-sheet:not(#wander-sheet)');
-const sheetHandle = document.querySelector('.sheet-handle');
-const topFab = document.getElementById('top-fab'); 
-const bookshelfContainer = document.querySelector('.bookshelf');
-const searchResultsContainer = document.getElementById('search-results-container');
-
-// Sync manual dropdowns with pre-built Quick Filters
-const wanderSelects = document.querySelectorAll('#wander-sheet select');
-wanderSelects.forEach(select => {
-  select.addEventListener('change', () => {
-    // CLEAR the year filter anytime Sarah manually changes views!
-    libraryYearFilter = 'all';
-    // If Sarah manually changes a dropdown, strip the 'active' green color from all quick buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    btn.classList.add('active');
-    applyLibraryFilters();
-    if (wanderSheet) wanderSheet.classList.remove('open');
-  });
 });
 
-// ==========================================
-// CUSTOM SYSTEM MODAL LOGIC
-// ==========================================
-function showStacksModal(title, message, isConfirm = false) {
-  return new Promise((resolve) => {
-    const overlay = document.getElementById('stacks-modal-overlay');
-    const titleEl = document.getElementById('stacks-modal-title');
-    const messageEl = document.getElementById('stacks-modal-message');
-    const cancelBtn = document.getElementById('stacks-modal-cancel');
-    const confirmBtn = document.getElementById('stacks-modal-confirm');
+// =========================================================================
+// MODULE 3: THE MAIN LIBRARY VIEW (THE DASHBOARD)
+// =========================================================================
 
-    titleEl.textContent = title;
-    messageEl.textContent = message;
-
-    if (isConfirm) {
-      cancelBtn.style.display = 'block';
-      confirmBtn.textContent = 'Yes';
-    } else {
-      // If it is just an alert, hide the cancel button
-      cancelBtn.style.display = 'none';
-      confirmBtn.textContent = 'Okay';
-    }
-
-    overlay.classList.remove('hidden');
-
-    const cleanup = () => {
-      overlay.classList.add('hidden');
-      cancelBtn.removeEventListener('click', onCancel);
-      confirmBtn.removeEventListener('click', onConfirm);
-    };
-
-    const onCancel = () => { cleanup(); resolve(false); };
-    const onConfirm = () => { cleanup(); resolve(true); };
-
-    cancelBtn.addEventListener('click', onCancel);
-    confirmBtn.addEventListener('click', onConfirm);
-  });
-}
-
-// ==========================================
-// 2. UTILITY & HELPER FUNCTIONS
-// ==========================================
-
-// Highly resilient helper to find data regardless of database capitalization
-const getField = (obj, fieldName) => {
-  if (!obj) return undefined;
-  const key = Object.keys(obj).find(k => k.toLowerCase() === fieldName.toLowerCase());
-  return key ? obj[key] : undefined;
-};
-
-// Formats DB timestamp to "MM-DD-YY" for the vintage stamp
-function formatDate(isoString) {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  const y = String(date.getFullYear()).slice(-2);
-  return `${m}-${d}-${y}`;
-}
-
-// Fallback cover generator
-function getCoverUrl(isbn) {
-  if (!isbn || isbn === 'N/A') return 'https://placehold.co/150x200?text=No+Cover';
-  const cleanIsbn = String(isbn).replace(/[-\s]/g, '');
-  return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg?default=false`;
-}
-
-// Reusable function to update Supabase AND local memory
-async function updateBookData(columnName, newValue) {
-  if (!currentOpenBookId) return;
-
-  const { data, error } = await supabase
-    .from('books')
-    .update({ [columnName]: newValue })
-    .eq('uuid', currentOpenBookId);
-
-  if (error) {
-    console.error('Error updating book:', error);
-  } else {
-    const bookToUpdate = globalLibraryData.find(b => b.uuid === currentOpenBookId);
-    if (bookToUpdate) {
-      const key = Object.keys(bookToUpdate).find(k => k.toLowerCase() === columnName.toLowerCase()) || columnName;
-      bookToUpdate[key] = newValue;
-    }
-  }
-}
-
-// Navigates from the Hero Section to a specific filtered Library view
-function navigateToQuickFilter(status, sort, sourceBtn = null) {
-  // 1. Switch to Library tab
-  document.querySelector('.nav-item[data-target="view-library"]').click();
-  
-  // 2. Clear Stats year lock
-  libraryYearFilter = 'all';
-
-  // 3. Visually update the Quick Filters in the Wander Drawer
-  document.querySelectorAll('.quick-btn, .filter-btn').forEach(b => b.classList.remove('active'));
-  const targetBtn = document.querySelector(`.quick-btn[data-status="${status}"]`);
-  if (targetBtn) targetBtn.classList.add('active');
-
-  // 4. Update the Pill Buttons to stay highlighted
-  document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-  if (sourceBtn) sourceBtn.classList.add('active');
-
-  // 5. Apply the sort and filter (Removed the scroll logic!)
-  window.lastAppliedSort = sort; 
-  applyLibraryFilters();
-  
-}
-
-// ==========================================
-// 3. CORE LIBRARY RENDERING (Grid, Hero, Stats)
-// ==========================================
-
-// Calculate and render Stats Page numbers
-function calculateStats() {
-  const books = globalLibraryData;
-  const timeFilterEl = document.getElementById('stats-timefilter');
-  const filter = timeFilterEl ? timeFilterEl.value : 'year';
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  const activeCount = books.filter(b => Number(getField(b, 'status')) === 0).length;
-  
-  let periodCount = 0;
-  const completedBooks = books.filter(b => Number(getField(b, 'status')) === 1 && getField(b, 'read_date'));
-  
-  completedBooks.forEach(b => {
-    const readDate = new Date(getField(b, 'read_date'));
-    if (filter === 'all') periodCount++;
-    else if (filter === 'year' && readDate.getFullYear() === currentYear) periodCount++;
-    else if (filter === 'month' && readDate.getFullYear() === currentYear && readDate.getMonth() === currentMonth) periodCount++;
-  });
-
-  const categoryCounts = {};
-  books.forEach(b => {
-    const cat = getField(b, 'category');
-    if (cat && cat !== 'Uncategorized' && cat !== 'N/A') {
-      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-    }
-  });
-
-  const sortedCategories = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a]);
-  const topCategories = sortedCategories.slice(0, 3); 
-
-  const statActiveEl = document.getElementById('stat-active');
-  const statYearlyEl = document.getElementById('stat-yearly');
-  const statCategoriesEl = document.getElementById('stat-categories');
-
-  if (statActiveEl) statActiveEl.textContent = activeCount;
-  
-  if (statYearlyEl) {
-    statYearlyEl.textContent = periodCount;
-    const labelEl = statYearlyEl.nextElementSibling;
-    if (labelEl) {
-        labelEl.textContent = filter === 'month' ? 'Books Read This Month' : 
-                              filter === 'year' ? 'Books Read This Year' : 
-                              'Total Books Read';
-    }
-  }
-
-  if (statCategoriesEl) {
-    if (topCategories.length === 0) {
-      statCategoriesEl.innerHTML = '<li>No categories yet</li>';
-    } else {
-      statCategoriesEl.innerHTML = topCategories.map(cat => `<li>${cat} (${categoryCounts[cat]})</li>`).join('');
-    }
-  }
-}
-
-// ==========================================
-// PHASE 4: STATS DASHBOARD 2.0
-// ==========================================
-let statsChartInstance = null; 
-let currentStatsYear = 'all';
-let currentStatsMonth = null;
-
-const renderStatsList = (booksArray, listTitle) => {
-  document.getElementById('stats-list-title').textContent = listTitle;
-  const listContainer = document.getElementById('stats-book-list');
-  listContainer.innerHTML = '';
-
-  if (booksArray.length === 0) {
-    listContainer.innerHTML = `<p style="text-align: center; color: var(--sage-green); font-family: 'Courier New'; margin-top: 20px;">No books finished in this timeframe.</p>`;
-    return;
-  }
-
-  booksArray.forEach(book => {
-    const title = getField(book, 'title') || 'Unknown';
-    const author = getField(book, 'author') || 'Unknown';
-    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover'; // Make sure this matches your actual placeholder filename!
-    const ratingNum = Number(getField(book, 'rating')) || 0;
-    
-    let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
-    if (ratingNum > 0) ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
-
-    const card = document.createElement('div');
-    card.className = 'book-card';
-    card.innerHTML = `
-      <img src="${coverUrl}" alt="${title}" class="book-cover" onerror="this.src='https://placehold.co/150x200?text=No+Cover'">
-      <div class="book-info">
-        <p class="book-title">${title}</p>
-        <p class="book-author">${author}</p>
-        <div class="book-rating" style="display: block; margin-top: auto; color: #DDA750; font-size: 12px; letter-spacing: 2px;">${ratingDisplay}</div>
-      </div>
-    `;
-    card.addEventListener('click', () => openDetails(book));
-    listContainer.appendChild(card);
-  });
-};
-
-function renderAnnualStats(targetYear) {
-  currentStatsYear = targetYear;
-  currentStatsMonth = null;
-  const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
-  const container = document.getElementById('stats-chart-container');
-  
-  if (targetYear === 'all') {
-    const yearsMap = {};
-    finishedBooks.forEach(b => {
-      const y = b.read_date.split('-')[0]; 
-      yearsMap[y] = (yearsMap[y] || 0) + 1;
-    });
-    
-    const labels = Object.keys(yearsMap).sort();
-    const data = labels.map(y => yearsMap[y]);
-    
-    // Fixed height and Y-axis step 10 for All Time
-    container.style.height = '280px';
-    drawChart('bar', labels, data, '#A65239', 10, (clickedIndex) => {
-      const selectedYear = labels[clickedIndex];
-      document.getElementById('stats-year-select').value = selectedYear;
-      renderAnnualStats(selectedYear);
-    });
-    
-    renderStatsList(finishedBooks.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `All Time Books (${finishedBooks.length})`);
-    document.getElementById('stats-drilldown-nav').classList.add('hidden');
-    document.getElementById('btn-view-in-stacks').style.display = 'flex';
-  } 
-  else {
-    const filtered = finishedBooks.filter(b => b.read_date.startsWith(targetYear));
-    const monthlyCounts = Array(12).fill(0);
-    
-    filtered.forEach(b => {
-      const m = parseInt(b.read_date.split('-')[1]) - 1; 
-      monthlyCounts[m]++;
-    });
-
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const maxValue = Math.max(5, ...monthlyCounts); 
-    container.style.height = `${Math.max(250, (maxValue * 25) + 50)}px`; 
-
-    let barColors = Array(12).fill('#597755'); // Default sage green
-
-    drawChart('bar', monthLabels, monthlyCounts, barColors, 1, (clickedIndex) => {
-      // Highlight tapped bar orange
-      barColors = Array(12).fill('#597755');
-      barColors[clickedIndex] = '#A65239';
-      statsChartInstance.data.datasets[0].backgroundColor = barColors;
-      statsChartInstance.update();
-
-      // Update the list below
-      renderMonthlyStatsList(clickedIndex, targetYear); 
-    });
-
-    renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${targetYear} (${filtered.length})`);
-    document.getElementById('stats-drilldown-nav').classList.add('hidden');
-    document.getElementById('btn-view-in-stacks').style.display = 'flex';
-  };
-}
-
-// Replaces the line chart logic with a simple list update for the tapped bar
-function renderMonthlyStatsList(monthIndex, yearStr) {
-  currentStatsMonth = monthIndex;
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  
-  const targetPrefix = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`;
-  const monthlyBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(targetPrefix));
-
-  // Update the list and hide the Stacks handoff button
-  renderStatsList(monthlyBooks.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `${fullMonthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
-  document.getElementById('btn-view-in-stacks').style.display = 'none'; 
-
-  // Setup the drilldown back button
-  const navDiv = document.getElementById('stats-drilldown-nav');
-  const backBtn = document.getElementById('btn-stats-back');
-  backBtn.innerHTML = `<span style="font-size:12px;">✕</span> Clear ${monthNames[monthIndex]}`;
-  
-  backBtn.onclick = () => {
-    // Reset bar colors back to Sage Green
-    statsChartInstance.data.datasets[0].backgroundColor = Array(12).fill('#597755');
-    statsChartInstance.update();
-    
-    // Re-render the full year list and restore the Stacks button
-    const filtered = globalLibraryData.filter(b => b.status === 2 && b.read_date && b.read_date.startsWith(yearStr));
-    renderStatsList(filtered.sort((a, b) => new Date(b.read_date) - new Date(a.read_date)), `Books Finished in ${yearStr} (${filtered.length})`);
-    document.getElementById('btn-view-in-stacks').style.display = 'flex';
-    navDiv.classList.add('hidden');
-    currentStatsMonth = null;
-  };
-  
-  navDiv.classList.remove('hidden');
-}
-
-// Chart Helper for Bars
-function drawChart(type, labels, data, color, stepSize, onClickCallback) {
-  if (statsChartInstance) statsChartInstance.destroy();
-  const ctx = document.getElementById('stats-chart').getContext('2d');
-  statsChartInstance = new Chart(ctx, {
-    type: type,
-    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      onClick: (e, elements) => { if (elements.length > 0) onClickCallback(elements[0].index); },
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: color, borderColor: '#8B5E34', borderWidth: 1 } },
-      scales: {
-        y: { suggestedMax: stepSize === 10 ? undefined : 5, ticks: { stepSize: stepSize, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
-        x: { ticks: { font: { family: 'Georgia' } }, grid: { display: false } }
-      }
-    }
-  });
-}
-
-function initStatsPage() {
-  const yearSelect = document.getElementById('stats-year-select');
-  const finishedBooks = globalLibraryData.filter(b => b.status === 2 && b.read_date);
-  const years = [...new Set(finishedBooks.map(b => b.read_date.split('-')[0]))].sort((a, b) => b - a);
-  
-  yearSelect.innerHTML = '<option value="all">All Time</option>';
-  years.forEach(y => {
-    const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y;
-    yearSelect.appendChild(opt);
-  });
-
-  yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
-
-  // "View in Stacks" - Bulletproof Handoff Logic
-  document.getElementById('btn-view-in-stacks').addEventListener('click', () => {
-    
-    // 1. Switch Tabs visually
-    document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-library').classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
-    lastActiveTab = 'view-library';
-
-    // 2. Set the global Year Filter based on what the chart is showing
-    libraryYearFilter = currentStatsYear; // Will be 'all' or a specific year like '2026'
-
-    // 3. Visually highlight the "Finished" Quick Filter button
-    document.querySelectorAll('.quick-btn, .filter-btn').forEach(btn => btn.classList.remove('active'));
-    const finishedBtn = document.querySelector('[data-sort="date_finished_desc"]'); // Finds it regardless of class
-    if (finishedBtn) finishedBtn.classList.add('active');
-
-    applyLibraryFilters(); 
-    
-    document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-    
-    // IDK window.scrollTo({ top: 0, behavior: 'instant' });
-  });
-}
-
-
-// Dynamic Active Reads Carousel
+// Renders the Hero shelf displaying active reading carousels or action pills
 function renderHeroSection() {
   const carousel = document.getElementById('active-reads-carousel');
   const heroLabel = document.getElementById('hero-label');
@@ -490,13 +199,13 @@ function renderHeroSection() {
       <h3>Read Again</h3>
       <p>Revisit an old favorite</p>
     `;
-    card.addEventListener('click', () => navigateToQuickFilter('2', 'rating_desc')); // Routes to Finished + Highest Rated
+    card.addEventListener('click', () => navigateToQuickFilter('2', 'rating_desc')); 
     return card;
   };
 
   const activeReads = globalLibraryData.filter(b => Number(getField(b, 'status')) === 1);
 
-  // SCENARIO 0: No Active Reads (Pill Buttons)
+  // SCENARIO 0: No Active Reads (Renders action pill shortcuts)
   if (activeReads.length === 0) {
     heroLabel.textContent = "Start Reading";
     
@@ -512,28 +221,18 @@ function renderHeroSection() {
     addPill.className = 'hero-pill-btn';
     addPill.innerHTML = `+ Add Book`;
     addPill.addEventListener('click', () => {
-      // 1. Clear visual active state from hero pills
       document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-      
-      // 2. Clear visual active state from Wander Drawer buttons
       document.querySelectorAll('.quick-btn, .filter-btn').forEach(b => b.classList.remove('active'));
-      
-      // 3. Reset any manual dropdowns in the Wander Drawer to their defaults
       document.querySelectorAll('#wander-sheet select').forEach(select => select.selectedIndex = 0);
-      
-      // 4. Reset the underlying data filters
       libraryYearFilter = 'all';
-      window.lastAppliedSort = 'title_asc'; // Or whatever default sort you prefer for "All Books"
+      window.lastAppliedSort = 'title_asc'; 
       applyLibraryFilters();
-
-      // 5. Route to the Search view
       document.querySelector('.nav-item[data-target="view-search"]').click();
     });
 
     const tbrPill = document.createElement('button');
     tbrPill.className = 'hero-pill-btn';
     tbrPill.innerHTML = `TBR List`;
-    // Pass the button itself (e.currentTarget) to trigger the active state
     tbrPill.addEventListener('click', (e) => navigateToQuickFilter('0', 'date_added_desc', e.currentTarget));
 
     const againPill = document.createElement('button');
@@ -553,7 +252,7 @@ function renderHeroSection() {
     const book = activeReads[0];
     const card = document.createElement('div');
     card.className = 'carousel-item';
-    const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+    const coverUrl = getField(book, 'cover_url') || getPlaceholderCoverUrl(book);
     card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
     card.addEventListener('click', () => openDetails(book, card)); 
     
@@ -568,7 +267,7 @@ function renderHeroSection() {
     activeReads.forEach(book => {
       const card = document.createElement('div');
       card.className = 'carousel-item';
-      const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+      const coverUrl = getField(book, 'cover_url') || getPlaceholderCoverUrl(book);
       card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
       card.addEventListener('click', () => openDetails(book, card)); 
       carousel.appendChild(card);
@@ -576,15 +275,15 @@ function renderHeroSection() {
 
     carousel.appendChild(createSlimAddBtn());
 
-  // SCENARIO 4+: 4 or more Active Reads
+  // SCENARIO 3+: 3 or more Active Reads (Scrollable Carousel with a "See All" trigger)
   } else {
     heroLabel.textContent = "Current Reads";
-    const displayReads = activeReads.slice(0, 3); // Cap at 3 covers
+    const displayReads = activeReads.slice(0, 3); 
 
     displayReads.forEach(book => {
       const card = document.createElement('div');
       card.className = 'carousel-item';
-      const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/150x200?text=No+Cover';
+      const coverUrl = getField(book, 'cover_url') || getPlaceholderCoverUrl(book);
       card.innerHTML = `<img src="${coverUrl}" alt="${getField(book, 'title')}" class="cover-image">`;
       card.addEventListener('click', () => openDetails(book, card)); 
       carousel.appendChild(card);
@@ -600,7 +299,7 @@ function renderHeroSection() {
     carousel.appendChild(seeAllCard);
   }
 
-  // Floating scroll-back arrow logic
+  // Floating horizontal scroll arrow indicators
   let backArrow = document.getElementById('carousel-back-arrow');
   if (!backArrow) {
     backArrow = document.createElement('button');
@@ -618,104 +317,67 @@ function renderHeroSection() {
   }
 }
 
-// Master load function for Library Grid
+// Master book fetching initiator (Preloads database cache on login/refresh)
 async function loadBooks() {
+  let hasLoaded = false;
+  const localBooksStr = localStorage.getItem('the_stacks_local_books');
+  if (localBooksStr) {
+    try {
+      globalLibraryData = JSON.parse(localBooksStr).map(b => {
+        b.category = normalizeCategory(b.category);
+        return b;
+      });
+      renderHeroSection();
+      populateFilterDropdowns();
+      applyLibraryFilters();
+      initStatsPage(); 
+      renderAnnualStats(document.getElementById('stats-year-select').value);
+      document.dispatchEvent(new CustomEvent('library-loaded'));
+      hasLoaded = true;
+    } catch (e) {
+      console.error("Error parsing local books, falling back to Supabase fetch", e);
+    }
+  }
+
   const { data: books, error } = await supabase
-    .from('books')
+    .from(TABLE_NAME)
     .select('*')
     .order('title', { ascending: true });
 
-  if (error) { console.error(error); return; }
+  if (error) {
+    console.error("Supabase fetch failed:", error);
+    if (!hasLoaded) {
+      document.dispatchEvent(new CustomEvent('library-loaded'));
+    }
+    return;
+  }
   
-  globalLibraryData = books; 
-  calculateStats(); 
+  globalLibraryData = books.map(b => {
+    b.category = normalizeCategory(b.category);
+    return b;
+  });
+  localStorage.setItem('the_stacks_local_books', JSON.stringify(globalLibraryData));
+  
   renderHeroSection();
-  
-  // Instead of drawing the grid here, we trigger the Master Filter!
+  populateFilterDropdowns();
   applyLibraryFilters();
-  
-  // Trigger Phase 4 Stats Render
   initStatsPage(); 
   renderAnnualStats(document.getElementById('stats-year-select').value);
-}
-
-// ==========================================
-// LIBRARY FILTERING & SORTING ENGINE
-// ==========================================
-function applyLibraryFilters() {
-  let filteredBooks = [...globalLibraryData];
-
-  // 1. Get Local Search Term
-  const searchInput = document.getElementById('local-search');
-  const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-
-  // 2. Find the active Quick Filter button (checking both potential class names)
-  const activeBtn = document.querySelector('.quick-btn.active, .filter-btn.active');
-  const statusFilter = activeBtn ? activeBtn.getAttribute('data-status') : 'all';
-  const sortMethod = activeBtn ? activeBtn.getAttribute('data-sort') : 'date_added_desc';
-
-  // 3. Apply All Filters
-  filteredBooks = filteredBooks.filter(book => {
-    // A. Text Search (Title or Author)
-    const title = (getField(book, 'title') || '').toLowerCase();
-    const author = (getField(book, 'author') || '').toLowerCase();
-    const matchesSearch = title.includes(searchTerm) || author.includes(searchTerm);
-
-    // B. Status Filter
-    const status = getField(book, 'status');
-    const matchesStatus = (statusFilter === 'all' || !statusFilter) ? true : Number(status) === Number(statusFilter);
-
-    // C. Year Filter (Triggered strictly by the Stats Page handoff)
-    let matchesYear = true;
-    if (libraryYearFilter !== 'all') {
-      matchesYear = (book.status === 2 && book.read_date && book.read_date.startsWith(libraryYearFilter));
-    }
-
-    return matchesSearch && matchesStatus && matchesYear;
-  });
-
-  // 4. Sort the Data
-  filteredBooks.sort((a, b) => {
-    if (sortMethod === 'title_asc') {
-      return (getField(a, 'title') || 'Z').toLowerCase().localeCompare((getField(b, 'title') || 'Z').toLowerCase());
-    } else if (sortMethod === 'author_asc') {
-      return (getField(a, 'author') || 'Z').toLowerCase().localeCompare((getField(b, 'author') || 'Z').toLowerCase());
-    } else if (sortMethod === 'rating_desc') {
-      return (Number(getField(b, 'rating')) || 0) - (Number(getField(a, 'rating')) || 0);
-    } else if (sortMethod === 'date_finished_desc') {
-      return new Date(b.read_date || 0).getTime() - new Date(a.read_date || 0).getTime();
-    } else if (sortMethod === 'date_started_desc') {
-      return new Date(b.date_started || 0).getTime() - new Date(a.date_started || 0).getTime();
-    } else {
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(); // Newest Added
-    }
-  });
-
-  // 5. Update the Subheading UI
-  const subheading = document.getElementById('library-subheading');
-  if (subheading) {
-    // THE FIX: Change the fallback text to match your default app state
-    let headingText = activeBtn ? activeBtn.textContent.trim() : 'All Books, by Title (A-Z)'; 
-    if (libraryYearFilter !== 'all') headingText = `Finished in ${libraryYearFilter}`;
-    if (searchTerm) headingText += ` (Searching: "${searchTerm}")`; 
-    subheading.textContent = headingText;
+  
+  if (!hasLoaded) {
+    document.dispatchEvent(new CustomEvent('library-loaded'));
   }
-
-  // 6. Track state for the renderer and Draw!
-  window.lastAppliedSort = sortMethod; 
-  renderGrid(filteredBooks);
 }
 
-// --- BATCH 7: GRID RENDERER & EMPTY STATE ---
+// Renders the main book catalog using user's layout preferences (Grid, Cards, List)
 function renderGrid(booksToRender) {
   if (!bookGrid) return;
   bookGrid.innerHTML = '';
 
-  // 1. Set the baseline layout class for the container
   const activeLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
   bookGrid.className = `book-grid ${activeLayout}`;
 
-  // EMPTY STATE: If the filter returns nothing!
+  // EMPTY STATE
   if (booksToRender.length === 0) {
     bookGrid.innerHTML = `
       <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; opacity: 0.85;">
@@ -727,17 +389,15 @@ function renderGrid(booksToRender) {
     return;
   }
 
-  // PHASE 5 Setup: Use the globally tracked sort method to guarantee accuracy!
   const sortMethod = window.lastAppliedSort || '';
   let currentRenderYear = null;
 
-  // Draw the covers
   for (const book of booksToRender) {
-    
-    // --- PHASE 5: INJECT CHRONOLOGICAL DIVIDERS ---
-    if (sortMethod === 'date_finished_desc' && Number(book.status) === 2 && book.read_date) {
-      // Force string and extract YYYY safely
-      const bookYear = String(book.read_date).split('-')[0]; 
+    // Inject chronological indicators if sorting by finished date
+    const bookStatus = Number(getField(book, 'status'));
+    const bookReadDate = getField(book, 'read_date') || getField(book, 'date_finished');
+    if (sortMethod === 'date_finished_desc' && bookStatus === 2 && bookReadDate) {
+      const bookYear = String(bookReadDate).split('-')[0]; 
       
       if (bookYear !== currentRenderYear) {
         currentRenderYear = bookYear;
@@ -748,12 +408,10 @@ function renderGrid(booksToRender) {
         bookGrid.appendChild(divider);
       }
     }
-    // ----------------------------------------------
 
     const bookDiv = document.createElement('div');
     bookDiv.className = 'book-card'; 
     
-    // Keep active state styling if this book is currently open
     if (typeof currentOpenBookId !== 'undefined' && book.uuid === currentOpenBookId && viewDetails && viewDetails.classList.contains('active')) {
        bookDiv.classList.add('active');
     }
@@ -764,28 +422,30 @@ function renderGrid(booksToRender) {
     const author = getField(book, 'author') || 'Unknown Author';
     const ratingNum = Number(getField(book, 'rating')) || 0;
     
-    // Generate the stars: Gold for active, Grey for inactive
     let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
     if (ratingNum > 0) {
       ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
     }
 
-    // 2. The Standardized Layout HTML
-    if (savedCover && savedCover !== 'https://placehold.co/60x90?text=No+Cover') {
+    const titleEsc = escapeHtml(title);
+    const authorEsc = escapeHtml(author);
+
+    const hasRealCover = savedCover && !savedCover.includes('placehold.co') && !savedCover.includes('placehold.it');
+    if (hasRealCover) {
       bookDiv.innerHTML = `
-        <img src="${savedCover}" data-isbn="${isbn}" alt="${title}" class="book-cover" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
+        <img src="${savedCover}" data-isbn="${isbn}" data-uuid="${book.uuid}" alt="${titleEsc}" class="book-cover" onerror="this.src=getPlaceholderCoverUrl(globalLibraryData.find(b => b.uuid === '${book.uuid}'))">
         <div class="book-info">
-          <p class="book-title">${title}</p>
-          <p class="book-author">${author}</p>
+          <p class="book-title">${titleEsc}</p>
+          <p class="book-author">${authorEsc}</p>
           <div class="book-rating">${ratingDisplay}</div>
         </div>
       `;
     } else {
       bookDiv.innerHTML = `
-        <img src="https://placehold.co/150x200?text=Loading..." data-isbn="${isbn}" alt="${title}" class="book-cover lazy-cover">
+        <img src="https://placehold.co/150x200?text=Loading..." data-isbn="${isbn}" data-uuid="${book.uuid}" alt="${titleEsc}" class="book-cover lazy-cover">
         <div class="book-info">
-          <p class="book-title">${title}</p>
-          <p class="book-author">${author}</p>
+          <p class="book-title">${titleEsc}</p>
+          <p class="book-author">${authorEsc}</p>
           <div class="book-rating">${ratingDisplay}</div>
         </div>
       `;
@@ -795,309 +455,838 @@ function renderGrid(booksToRender) {
     bookGrid.appendChild(bookDiv);
   }
 
-  // Re-attach Lazy loading for missing covers
+  // Setup Lazy image loader intersections (with disconnect guard to prevent leaks)
+  if (lazyCoverObserver) {
+    lazyCoverObserver.disconnect();
+  }
+
   const lazyCovers = document.querySelectorAll('.lazy-cover');
-  const observer = new IntersectionObserver((entries, observer) => {
+  lazyCoverObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const img = entry.target;
-        const coverUrl = getCoverUrl(img.dataset.isbn);
+        const book = globalLibraryData.find(b => b.uuid === img.dataset.uuid);
+        const coverUrl = getCoverUrl(img.dataset.isbn, book);
         img.src = coverUrl;
-        img.onerror = () => { img.src = 'https://placehold.co/60x90?text=No+Cover'; };
+        img.onerror = () => { img.src = getPlaceholderCoverUrl(book); };
         observer.unobserve(img);
       }
     });
   });
-  lazyCovers.forEach(img => observer.observe(img));
+  lazyCovers.forEach(img => lazyCoverObserver.observe(img));
 }
 
-// Attach Event Listeners to Toolbar Inputs
-document.getElementById('local-search')?.addEventListener('input', applyLibraryFilters);
-document.getElementById('filter-status')?.addEventListener('change', applyLibraryFilters);
-document.getElementById('sort-library')?.addEventListener('change', applyLibraryFilters);
+// Adjusts the Back to Top FAB display based on active panel scroll coordinates
+function updateFabVisibility() {
+  if (!topFab) return;
+  const activeView = document.querySelector('.page-view.active');
+  if (activeView && activeView.id !== 'view-focus' && activeView.id !== 'view-details' && activeView.scrollTop > 300) {
+    topFab.classList.add('visible');
+  } else {
+    topFab.classList.remove('visible');
+  }
+}
+
+// Layout Switchers
+const layoutBtns = document.querySelectorAll('.layout-btn');
+if (layoutBtns.length > 0 && bookGrid) {
+  let currentLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
+  layoutBtns.forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('data-layout') === currentLayout) {
+      b.classList.add('active');
+    }
+  });
+
+  layoutBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      layoutBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      currentLayout = btn.getAttribute('data-layout');
+      localStorage.setItem('stacksLayout', currentLayout);
+      
+      bookGrid.className = 'book-grid ' + currentLayout;
+      bookGrid.style.opacity = 0;
+      setTimeout(() => { bookGrid.style.opacity = 1; }, 50);
+    });
+  });
+}
+
+// =========================================================================
+// MODULE 4: THE WANDER DRAWER (FILTERS, SORTS & SEARCH ENGINE)
+// =========================================================================
+
+// Evaluates filters and sorts matching data, compiling lists for grid display
+function applyLibraryFilters() {
+  let filteredBooks = [...globalLibraryData];
+
+  const searchInput = document.getElementById('local-search');
+  const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const activeBtn = document.querySelector('.quick-btn.active, .filter-btn.active');
+  const statusFilter = activeBtn ? activeBtn.getAttribute('data-status') : 'all';
+  const sortMethod = activeBtn ? activeBtn.getAttribute('data-sort') : 'title_asc';
+
+  const filterYearEl = document.getElementById('filter-year');
+  const filterRatingEl = document.getElementById('filter-rating');
+  const filterCategoryEl = document.getElementById('filter-category');
+  const filterHasNotesEl = document.getElementById('filter-has-notes');
+  const filterMissingCoverEl = document.getElementById('filter-missing-cover');
+
+  let filterYear = filterYearEl ? filterYearEl.value : 'all';
+  if (Number(statusFilter) === 2) {
+    if (filterYearEl) {
+      filterYearEl.disabled = false;
+      filterYearEl.style.opacity = '1';
+      filterYearEl.style.cursor = 'pointer';
+    }
+  } else {
+    filterYear = 'all';
+    if (filterYearEl) {
+      filterYearEl.value = 'all';
+      filterYearEl.disabled = true;
+      filterYearEl.style.opacity = '0.5';
+      filterYearEl.style.cursor = 'not-allowed';
+    }
+  }
+  const filterRating = filterRatingEl ? filterRatingEl.value : 'all';
+  const filterCategory = filterCategoryEl ? filterCategoryEl.value : 'all';
+  const filterHasNotes = filterHasNotesEl ? filterHasNotesEl.checked : false;
+  const filterMissingCover = filterMissingCoverEl ? filterMissingCoverEl.checked : false;
+
+  filteredBooks = filteredBooks.filter(book => {
+    // 1. Search filter: check title, author, notes, ISBN, category
+    const title = (getField(book, 'title') || '').toLowerCase();
+    const author = (getField(book, 'author') || '').toLowerCase();
+    const notes = (getField(book, 'notes') || '').toLowerCase();
+    const isbn = (getField(book, 'isbn') || '').toLowerCase();
+    const categoryVal = (getField(book, 'category') || '').toLowerCase();
+    
+    const matchesSearch = title.includes(searchTerm) || 
+                          author.includes(searchTerm) ||
+                          notes.includes(searchTerm) ||
+                          isbn.includes(searchTerm) ||
+                          categoryVal.includes(searchTerm);
+
+    // 2. Status filter
+    const status = getField(book, 'status');
+    const matchesStatus = (statusFilter === 'all' || !statusFilter) ? true : Number(status) === Number(statusFilter);
+
+    // 3. Finished Year filter (checks both quick filter year and advanced year select)
+    let matchesYear = true;
+    const bookStatus = Number(getField(book, 'status'));
+    const bookReadDate = getField(book, 'read_date') || getField(book, 'date_finished');
+    if (libraryYearFilter !== 'all') {
+      matchesYear = (bookStatus === 2 && bookReadDate && String(readDate).startsWith(libraryYearFilter));
+    } else if (filterYear !== 'all') {
+      matchesYear = (bookStatus === 2 && bookReadDate && String(bookReadDate).startsWith(filterYear));
+    }
+
+    // 4. Rating filter
+    let matchesRating = true;
+    const bookRating = Number(getField(book, 'rating') || 0);
+    if (filterRating === '5') {
+      matchesRating = bookRating === 5;
+    } else if (filterRating === '4') {
+      matchesRating = bookRating >= 4;
+    } else if (filterRating === '3') {
+      matchesRating = bookRating >= 3;
+    } else if (filterRating === 'unrated') {
+      matchesRating = bookRating === 0;
+    }
+
+    // 5. Category filter
+    let matchesCategory = true;
+    if (filterCategory !== 'all') {
+      const bookCategory = getField(book, 'category') || 'Uncategorized';
+      matchesCategory = bookCategory === filterCategory;
+    }
+
+    // 6. Has Notes filter
+    let matchesHasNotes = true;
+    if (filterHasNotes) {
+      const bookNotes = getField(book, 'notes') || '';
+      matchesHasNotes = bookNotes.trim().length > 0;
+    }
+
+    // 7. Missing Cover filter
+    let matchesMissingCover = true;
+    if (filterMissingCover) {
+      const bookCover = getField(book, 'cover_url') || '';
+      matchesMissingCover = !bookCover || bookCover.includes('placehold.co');
+    }
+
+    return matchesSearch && matchesStatus && matchesYear && matchesRating && matchesCategory && matchesHasNotes && matchesMissingCover;
+  });
+
+  // Sort Mechanics
+  filteredBooks.sort((a, b) => {
+    if (sortMethod === 'title_asc') {
+      return (getField(a, 'title') || 'Z').toLowerCase().localeCompare((getField(b, 'title') || 'Z').toLowerCase());
+    } else if (sortMethod === 'author_asc') {
+      return (getField(a, 'author') || 'Z').toLowerCase().localeCompare((getField(b, 'author') || 'Z').toLowerCase());
+    } else if (sortMethod === 'rating_desc') {
+      return (Number(getField(b, 'rating')) || 0) - (Number(getField(a, 'rating')) || 0);
+    } else if (sortMethod === 'date_finished_desc') {
+      const db = parseSafeDate(getField(b, 'read_date') || getField(b, 'date_finished'));
+      const da = parseSafeDate(getField(a, 'read_date') || getField(a, 'date_finished'));
+      return db - da;
+    } else if (sortMethod === 'date_started_desc') {
+      const db = parseSafeDate(getField(b, 'date_started'));
+      const da = parseSafeDate(getField(a, 'date_started'));
+      return db - da;
+    } else {
+      const db = parseSafeDate(getField(b, 'created_at') || getField(b, 'date_added'));
+      const da = parseSafeDate(getField(a, 'created_at') || getField(a, 'date_added'));
+      return db - da; 
+    }
+  });
+
+  // Turn Wander button green if filtered
+  const wanderTriggerBtn = document.getElementById('wander-trigger-btn');
+  const hasAdvancedFilters = filterYear !== 'all' || 
+                             filterRating !== 'all' || 
+                             filterCategory !== 'all' || 
+                             filterHasNotes || 
+                             filterMissingCover;
+
+  const isFiltered = (activeBtn && activeBtn.getAttribute('data-status') !== 'all') || 
+                     libraryYearFilter !== 'all' || 
+                     hasAdvancedFilters ||
+                     searchTerm;
+
+  if (wanderTriggerBtn) {
+    if (isFiltered) {
+      wanderTriggerBtn.classList.add('filtered');
+      wanderTriggerBtn.classList.add('active');
+    } else {
+      wanderTriggerBtn.classList.remove('filtered');
+      wanderTriggerBtn.classList.remove('active');
+    }
+  }
+
+  // Subheading text updating
+  const subheading = document.getElementById('library-subheading');
+  if (subheading) {
+    let headingText = '';
+    if (searchTerm) {
+      headingText = 'Refine Search';
+    } else {
+      const baseFilterName = activeBtn ? activeBtn.textContent.replace(' ✕', '').trim() : 'All Books';
+      
+      let customFiltersCount = 0;
+      if (filterYear !== 'all') customFiltersCount++;
+      if (filterRating !== 'all') customFiltersCount++;
+      if (filterCategory !== 'all') customFiltersCount++;
+      if (filterHasNotes) customFiltersCount++;
+      if (filterMissingCover) customFiltersCount++;
+      
+      if (customFiltersCount > 0) {
+        headingText = `${baseFilterName} +${customFiltersCount}`;
+      } else {
+        headingText = activeBtn ? baseFilterName : 'All Books, by Title (A-Z)';
+      }
+    }
+    subheading.textContent = headingText;
+  }
+
+  window.lastAppliedSort = sortMethod; 
+  renderGrid(filteredBooks);
+  updateQuickFilterButtonsUI();
+}
+
+function populateFilterDropdowns() {
+  const filterYearSelect = document.getElementById('filter-year');
+  const filterCategorySelect = document.getElementById('filter-category');
+  if (!filterYearSelect || !filterCategorySelect) return;
+
+  const currentYearVal = filterYearSelect.value;
+  const currentCategoryVal = filterCategorySelect.value;
+
+  const finishedYears = [...new Set(globalLibraryData
+    .filter(b => Number(getField(b, 'status')) === 2 && (getField(b, 'read_date') || getField(b, 'date_finished')))
+    .map(b => {
+      const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+      return String(readDate).split('-')[0];
+    })
+    .filter(Boolean)
+  )].sort((a, b) => b - a);
+
+  filterYearSelect.innerHTML = '<option value="all">All Years</option>';
+  finishedYears.forEach(year => {
+    const opt = document.createElement('option');
+    opt.value = year;
+    opt.textContent = year;
+    filterYearSelect.appendChild(opt);
+  });
+  if (finishedYears.includes(currentYearVal)) filterYearSelect.value = currentYearVal;
+
+  const categories = [...new Set(globalLibraryData
+    .map(b => normalizeCategory(getField(b, 'category')))
+  )].sort();
+
+  filterCategorySelect.innerHTML = '<option value="all">All Categories</option>';
+  categories.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    filterCategorySelect.appendChild(opt);
+  });
+  if (categories.includes(currentCategoryVal)) filterCategorySelect.value = currentCategoryVal;
+}
+
+function updateQuickFilterButtonsUI() {
+  const originalLabels = {
+    '1': 'Current Reads',
+    '0': 'TBR List',
+    '2': 'Finished',
+    '3': 'Gave Up'
+  };
+  document.querySelectorAll('.quick-btn').forEach(btn => {
+    const status = btn.getAttribute('data-status');
+    if (btn.classList.contains('active')) {
+      btn.textContent = `${originalLabels[status]} ✕`;
+    } else {
+      btn.textContent = originalLabels[status];
+    }
+  });
+}
+
+// Sets up drawer open/close and filter listeners
+const wanderTriggerBtn = document.getElementById('wander-trigger-btn');
+const wanderSheet = document.getElementById('wander-sheet');
+const localSearchInput = document.getElementById('local-search');
+const quickBtns = document.querySelectorAll('.quick-btn, .filter-btn');
+
+if (wanderTriggerBtn && wanderSheet) {
+  wanderTriggerBtn.addEventListener('click', () => {
+    wanderSheet.classList.add('open');
+  });
+  
+  const wanderHandle = wanderSheet.querySelector('.sheet-handle');
+  if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
+  
+  quickBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isActive = btn.classList.contains('active');
+      
+      libraryYearFilter = 'all'; 
+      quickBtns.forEach(b => { b.classList.remove('active'); b.style.background = ''; b.style.color = ''; });
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+      
+      if (!isActive) {
+        btn.classList.add('active');
+      }
+      
+      applyLibraryFilters(); 
+      const activeView = document.querySelector('.page-view.active');
+      if (activeView) activeView.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  const applyFiltersBtn = document.getElementById('btn-apply-filters');
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', () => {
+      applyLibraryFilters();
+      wanderSheet.classList.remove('open');
+    });
+  }
+
+  const clearFiltersBtn = document.getElementById('btn-clear-filters');
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      libraryYearFilter = 'all';
+      quickBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = '';
+        b.style.color = '';
+      });
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+
+      const filterYearEl = document.getElementById('filter-year');
+      const filterRatingEl = document.getElementById('filter-rating');
+      const filterCategoryEl = document.getElementById('filter-category');
+      const filterHasNotesEl = document.getElementById('filter-has-notes');
+      const filterMissingCoverEl = document.getElementById('filter-missing-cover');
+
+      if (filterYearEl) filterYearEl.value = 'all';
+      if (filterRatingEl) filterRatingEl.value = 'all';
+      if (filterCategoryEl) filterCategoryEl.value = 'all';
+      if (filterHasNotesEl) filterHasNotesEl.checked = false;
+      if (filterMissingCoverEl) filterMissingCoverEl.checked = false;
+
+      // Clear search input
+      const searchInput = document.getElementById('local-search');
+      if (searchInput) {
+        searchInput.value = '';
+        const clearBtn = document.getElementById('clear-search-btn');
+        if (clearBtn) clearBtn.style.display = 'none';
+      }
+
+      applyLibraryFilters();
+      wanderSheet.classList.remove('open');
+    });
+  }
+}
+
+// Syncs manual search/dropdown events and clear search button visibility
+const clearSearchBtn = document.getElementById('clear-search-btn');
+let searchDebounceTimeout;
+
+if (localSearchInput) {
+  localSearchInput.addEventListener('input', () => {
+    if (clearSearchBtn) {
+      if (localSearchInput.value.length > 0) {
+        clearSearchBtn.style.display = 'block';
+      } else {
+        clearSearchBtn.style.display = 'none';
+      }
+    }
+    clearTimeout(searchDebounceTimeout);
+    searchDebounceTimeout = setTimeout(() => {
+      applyLibraryFilters();
+    }, 200); // 200ms debounce
+  });
+
+  localSearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchDebounceTimeout);
+      applyLibraryFilters();
+      if (wanderSheet) wanderSheet.classList.remove('open');
+    }
+  });
+}
+
+if (clearSearchBtn) {
+  clearSearchBtn.addEventListener('click', () => {
+    if (localSearchInput) localSearchInput.value = '';
+    clearSearchBtn.style.display = 'none';
+    clearTimeout(searchDebounceTimeout);
+    applyLibraryFilters();
+  });
+}
+
+// Setup advanced filter change listeners
+const setupAdvancedFilters = () => {
+  const elements = ['filter-year', 'filter-rating', 'filter-category', 'filter-has-notes', 'filter-missing-cover'];
+  elements.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        applyLibraryFilters();
+      });
+    }
+  });
+};
+setupAdvancedFilters();
 
 
-// ==========================================
-// PHASE 3: FULL PAGE READING JOURNAL
-// ==========================================
+// Swipe to close gestures implementation for drawers
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isSwiping = false;
+
+if (wanderSheet) { 
+  wanderSheet.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    isSwiping = true;
+    wanderSheet.style.transition = 'none'; 
+  }, { passive: true });
+
+  wanderSheet.addEventListener('touchmove', (e) => {
+    if (!isSwiping) return;
+    touchCurrentY = e.touches[0].clientY;
+    const deltaY = touchCurrentY - touchStartY;
+    if (deltaY > 0) { 
+      wanderSheet.style.transform = `translateY(${deltaY}px)`;
+    }
+  }, { passive: true });
+
+  wanderSheet.addEventListener('touchend', () => {
+    if (!isSwiping) return;
+    isSwiping = false;
+    const deltaY = touchCurrentY - touchStartY;
+    
+    wanderSheet.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    wanderSheet.style.transform = ''; 
+
+    if (deltaY > 80) {
+      wanderSheet.classList.remove('open');
+    }
+  });
+}
+
+// Navigates from Hero directly to predefined filters
+function navigateToQuickFilter(status, sort, sourceBtn = null) {
+  document.querySelector('.nav-item[data-target="view-library"]').click();
+  libraryYearFilter = 'all';
+  document.querySelectorAll('.quick-btn, .filter-btn').forEach(b => b.classList.remove('active'));
+  
+  const targetBtn = document.querySelector(`.quick-btn[data-status="${status}"]`);
+  if (targetBtn) targetBtn.classList.add('active');
+
+  document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+  if (sourceBtn) sourceBtn.classList.add('active');
+
+  window.lastAppliedSort = sort; 
+  applyLibraryFilters();
+}
+
+// =========================================================================
+// MODULE 5: BOOK DETAILS SCREEN (READING JOURNAL)
+// =========================================================================
+
 const viewDetails = document.getElementById('view-details');
 const closeDetailsBtn = document.getElementById('close-details-btn');
 const journalContent = document.getElementById('journal-content');
 
+// Helper to batch database and local memory updates in a single connection
+async function updateMultipleBookFields(updatesObj) {
+  if (!currentOpenBookId || Object.keys(updatesObj).length === 0) return;
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .update(updatesObj)
+    .eq('uuid', currentOpenBookId);
+
+  if (error) {
+    console.error('Error updating book:', error);
+  } else {
+    const bookToUpdate = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+    if (bookToUpdate) {
+      for (const [key, value] of Object.entries(updatesObj)) {
+        const matchedKey = Object.keys(bookToUpdate).find(k => k.toLowerCase() === key.toLowerCase()) || key;
+        bookToUpdate[matchedKey] = value;
+      }
+      localStorage.setItem('the_stacks_local_books', JSON.stringify(globalLibraryData));
+    }
+  }
+}
+
+// Overloaded helper for backward compatibility with single field updates
+async function updateBookData(columnName, newValue) {
+  await updateMultipleBookFields({ [columnName]: newValue });
+}
+
+// Open Journal details container for selected entry
 function openDetails(book, clickedElement) {
-  
   const possibleViews = ['view-library', 'view-search', 'view-stats'];
   possibleViews.forEach(viewId => {
     const viewEl = document.getElementById(viewId);
     if (viewEl && viewEl.classList.contains('active')) {
       returnViewId = viewId;
+      scrollCache[viewId] = viewEl.scrollTop;
     }
   });
 
   window.history.pushState({ level: 'overlay' }, '');
-  
-  // THE FIX: Use uuid, not id!
   currentOpenBookId = book.uuid; 
   
   const title = getField(book, 'title') || 'Unknown Title';
   const author = getField(book, 'author') || 'Unknown Author';
-  const coverUrl = getField(book, 'cover_url') || 'https://placehold.co/60x90?text=No+Cover';
+  const coverUrl = getField(book, 'cover_url') || getPlaceholderCoverUrl(book);
   const ratingNum = Number(getField(book, 'rating')) || 0;
   const statusNum = String(getField(book, 'status') || '0');
   const notes = getField(book, 'notes') || '';
   
-  // Date Formatting for Display and Inputs
-  const formatStandardDate = (iso) => {
-    if (!iso) return '--';
-    const d = new Date(iso);
-    if (isNaN(d)) return '--';
-    return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${d.getFullYear()}`;
-  };
+  const titleEsc = escapeHtml(title);
+  const authorEsc = escapeHtml(author);
+  const notesEsc = escapeHtml(notes);
   
   const rawDateAdded = getField(book, 'created_at') || getField(book, 'date_added');
-  const dateAdded = formatDate(rawDateAdded) || '--';
+  const dateAdded = formatVintageDate(rawDateAdded, 'meta');
 
   const rawStarted = getField(book, 'date_started');
-  const startedVal = rawStarted ? new Date(rawStarted).toISOString().split('T')[0] : '';
-  const startedText = rawStarted ? formatStandardDate(rawStarted) : '';
+  const startedVal = formatVintageDate(rawStarted, 'input');
 
   const rawFinished = getField(book, 'read_date') || getField(book, 'date_finished');
-  const finishedVal = rawFinished ? new Date(rawFinished).toISOString().split('T')[0] : '';
-  const finishedText = rawFinished ? formatStandardDate(rawFinished) : '';
+  const finishedVal = formatVintageDate(rawFinished, 'input');
 
-  // Helper for vintage mm-dd-yy dates
-  const formatVintageDate = (iso) => {
-    if (!iso) return 'mm-dd-yy';
-    const d = new Date(iso);
-    if (isNaN(d)) return 'mm-dd-yy';
-    return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${String(d.getFullYear()).slice(-2)}`;
-  };
-
-  // 1. Conditional Stamps (One stamp only, wrapped for centering!)
+  // Stamp renders (no time-of-day or ISO on visual stamp)
   let stampsHtml = '';
   if (statusNum === '1') { 
-    stampsHtml = `<div class="stamp-container"><span class="stamp stamp-started">STARTED<br/>${formatVintageDate(rawStarted)}</span></div>`;
+    stampsHtml = `<div class="stamp-container"><span class="stamp stamp-started">STARTED<br/>${formatVintageDate(rawStarted, 'stamp')}</span></div>`;
   } else if (statusNum === '2') { 
-    stampsHtml = `<div class="stamp-container"><span class="stamp stamp-finished">FINISHED<br/>${formatVintageDate(rawFinished)}</span></div>`;
+    stampsHtml = `<div class="stamp-container"><span class="stamp stamp-finished">FINISHED<br/>${formatVintageDate(rawFinished, 'stamp')}</span></div>`;
   }
 
-  // 2. Interactive Stars HTML
+  // Interactive Stars
   let starsHtml = `<div id="details-stars" style="display: flex; gap: 4px; font-size: 24px; margin-bottom: 5px;">`;
   for (let i = 1; i <= 5; i++) {
     starsHtml += `<span data-value="${i}" style="color: ${i <= ratingNum ? '#DDA750' : '#e0dcd3'}; cursor:pointer; transition: transform 0.1s;">★</span>`;
   }
   starsHtml += `</div>`;
 
-  // 3. Inject Layout HTML (With Pencil Icons and Magic Wand)
+  // Missing Cover resolution UX logic (Tapping cover triggers sync)
+  const coverHtml = `
+    <div id="details-cover-container" style="cursor: pointer; position: relative; width: 110px; height: 165px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0; background: var(--card-bg); overflow: hidden; display: flex; align-items: center; justify-content: center;" title="Tap cover to search and sync details">
+      <img src="${coverUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src=getPlaceholderCoverUrl(globalLibraryData.find(b => b.uuid === '${book.uuid}'))">
+    </div>
+  `;
+
+  // Dynamic state-based primary action button
+  let stateActionBtnHtml = '';
+  if (statusNum === '0') {
+    stateActionBtnHtml = `
+      <button id="btn-state-action" class="details-pill-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background-color: var(--sage-green); color: var(--bg-color); border: none; padding: 10px 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: transform 0.1s;" title="Start reading this book">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Start
+      </button>
+    `;
+  } else if (statusNum === '1') {
+    stateActionBtnHtml = `
+      <button id="btn-state-action" class="details-pill-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background-color: var(--terracotta); color: var(--bg-color); border: none; padding: 10px 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: transform 0.1s;" title="Mark this book as finished">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Finish
+      </button>
+    `;
+  } else {
+    stateActionBtnHtml = `
+      <button id="btn-read-again" class="details-pill-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background-color: var(--sage-green); color: var(--bg-color); border: none; padding: 10px 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: transform 0.1s;" title="Start a new reading journey">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        Read Again
+      </button>
+    `;
+  }
+
+  const actionBarHtml = `
+    <div class="details-action-bar" style="display: flex; gap: 10px; width: 100%; margin-top: 15px; margin-bottom: 10px;">
+      ${stateActionBtnHtml}
+      <button id="btn-delete-book" class="details-pill-btn" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background-color: transparent; color: var(--terracotta); border: 1px solid var(--terracotta); padding: 10px 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: transform 0.1s;" title="Delete this book">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        Delete
+      </button>
+    </div>
+  `;
+
   const pencilSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
 
+  const existingCategories = [...new Set(globalLibraryData
+    .map(b => normalizeCategory(getField(b, 'category')))
+    .filter(Boolean)
+  )].sort();
+  if (!existingCategories.includes('Uncategorized')) {
+    existingCategories.push('Uncategorized');
+  }
+  const currentCategory = normalizeCategory(getField(book, 'category'));
+
+  let categorySelectHtml = `<select id="inline-category" class="inline-edit-input" style="padding: 2px 0; font-size: 0.85rem; border: none; background: transparent; cursor: pointer; pointer-events: auto; max-width: 150px; text-overflow: ellipsis; outline: none; font-weight: bold; color: var(--text-dark); font-family: 'Courier New', monospace; text-align: right; text-align-last: right;">`;
+  existingCategories.forEach(cat => {
+    const isSelected = currentCategory === cat;
+    const displayCat = trimCategory(cat, 20);
+    categorySelectHtml += `<option value="${escapeHtml(cat)}" ${isSelected ? 'selected' : ''}>${escapeHtml(displayCat)}</option>`;
+  });
+  categorySelectHtml += `<option value="__ADD_NEW__" style="color: var(--terracotta); font-weight: bold;">+ Add New...</option></select>`;
+
   journalContent.innerHTML = `
-    <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 10px;">
-      <img src="${coverUrl}" style="width: 110px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); flex-shrink: 0;" onerror="this.src='https://placehold.co/60x90?text=No+Cover'">
+    <div style="display: flex; gap: 20px; align-items: flex-start; width: 100%; text-align: left; margin-bottom: 15px;">
+      ${coverHtml}
       <div style="flex-grow: 1; min-width: 0;">
-        <h2 style="font-family: 'Georgia', serif; font-size: 1.25rem; font-weight: bold; color: var(--text-dark); margin: 0 0 4px 0; line-height: 1.2; overflow-wrap: break-word;">${title}</h2>
-        <p style="font-family: 'Courier New'; font-size: 0.9rem; color: var(--sage-green); margin: 0 0 10px 0;">by ${author}</p>
+        <h2 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: bold; color: var(--text-dark); margin: 0 0 4px 0; line-height: 1.2; overflow-wrap: break-word;">${titleEsc}</h2>
+        <p style="font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; color: var(--sage-green); margin: 0 0 10px 0; font-weight: bold;">by ${authorEsc}</p>
         ${starsHtml}
         ${stampsHtml}
       </div>
     </div>
 
-    <div style="display: flex; gap: 15px; width: 100%; margin-bottom: 25px;">
-      
-      <div class="journal-meta-card" style="flex-grow: 1;">
-        <div class="meta-row">
-          <span class="meta-label">Status:</span> 
-          <div class="input-with-icon">
-            <select id="inline-status" class="inline-edit-input">
-              <option value="0" ${statusNum === '0' ? 'selected' : ''}>TBR</option>
-              <option value="1" ${statusNum === '1' ? 'selected' : ''}>Reading</option>
-              <option value="2" ${statusNum === '2' ? 'selected' : ''}>Finished</option>
-              <option value="3" ${statusNum === '3' ? 'selected' : ''}>Gave Up</option>
-            </select>
-            ${pencilSvg}
-          </div>
-        </div>
-        <div class="meta-row">
-          <span class="meta-label">Added:</span> 
-          <div class="input-with-icon">
-            <span class="meta-value" style="font-weight: bold;">${dateAdded}</span>
-            <svg width="14" height="14" style="opacity: 0;"></svg> </div>
-        </div>
-        <div class="meta-row">
-          <span class="meta-label">Started:</span> 
-          <div class="input-with-icon">
-            <input type="date" id="inline-started" class="inline-edit-input" value="${startedVal}">
-            ${pencilSvg}
-          </div>
-        </div>
-        <div class="meta-row">
-          <span class="meta-label">Finished:</span> 
-          <div class="input-with-icon">
-            <input type="date" id="inline-finished" class="inline-edit-input" value="${finishedVal}">
-            ${pencilSvg}
-          </div>
+    <div class="journal-meta-card" style="width: 100%;">
+      <div class="meta-row">
+        <span class="meta-label">Status:</span> 
+        <div class="input-with-icon">
+          <select id="inline-status" class="inline-edit-input" style="padding: 2px 0; font-size: 0.85rem; border: none; background: transparent; cursor: pointer; pointer-events: auto;">
+            <option value="0" ${statusNum === '0' ? 'selected' : ''}>TBR</option>
+            <option value="1" ${statusNum === '1' ? 'selected' : ''}>Reading</option>
+            <option value="2" ${statusNum === '2' ? 'selected' : ''}>Finished</option>
+            <option value="3" ${statusNum === '3' ? 'selected' : ''}>Gave Up</option>
+          </select>
+          <span class="pencil-trigger" data-target="inline-status" style="margin-left: 4px;">${pencilSvg}</span>
         </div>
       </div>
-      
-      <div style="display: flex; flex-direction: column; gap: 10px; justify-content: space-between; margin-top: 15px;">
-        <button id="btn-refresh-book" class="journal-action-btn" title="Refresh Data">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-          </svg>
-        </button>
-        <button id="btn-read-again" class="journal-action-btn" title="Read Again">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-        </button>
-        <button id="btn-delete-book" class="journal-action-btn" title="Return/Delete">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        </button>
+      <div class="meta-row">
+        <span class="meta-label">Added:</span> 
+        <div class="input-with-icon">
+          <span class="meta-value" style="font-weight: bold;">${dateAdded}</span>
+          <svg width="14" height="14" style="opacity: 0;"></svg>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Started:</span> 
+        <div class="input-with-icon">
+          <input type="date" id="inline-started" class="inline-edit-input" style="padding: 2px 0; font-size: 0.85rem; border: none; background: transparent; cursor: pointer; pointer-events: auto;" value="${startedVal}">
+          <span class="pencil-trigger" data-target="inline-started" style="margin-left: 4px;">${pencilSvg}</span>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Finished:</span> 
+        <div class="input-with-icon">
+          <input type="date" id="inline-finished" class="inline-edit-input" style="padding: 2px 0; font-size: 0.85rem; border: none; background: transparent; cursor: pointer; pointer-events: auto;" value="${finishedVal}">
+          <span class="pencil-trigger" data-target="inline-finished" style="margin-left: 4px;">${pencilSvg}</span>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">ISBN:</span> 
+        <div class="input-with-icon">
+          <span class="meta-value" style="font-weight: bold;">${getField(book, 'isbn') || '--'}</span>
+          <svg width="14" height="14" style="opacity: 0;"></svg>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Category:</span> 
+        <div class="input-with-icon">
+          ${categorySelectHtml}
+          <span class="pencil-trigger" data-target="inline-category" style="margin-left: 4px;">${pencilSvg}</span>
+        </div>
       </div>
     </div>
 
-    <div style="width: 100%; text-align: left;">
-      <h3 style="font-family: 'Courier New'; color: var(--terracotta); margin: 0 0 10px 0; font-size: 1rem;">Notes</h3>
-      <div style="position: relative;">
-        <textarea id="journal-notes-area" class="journal-notes-input" placeholder="Tap to add your thoughts...">${notes}</textarea>
-        <button id="btn-save-notes" style="position: absolute; bottom: 12px; right: 12px; background: var(--terracotta); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-family: 'Courier New'; font-weight: bold; cursor: pointer; display: none;">Save</button>
-      </div>
+    ${actionBarHtml}
+
+    <div style="width: 100%; text-align: left; margin-top: 15px;">
+      <h3 style="font-family: 'Courier New', Courier, monospace; color: var(--terracotta); margin: 0 0 10px 0; font-size: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        Notes <span id="autosave-indicator" class="autosave-status" style="display: none;">saving...</span>
+      </h3>
+      <textarea id="journal-notes-area" class="journal-notes-input" placeholder="Tap to add your thoughts...">${notesEsc}</textarea>
     </div>
   `;
+
+  const detailsContainer = document.getElementById('view-details');
   
   pageViews.forEach(view => view.classList.remove('active'));
-  const detailsContainer = document.getElementById('view-details');
-    if (detailsContainer) {
-      detailsContainer.classList.add('active');
-    }
+  if (detailsContainer) {
+    detailsContainer.classList.add('active');
+    detailsContainer.scrollTop = 0; 
+    updateFabVisibility();
+  }
 
-    // Add this line right here! 
-    // IDK  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // ==========================================
-  // CLOSE BOOK DETAILS LOGIC
-  // ==========================================
+  // Close detail view routing
   function closeBookDetails() {
     const detailsContainer = document.getElementById('view-details'); 
-  
-    if (detailsContainer) {
-      detailsContainer.classList.remove('active'); 
-    }
+    if (detailsContainer) detailsContainer.classList.remove('active'); 
     
-    // Safely route back to whatever view Sarah was previously on!
+    pageViews.forEach(view => view.classList.remove('active'));
     const previousView = document.getElementById(lastActiveTab);
     if (previousView) {
-      previousView.classList.add('active'); 
+      previousView.classList.add('active');
+      requestAnimationFrame(() => {
+        previousView.scrollTop = scrollCache[lastActiveTab] || 0;
+        updateFabVisibility();
+      });
     } else {
-      // Fallback just in case something goes wrong
-      document.getElementById('view-library').classList.add('active'); 
+      document.getElementById('view-library').classList.add('active');
     }
-  
     currentOpenBookId = null; 
   }
 
-  // ==========================================
-  // 4. ATTACH INTERACTIVE EVENT LISTENERS
-  // ==========================================
+  // Attach Details Event Listeners
   
-  // A. Inline Edits (Status & Dates)
+  // Date Picker Pencil triggers
+  document.querySelectorAll('.pencil-trigger').forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const targetId = trigger.getAttribute('data-target');
+      const targetInput = document.getElementById(targetId);
+      if (targetInput) {
+        if (targetInput.tagName === 'INPUT' && targetInput.type === 'date') {
+          try {
+            targetInput.showPicker();
+          } catch (err) {
+            console.error('showPicker failed, falling back to focus/click:', err);
+            targetInput.focus();
+            targetInput.click();
+          }
+        } else {
+          targetInput.focus();
+          if (targetInput.select) targetInput.select();
+        }
+      }
+    });
+  });
+
+  // Inline Status Change dropdown listener (Remove auto-dating from select dropdown)
   document.getElementById('inline-status').addEventListener('change', async (e) => {
     const newStatus = parseInt(e.target.value);
     const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
     
-    await updateBookData('status', newStatus);
-    updatedBook.status = newStatus; 
+    await updateMultipleBookFields({ status: newStatus });
     
-    const todayIso = new Date().toISOString();
-    
-    if (newStatus === 1) { // Reading
-      // ALWAYS update to today's date when switching to Reading
-      await updateBookData('date_started', todayIso);
-      updatedBook.date_started = todayIso;
-      
-      // Clear finish date if moved back to Reading
-      await updateBookData('read_date', null);
-      updatedBook.read_date = null;
-      
-    } else if (newStatus === 2) { // Finished
-      await updateBookData('read_date', todayIso);
-      updatedBook.read_date = todayIso;
-    }
-    
-    // Instantly update the Hero Carousel!
-    if (typeof renderHeroSection === 'function') renderHeroSection();
-    if (typeof calculateStats === 'function') calculateStats();
-    
+    renderHeroSection();
     openDetails(updatedBook); 
     applyLibraryFilters(); 
   });
 
+  // Date Started selection listener
   document.getElementById('inline-started').addEventListener('change', async (e) => {
     const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
     const rawInput = e.target.value;
     
     if (!rawInput) {
       await updateBookData('date_started', null);
-      updatedBook.date_started = null;
     } else {
-      // Parse locally to avoid UTC off-by-one errors
-      const [year, month, day] = rawInput.split('-');
-      const isoString = new Date(year, month - 1, day).toISOString();
-      await updateBookData('date_started', isoString);
-      updatedBook.date_started = isoString;
+      const finishedInput = document.getElementById('inline-finished').value;
+      const startedDate = new Date(rawInput);
+      const today = new Date();
+      
+      if (startedDate > today) {
+        await showStacksModal("Error", "Start date cannot be in the future.", false);
+        const currentStarted = getField(updatedBook, 'date_started');
+        e.target.value = currentStarted ? formatVintageDate(currentStarted, 'input') : '';
+        return;
+      }
+      
+      if (finishedInput && startedDate > new Date(finishedInput)) {
+        await showStacksModal("Error", "Start date cannot be after the Finished date.", false);
+        const currentStarted = getField(updatedBook, 'date_started');
+        e.target.value = currentStarted ? formatVintageDate(currentStarted, 'input') : '';
+        return;
+      }
+      
+      await updateBookData('date_started', rawInput);
     }
+    renderHeroSection();
+    applyLibraryFilters();
     openDetails(updatedBook);
   });
 
+  // Date Finished selection listener
   document.getElementById('inline-finished').addEventListener('change', async (e) => {
     const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
     const rawInput = e.target.value;
 
     if (!rawInput) {
       await updateBookData('read_date', null);
-      updatedBook.read_date = null;
     } else {
-      const [year, month, day] = rawInput.split('-');
-      const newDateObj = new Date(year, month - 1, day);
-      
+      const startedInput = document.getElementById('inline-started').value;
+      const finishedDate = new Date(rawInput);
       const today = new Date();
-      today.setHours(23, 59, 59, 999); 
+      
+      if (finishedDate > today) {
+        await showStacksModal("Error", "Finished date cannot be in the future.", false);
+        const currentFinished = getField(updatedBook, 'read_date') || getField(updatedBook, 'date_finished');
+        e.target.value = currentFinished ? formatVintageDate(currentFinished, 'input') : '';
+        return;
+      }
+      
+      if (startedInput && finishedDate < new Date(startedInput)) {
+        await showStacksModal("Error", "Finished date cannot be before the Started date.", false);
+        const currentFinished = getField(updatedBook, 'read_date') || getField(updatedBook, 'date_finished');
+        e.target.value = currentFinished ? formatVintageDate(currentFinished, 'input') : '';
+        return;
+      }
 
-    const startedInput = document.getElementById('inline-started').value;
-    let startedDateObj = null;
-    if (startedInput) {
-       const [sYear, sMonth, sDay] = startedInput.split('-');
-       startedDateObj = new Date(sYear, sMonth - 1, sDay);
+      await updateMultipleBookFields({
+        read_date: rawInput,
+        status: 2
+      });
     }
 
-    // Validations
-    if (newDateObj > today) {
-      alert("Finished date cannot be in the future.");
-      e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
-      return;
-    }
-    
-    if (startedDateObj && newDateObj < startedDateObj) {
-      alert("Finished date cannot be before the Started date.");
-      e.target.value = updatedBook.read_date ? updatedBook.read_date.split('T')[0] : '';
-      return;
-    }
-
-    const isoString = newDateObj.toISOString();
-    await updateBookData('read_date', isoString);
-    updatedBook.read_date = isoString;
-
-    // Auto-update status to Finished
-    await updateBookData('status', 2);
-    updatedBook.status = 2;
-  }
-
-    if (typeof renderHeroSection === 'function') renderHeroSection();
-    if (typeof calculateStats === 'function') calculateStats();
-
-    openDetails(updatedBook);
+    renderHeroSection();
     applyLibraryFilters();
+    openDetails(updatedBook);
   });
 
-  // B. Editable Stars
+  // Star Ratings Editor
   const starElements = document.querySelectorAll('#details-stars span');
   starElements.forEach(star => {
     star.addEventListener('click', async (e) => {
@@ -1115,131 +1304,258 @@ function openDetails(book, clickedElement) {
     });
   });
 
-  // C. Notes
+  // Notes Autosave bindings with debounced autosave
   const notesArea = document.getElementById('journal-notes-area');
-  const saveNotesBtn = document.getElementById('btn-save-notes');
+  const autosaveIndicator = document.getElementById('autosave-indicator');
+  let saveTimeout;
   
-  notesArea.addEventListener('input', () => saveNotesBtn.style.display = 'block');
+  if (notesArea) {
+    const saveNotesData = async () => {
+      if (autosaveIndicator) {
+        autosaveIndicator.textContent = 'saving...';
+        autosaveIndicator.style.display = 'inline';
+      }
+      await updateBookData('notes', notesArea.value);
+      if (autosaveIndicator) {
+        autosaveIndicator.textContent = 'saved';
+        setTimeout(() => {
+          if (autosaveIndicator.textContent === 'saved') {
+            autosaveIndicator.style.display = 'none';
+          }
+        }, 1500);
+      }
+    };
 
-  saveNotesBtn.addEventListener('click', async () => {
-    saveNotesBtn.textContent = 'Saved!';
-    saveNotesBtn.style.background = 'var(--sage-green)';
-    
-    await updateBookData('notes', notesArea.value);
-    
-    setTimeout(() => {
-      saveNotesBtn.style.display = 'none';
-      saveNotesBtn.textContent = 'Save';
-      saveNotesBtn.style.background = 'var(--terracotta)';
-    }, 1500);
-  });
+    notesArea.addEventListener('input', () => {
+      if (autosaveIndicator) {
+        autosaveIndicator.textContent = 'saving...';
+        autosaveIndicator.style.display = 'inline';
+      }
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveNotesData, 1000);
+    });
 
-  // D. Action Buttons
-  document.getElementById('btn-refresh-book').addEventListener('click', async (e) => 
-    {
-    const btn = e.currentTarget;
-    btn.style.opacity = '0.5';
-    
+    notesArea.addEventListener('blur', () => {
+      clearTimeout(saveTimeout);
+      saveNotesData();
+    });
+  }
+
+
+
+  // Inline Category editor change listener
+  const categoryInput = document.getElementById('inline-category');
+  if (categoryInput) {
+    categoryInput.addEventListener('change', async (e) => {
+      const val = e.target.value;
+      if (val === '__ADD_NEW__') {
+        const newCat = await showPromptModal("Custom Category", "Enter a name for the new category:", "e.g. History, Biography...");
+        if (newCat && newCat.trim().length > 0) {
+          const normalized = normalizeCategory(newCat);
+          await updateBookData('category', normalized);
+          const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+          populateFilterDropdowns();
+          applyLibraryFilters();
+          openDetails(updatedBook);
+        } else {
+          const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+          openDetails(updatedBook);
+        }
+      } else {
+        await updateBookData('category', val);
+        const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+        populateFilterDropdowns();
+        applyLibraryFilters();
+        openDetails(updatedBook);
+      }
+    });
+  }
+
+  // Sync details from Google Books (Tapping cover placeholder)
+  const triggerGoogleBooksSync = async () => {
+    const coverContainer = document.getElementById('details-cover-container');
+    if (coverContainer) {
+      coverContainer.style.background = 'var(--card-bg)';
+      coverContainer.style.border = '2px dashed var(--sage-green)';
+      coverContainer.style.boxShadow = 'none'; // Avoid double shadow
+      coverContainer.style.display = 'flex';
+      coverContainer.style.flexDirection = 'column';
+      coverContainer.style.alignItems = 'center';
+      coverContainer.style.justifyContent = 'center';
+      coverContainer.innerHTML = `
+        <svg class="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sage-green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10"></path>
+        </svg>
+        <span style="font-family: 'Courier New'; font-size: 0.7rem; color: var(--sage-green); font-weight: bold; text-align: center; padding: 0 5px;">Syncing...</span>
+      `;
+    }
+
     const isbn = getField(book, 'isbn');
     const qTitle = getField(book, 'title') || '';
     const qAuthor = getField(book, 'author') || '';
     let query = '';
     
     const cleanIsbn = String(isbn).replace(/[-\s]/g, '');
-    if (cleanIsbn && cleanIsbn !== 'N/A' && cleanIsbn !== 'undefined') {
+    const isValidIsbn = /^\d{10}(\d{3})?$/.test(cleanIsbn);
+    
+    if (isValidIsbn) {
       query = `isbn:${cleanIsbn}`;
     } else {
-      query = `intitle:${qTitle.replace(/ /g, '+')}+inauthor:${qAuthor.replace(/ /g, '+')}`;
+      let parts = [];
+      if (qTitle.trim()) parts.push(`intitle:${qTitle.trim()}`);
+      if (qAuthor.trim()) parts.push(`inauthor:${qAuthor.trim()}`);
+      query = parts.join(' ');
+    }
+
+    if (!query) {
+      resetSyncUI();
+      return;
     }
 
     try {
-      const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&key=${apiKey}`);
-      const data = await response.json();
+      const data = await fetchBooksFromAPIs(query);
 
       if (data.items && data.items.length > 0) {
         const volumeInfo = data.items[0].volumeInfo;
-        if (volumeInfo.imageLinks?.thumbnail) await updateBookData('cover_url', volumeInfo.imageLinks.thumbnail.replace('http:', 'https:'));
-        if (volumeInfo.pageCount) await updateBookData('pages', volumeInfo.pageCount);
-        if (volumeInfo.categories?.length > 0) await updateBookData('category', volumeInfo.categories[0]);
+        const updates = {};
+        if (volumeInfo.imageLinks?.thumbnail) updates.cover_url = volumeInfo.imageLinks.thumbnail.replace('http:', 'https:');
+        if (volumeInfo.pageCount) updates.pages = volumeInfo.pageCount;
+        if (volumeInfo.categories?.length > 0) updates.category = normalizeCategory(volumeInfo.categories[0]);
         
+        await updateMultipleBookFields(updates);
         const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
         openDetails(updatedBook);
         applyLibraryFilters();
+      } else {
+        await showStacksModal('Not Found', 'Could not find matching book details.', false);
+        resetSyncUI();
       }
     } catch (error) {
       console.error(error);
-    } finally {
-      btn.style.opacity = '1';
+      resetSyncUI();
     }
-  });
+  };
 
-  document.getElementById('btn-read-again').addEventListener('click', async () => {
-    const userConfirmed = await showStacksModal("Read Again", "Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.", true);
-    
-    if (userConfirmed) {
-      const duplicate = {
-        uuid: crypto.randomUUID(),
-        title: getField(book, 'title'),
-        author: getField(book, 'author'),
-        isbn: getField(book, 'isbn'),
-        cover_url: getField(book, 'cover_url'),
-        pages: getField(book, 'pages'),
-        category: getField(book, 'category'),
-        status: 1, 
-        date_started: new Date().toISOString(),
-        read_date: null,
-        rating: 0,
-        notes: null
-      };
+  const resetSyncUI = () => {
+    const coverContainer = document.getElementById('details-cover-container');
+    if (coverContainer) {
+      coverContainer.style.background = 'var(--card-bg)';
+      coverContainer.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sage-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 5px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span style="font-family: 'Courier New'; font-size: 0.75rem; color: var(--sage-green); font-weight: bold; text-align: center; padding: 0 5px;">Find Cover</span>
+        <span style="font-size: 0.65rem; color: var(--text-dark); margin-top: 2px;">Tap to search</span>
+      `;
+    }
+  };
+
+  // Bind Cover Resolver click event
+  const detailsCoverContainer = document.getElementById('details-cover-container');
+  if (detailsCoverContainer) {
+    detailsCoverContainer.addEventListener('click', triggerGoogleBooksSync);
+  }
+
+  // Bind Primary CTA Button click
+  const stateActionBtn = document.getElementById('btn-state-action');
+  if (stateActionBtn) {
+    stateActionBtn.addEventListener('click', async () => {
+      const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
+      if (!updatedBook) return;
       
-      const { data, error } = await supabase.from('books').insert([duplicate]).select();
+      const currentStatus = Number(getField(updatedBook, 'status') || 0);
+      const today = getLocalDateString();
       
-      if (error) {
-        console.error('Error duplicating:', error);
-        await showStacksModal("Error", "Oops! Something went wrong communicating with the database.", false);
-      } else {
-        globalLibraryData.push(data[0] || duplicate);
-        
-        if (typeof renderHeroSection === 'function') renderHeroSection();
-        if (typeof calculateStats === 'function') calculateStats();
-        applyLibraryFilters(); 
-        
-        await showStacksModal("Success", "New journey added! Check your Current Reads.", false);
-        closeBookDetails();
+      if (currentStatus === 0) {
+        await updateMultipleBookFields({
+          status: 1,
+          date_started: today
+        });
+        showToast("Started reading!");
+      } else if (currentStatus === 1) {
+        await updateMultipleBookFields({
+          status: 2,
+          read_date: today
+        });
+        showToast("Finished reading!");
       }
-    }
-  });
+      
+      renderHeroSection();
+      openDetails(updatedBook);
+      applyLibraryFilters();
+    });
+  }
 
+  // Read Again duplicate duplicator
+  const btnReadAgain = document.getElementById('btn-read-again');
+  if (btnReadAgain) {
+    btnReadAgain.addEventListener('click', async () => {
+      const userConfirmed = await showStacksModal("Read Again", "Start a new reading journey for this book? This duplicates the entry so you can log new dates and notes.", true);
+      
+      if (userConfirmed) {
+        const duplicate = {
+          uuid: crypto.randomUUID(),
+          title: getField(book, 'title'),
+          author: getField(book, 'author'),
+          isbn: getField(book, 'isbn'),
+          cover_url: getField(book, 'cover_url'),
+          pages: getField(book, 'pages'),
+          category: normalizeCategory(getField(book, 'category')),
+          status: 1, 
+          date_started: getLocalDateString(),
+          read_date: null,
+          rating: 0,
+          notes: null
+        };
+        
+        const { data, error } = await supabase.from(TABLE_NAME).insert([duplicate]).select();
+        
+        if (error) {
+          console.error('Error duplicating:', error);
+          await showStacksModal("Error", "Oops! Something went wrong communicating with the database.", false);
+        } else {
+          const savedDuplicate = (data && data.length > 0) ? data[0] : duplicate;
+          savedDuplicate.category = normalizeCategory(savedDuplicate.category);
+          
+          globalLibraryData.push(savedDuplicate);
+          localStorage.setItem('the_stacks_local_books', JSON.stringify(globalLibraryData));
+          
+          renderHeroSection();
+          applyLibraryFilters(); 
+          await showStacksModal("Success", "New journey added! Check your Current Reads.", false);
+          closeBookDetails();
+        }
+      }
+    });
+  }
+
+  // Delete book action click event
   document.getElementById('btn-delete-book').addEventListener('click', async () => {
     const userConfirmed = await showStacksModal("Delete Book", "Are you sure you want to delete this book?", true);
     
     if (userConfirmed) {
-      const { error } = await supabase.from('books').delete().eq('uuid', book.uuid);
+      const { error } = await supabase.from(TABLE_NAME).delete().eq('uuid', book.uuid);
   
       if (error) {
         await showStacksModal("Error", "Could not delete the book. Please try again.", false);
         return;
       }
-  
+      
       globalLibraryData = globalLibraryData.filter(b => b.uuid !== book.uuid);
-      loadBooks();
+      localStorage.setItem('the_stacks_local_books', JSON.stringify(globalLibraryData));
+      
+      applyLibraryFilters();
+      renderHeroSection();
       closeBookDetails();
+      showToast("Book deleted!");
     }
   });
 
-  // Ensure the Close button functions cleanly without memory leaks
-  if (closeDetailsBtn) {
-    closeDetailsBtn.onclick = () => {
-      closeBookDetails(); 
-    };
-  }
-} // <--- This final bracket safely closes the master openDetails() function!
+  if (closeDetailsBtn) closeDetailsBtn.onclick = closeBookDetails;
+}
 
-
-// ==========================================
-// 5. SEARCH & BARCODE SCANNER LOGIC
-// ==========================================
+// =========================================================================
+// MODULE 6: GOOGLE BOOKS API SEARCH & CAMERA SCANNER
+// =========================================================================
 
 const startScanBtn = document.getElementById('start-scan-btn');
 const stopScanBtn = document.getElementById('stop-scan-btn');
@@ -1261,13 +1577,13 @@ if (startScanBtn) {
         html5QrcodeScanner.stop().then(() => {
           scannerContainer.classList.add('hidden');
           searchInput.value = `${decodedText}`;
-          if(searchBtn) searchBtn.click();
+          if (searchBtn) searchBtn.click();
         });
       },
-      (err) => { /* Ignore constant read errors */ }
-    ).catch((err) => {
+      (err) => { /* Ignore constant scan frame read errors */ }
+    ).catch(async (err) => {
       console.error("Camera access denied or error:", err);
-      alert("Could not access the camera. Please ensure permissions are granted.");
+      await showStacksModal("Error", "Could not access the camera. Please ensure permissions are granted.", false);
       scannerContainer.classList.add('hidden');
     });
   });
@@ -1281,44 +1597,20 @@ if (stopScanBtn) {
   });
 }
 
+// Search Google Books DB by title, author, or ISBN
 async function searchGoogleBooks(query) {
   if (!query) return;
 
-  if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
+  if (searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">Searching the archives...</p>';
 
   try {
-    const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4'; 
-    const typeRadio = document.querySelector('input[name="search-type"]:checked');
-    const searchType = typeRadio ? typeRadio.value : 'intitle:';
-    
-    // --- SEARCH WITHOUT TITLE OR AUTHOR ---
-    let finalQuery = '';
-    const cleanString = query.trim();
-    const numbersOnly = cleanString.replace(/[-\s]/g, '');
+    const data = await fetchBooksFromAPIs(query);
 
-    // 1. If the query already starts with "isbn:" (typed manually)
-    if (cleanString.toLowerCase().startsWith('isbn:')) {
-      finalQuery = encodeURIComponent(cleanString);
-    } 
-    // 2. If it's purely a 10 or 13 digit number, force the "isbn:" prefix
-    else if (/^\d{10}(\d{3})?$/.test(numbersOnly)) {
-      finalQuery = encodeURIComponent(`isbn:${numbersOnly}`);
-    } 
-    // 3. Otherwise, perform a broad keyword search!
-    else {
-      finalQuery = encodeURIComponent(cleanString);
-    }
-    
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${finalQuery}&maxResults=10&key=${apiKey}`);
-    
-    const data = await response.json();
-
-    if(searchResultsContainer) searchResultsContainer.innerHTML = '';
-
+    if (searchResultsContainer) searchResultsContainer.innerHTML = '';
     document.getElementById('search-results-header').classList.remove('hidden');
 
     if (!data.items || data.items.length === 0) {
-      if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">No books found. Try a different search.</p>';
+      if (searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: var(--sage-green); font-family: Courier New;">No books found. Try a different search.</p>';
       return;
     }
 
@@ -1326,8 +1618,8 @@ async function searchGoogleBooks(query) {
       const info = item.volumeInfo;
       const title = info.title || 'Unknown Title';
       const author = info.authors ? info.authors.join(', ') : 'Unknown Author';
-      const category = info.categories ? info.categories[0] : 'Uncategorized';
-      const thumbnail = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http:', 'https:') : 'https://placehold.co/60x90?text=No+Cover';
+      const category = normalizeCategory(info.categories ? info.categories[0] : 'Uncategorized');
+      const thumbnail = info.imageLinks?.thumbnail ? info.imageLinks.thumbnail.replace('http:', 'https:') : getGenericPlaceholderCoverUrl(title, author);
       const infoLink = info.infoLink || '#';
       
       let isbn = '';
@@ -1354,13 +1646,64 @@ async function searchGoogleBooks(query) {
         </div>
       `;
 
-      if(searchResultsContainer) searchResultsContainer.appendChild(card);
+      if (searchResultsContainer) searchResultsContainer.appendChild(card);
     });
 
-    // Add Book Listeners
+    // Setup Add Book listeners inside search results
     document.querySelectorAll('.add-book-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const button = e.target;
+        
+        const title = decodeURIComponent(button.dataset.title);
+        const author = decodeURIComponent(button.dataset.author);
+        const isbn = decodeURIComponent(button.dataset.isbn);
+        const category = normalizeCategory(decodeURIComponent(button.dataset.category));
+        const coverUrl = decodeURIComponent(button.dataset.cover);
+
+        // Normalize ISBN for comparison
+        const cleanIsbn = isbn ? isbn.replace(/[-\s]/g, '') : '';
+        
+        // Check for duplicates in globalLibraryData
+        let duplicateFound = null;
+        if (cleanIsbn && cleanIsbn !== 'null' && cleanIsbn !== 'undefined' && cleanIsbn !== 'N/A') {
+          duplicateFound = globalLibraryData.find(b => {
+            const bIsbn = getField(b, 'isbn');
+            return bIsbn && bIsbn.replace(/[-\s]/g, '') === cleanIsbn;
+          });
+        }
+        if (!duplicateFound) {
+          const normTitle = title.toLowerCase().trim();
+          const normAuthor = author.toLowerCase().trim();
+          duplicateFound = globalLibraryData.find(b => {
+            const bTitle = (getField(b, 'title') || '').toLowerCase().trim();
+            const bAuthor = (getField(b, 'author') || '').toLowerCase().trim();
+            return bTitle === normTitle && bAuthor === normAuthor;
+          });
+        }
+
+        if (duplicateFound) {
+          const cancelBtn = document.getElementById('stacks-modal-cancel');
+          const confirmBtn = document.getElementById('stacks-modal-confirm');
+          if (cancelBtn && confirmBtn) {
+            cancelBtn.textContent = "Open Existing";
+            confirmBtn.textContent = "Add Anyway";
+          }
+          const addAnyway = await showStacksModal(
+            "Already in Stacks",
+            `"${title}" is already in your library.`,
+            true
+          );
+          if (cancelBtn && confirmBtn) {
+            cancelBtn.textContent = "Cancel";
+            confirmBtn.textContent = "Yes";
+          }
+          
+          if (!addAnyway) {
+            setTimeout(() => { openDetails(duplicateFound); }, 300);
+            return;
+          }
+        }
+
         button.textContent = 'Saving...';
         button.style.backgroundColor = 'var(--terracotta)';
         button.disabled = true;
@@ -1370,37 +1713,48 @@ async function searchGoogleBooks(query) {
 
         const payload = {};
         payload[getKey('uuid')] = crypto.randomUUID();
-        payload[getKey('title')] = decodeURIComponent(button.dataset.title);
-        payload[getKey('author')] = decodeURIComponent(button.dataset.author);
-        payload[getKey('status')] = 0; // Default to Waiting
-        payload[getKey('isbn')] = decodeURIComponent(button.dataset.isbn);
-        payload[getKey('category')] = decodeURIComponent(button.dataset.category);
-        payload[getKey('cover_url')] = decodeURIComponent(button.dataset.cover);
+        payload[getKey('title')] = title;
+        payload[getKey('author')] = author;
+        payload[getKey('status')] = 0; 
+        payload[getKey('isbn')] = isbn;
+        payload[getKey('category')] = category;
+        payload[getKey('cover_url')] = coverUrl;
+        payload[getKey('pages')] = 0;
+        payload[getKey('rating')] = 0;
+        payload[getKey('notes')] = '';
+        payload[getKey('created_at')] = new Date().toISOString();
+        payload[getKey('date_added')] = new Date().toISOString();
+        payload[getKey('date_started')] = null;
+        payload[getKey('read_date')] = null;
 
         // Database Insert
-        const { data, error } = await supabase.from('books').insert([payload]).select();
+        const { data, error } = await supabase.from(TABLE_NAME).insert([payload]).select();
 
         if (error) {
           console.error('Error adding book:', error);
           button.textContent = 'Error!';
+          button.disabled = false;
+          button.style.backgroundColor = '';
         } else {
           button.textContent = 'Saved!';
           button.style.backgroundColor = 'var(--sage-green)';
           
-          if (data && data.length > 0) {
-            const savedBook = data[0];
-            globalLibraryData.push(savedBook);
-            
-            // Auto-open card and refresh grid
-            setTimeout(() => { openDetails(savedBook); }, 600);
-            loadBooks(); 
-          }
+          const savedBook = (data && data.length > 0) ? data[0] : payload;
+          savedBook.category = normalizeCategory(savedBook.category);
+          
+          globalLibraryData.push(savedBook);
+          localStorage.setItem('the_stacks_local_books', JSON.stringify(globalLibraryData));
+          
+          setTimeout(() => { openDetails(savedBook); }, 600);
+          populateFilterDropdowns();
+          applyLibraryFilters();
+          renderHeroSection();
         }
       });
     });
   } catch (error) {
     console.error("Search failed:", error);
-    if(searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: #a34e4e;">Something went wrong. Please try again.</p>';
+    if (searchResultsContainer) searchResultsContainer.innerHTML = '<p style="text-align:center; color: #a34e4e;">Something went wrong. Please try again.</p>';
   }
 }
 
@@ -1411,10 +1765,9 @@ if (searchInput) {
   });
 }
 
-
-// ==========================================
-// 6. FOCUS TIMER & AUDIO
-// ==========================================
+// =========================================================================
+// MODULE 7: INTERACTIVE FOCUS SESSION
+// =========================================================================
 
 const timerDisplay = document.getElementById('timer-display');
 const playPauseBtn = document.getElementById('play-pause-btn');
@@ -1425,17 +1778,24 @@ const focusCloseBtn = document.getElementById('focus-close-btn');
 const sound = new Audio('uplifting-bells.wav');
 
 let focusInterval;
-let timeRemaining = 1200; // Default 20 mins
+const savedDuration = localStorage.getItem('focus_timer_duration') || '1200';
+let timeRemaining = parseInt(savedDuration);
+if (focusDurationSelect) {
+  focusDurationSelect.value = savedDuration;
+}
 let isTimerRunning = false;
 let audioCtx; 
 
 function updateTimerDisplay() {
   const mins = Math.floor(timeRemaining / 60);
   const secs = timeRemaining % 60;
-  if(timerDisplay) timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  if (timerDisplay) timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-if(playPauseBtn) {
+// Initial display refresh
+updateTimerDisplay();
+
+if (playPauseBtn) {
   playPauseBtn.addEventListener('click', () => {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1474,17 +1834,22 @@ if (focusDurationSelect) {
   focusDurationSelect.addEventListener('change', () => {
     clearInterval(focusInterval);
     isTimerRunning = false;
-    if(playIcon) playIcon.style.display = 'block';
-    if(pauseIcon) pauseIcon.style.display = 'none';
-    if(timerDisplay) timerDisplay.style.color = "var(--text-dark)";
+    if (playIcon) playIcon.style.display = 'block';
+    if (pauseIcon) pauseIcon.style.display = 'none';
+    if (timerDisplay) timerDisplay.style.color = "var(--text-dark)";
     
-    timeRemaining = parseInt(focusDurationSelect.value);
+    const val = focusDurationSelect.value;
+    localStorage.setItem('focus_timer_duration', val);
+    timeRemaining = parseInt(val);
     updateTimerDisplay();
   });
 }
 
+// Safely play chimes without unhandled promise warnings
 function playCozyChime() {
-  sound.play();
+  sound.play().catch(err => {
+    console.warn("Audio playback blocked by autoplay settings:", err);
+  });
 }
 
 if (focusCloseBtn) {
@@ -1494,30 +1859,101 @@ if (focusCloseBtn) {
   });
 }
 
+// =========================================================================
+// MODULE 8: SYSTEM DIALOGS & UTILITY INTERFACES
+// =========================================================================
 
-// ==========================================
-// 7. NAVIGATION & SYSTEM
-// ==========================================
+// Custom confirm dialog replacement
+function showStacksModal(title, message, isConfirm = false) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('stacks-modal-overlay');
+    const titleEl = document.getElementById('stacks-modal-title');
+    const messageEl = document.getElementById('stacks-modal-message');
+    const cancelBtn = document.getElementById('stacks-modal-cancel');
+    const confirmBtn = document.getElementById('stacks-modal-confirm');
 
-const navItems = document.querySelectorAll('.nav-item');
-const pageViews = document.querySelectorAll('.page-view');
-let previousViewId = 'view-library'; 
+    titleEl.textContent = title;
+    messageEl.textContent = message;
 
-// --- BATCH 8: HEADER & FEEDBACK LOGIC ---
+    if (isConfirm) {
+      cancelBtn.style.display = 'block';
+      confirmBtn.textContent = 'Yes';
+    } else {
+      cancelBtn.style.display = 'none';
+      confirmBtn.textContent = 'OK'; // Restyled confirmation feedback
+    }
 
-// 1. Header Scroll-to-Top
+    overlay.classList.remove('hidden');
+
+    const cleanup = () => {
+      overlay.classList.add('hidden');
+      cancelBtn.removeEventListener('click', onCancel);
+      confirmBtn.removeEventListener('click', onConfirm);
+    };
+
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onConfirm = () => { cleanup(); resolve(true); };
+
+    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.addEventListener('click', onConfirm);
+  });
+}
+
+function showPromptModal(title, message, placeholder = '') {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('stacks-modal-overlay');
+    const titleEl = document.getElementById('stacks-modal-title');
+    const messageEl = document.getElementById('stacks-modal-message');
+    const inputEl = document.getElementById('stacks-modal-input');
+    const cancelBtn = document.getElementById('stacks-modal-cancel');
+    const confirmBtn = document.getElementById('stacks-modal-confirm');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    
+    if (inputEl) {
+      inputEl.value = '';
+      inputEl.placeholder = placeholder;
+      inputEl.style.display = 'block';
+      setTimeout(() => inputEl.focus(), 100);
+    }
+
+    cancelBtn.style.display = 'block';
+    confirmBtn.textContent = 'Confirm';
+
+    overlay.classList.remove('hidden');
+
+    const cleanup = () => {
+      overlay.classList.add('hidden');
+      if (inputEl) {
+        inputEl.style.display = 'none';
+      }
+      cancelBtn.removeEventListener('click', onCancel);
+      confirmBtn.removeEventListener('click', onConfirm);
+    };
+
+    const onCancel = () => { cleanup(); resolve(null); };
+    const onConfirm = () => {
+      const val = inputEl ? inputEl.value.trim() : '';
+      cleanup();
+      resolve(val);
+    };
+
+    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.addEventListener('click', onConfirm);
+  });
+}
+
+// Header branding scroll to top trigger
 const headerScrollTrigger = document.getElementById('header-scroll-trigger');
 if (headerScrollTrigger) {
   headerScrollTrigger.addEventListener('click', () => {
     const activeView = document.querySelector('.page-view.active');
     if (activeView) activeView.scrollTo({ top: 0, behavior: 'smooth' });
-    if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
-// ==========================================
-// FEEDBACK MODAL LOGIC
-// ==========================================
+// Feedback Modal controls
 const feedbackModal = document.querySelector('.feedback-modal');
 const feedbackTriggerBtn = document.getElementById('feedback-trigger-btn');
 const closeXBtn = document.querySelector('.close-modal');
@@ -1526,38 +1962,31 @@ const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
 const feedbackText = document.getElementById('feedback-text');
 
 if (feedbackModal && feedbackTriggerBtn) {
-  // 1. Open the modal
   feedbackTriggerBtn.addEventListener('click', () => {
     feedbackModal.classList.remove('hidden');
   });
 
-  // 2. Reusable Close Function
   const closeModal = () => {
     feedbackModal.classList.add('hidden');
-    if (feedbackText) feedbackText.value = ''; // Clear text on close
+    if (feedbackText) feedbackText.value = ''; 
   };
 
-  // Wire up the 'X' and 'Cancel' buttons
   if (closeXBtn) closeXBtn.addEventListener('click', closeModal);
   if (closeFeedbackBtn) closeFeedbackBtn.addEventListener('click', closeModal);
 
-  // Close by tapping the blurred background
   feedbackModal.addEventListener('click', (e) => {
     if (e.target === feedbackModal) closeModal();
   });
 
-  // 3. Submit Logic to Supabase
   if (submitFeedbackBtn) {
     submitFeedbackBtn.addEventListener('click', async () => {
       const text = feedbackText.value.trim();
       if (!text) return;
 
-      // UI Feedback state
       const originalText = submitFeedbackBtn.textContent;
       submitFeedbackBtn.textContent = 'Sending...';
       submitFeedbackBtn.disabled = true;
 
-      // Send to Supabase
       const { error } = await supabase
         .from('feedback')
         .insert([{ message: text }]);
@@ -1565,12 +1994,11 @@ if (feedbackModal && feedbackTriggerBtn) {
       if (error) {
         console.error('Error sending feedback:', error);
         submitFeedbackBtn.textContent = 'Error!';
-        submitFeedbackBtn.style.backgroundColor = '#a34e4e'; // Turn red on error
+        submitFeedbackBtn.style.backgroundColor = '#a34e4e'; 
       } else {
         submitFeedbackBtn.textContent = 'Sent!';
         submitFeedbackBtn.style.backgroundColor = 'var(--sage-green)';
         
-        // Reset and close after a brief delay
         setTimeout(() => {
           closeModal();
           submitFeedbackBtn.textContent = originalText;
@@ -1582,176 +2010,61 @@ if (feedbackModal && feedbackTriggerBtn) {
   }
 }
 
+// Tab navigation routing and scrollCache retention
 navItems.forEach(item => {
   item.addEventListener('click', () => {
     const targetId = item.getAttribute('data-target');
 
-    lastActiveTab = targetId;
-    window.history.replaceState({ level: 'main' }, '');
-        
     const currentActive = document.querySelector('.page-view.active');
-    if (currentActive && currentActive.id !== 'view-focus' && targetId === 'view-focus') {
+    if (currentActive && currentActive.id !== 'view-focus') {
+      scrollCache[currentActive.id] = currentActive.scrollTop;
       previousViewId = currentActive.id;
     }
 
+    lastActiveTab = targetId;
+    window.history.replaceState({ level: 'main' }, '');
+    
     navItems.forEach(btn => btn.classList.remove('active'));
     item.classList.add('active');
 
     pageViews.forEach(view => view.classList.remove('active'));
     const targetView = document.getElementById(targetId);
-    if(targetView) targetView.classList.add('active');
+    
+    if (targetView) {
+      targetView.classList.add('active');
+      requestAnimationFrame(() => {
+        const savedScroll = scrollCache[targetId] || 0;
+        targetView.scrollTop = savedScroll;
+        updateFabVisibility();
+      });
+    }
 
-    if (bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'instant' });
-    if (topFab) topFab.classList.remove('visible');
     if (sheet && sheet.classList.contains('open')) sheet.classList.remove('open');
   });
 });
 
-if (topFab && bookshelfContainer) {
-  bookshelfContainer.addEventListener('scroll', () => {
-    if (bookshelfContainer.scrollTop > 300) topFab.classList.add('visible');
-    else topFab.classList.remove('visible');
+if (topFab) {
+  pageViews.forEach(view => {
+    view.addEventListener('scroll', () => {
+      updateFabVisibility();
+    });
   });
 
   topFab.addEventListener('click', () => {
-    bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    const activeView = document.querySelector('.page-view.active');
+    if (activeView) activeView.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 
-// 1. History API & Context Routing
-let lastActiveTab = 'view-library'; // Default
-
-// Ensure nav clicks ALWAYS update the origin tracker
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    lastActiveTab = e.currentTarget.getAttribute('data-target');
-  });
-});
-
-// ==========================================
-// 9. PHASE 1: WANDER DRAWER LOGIC
-// ==========================================
-
-const wanderTriggerBtn = document.getElementById('wander-trigger-btn');
-const wanderSheet = document.getElementById('wander-sheet');
-const statusFilterSelect = document.getElementById('filter-status');
-const sortLibrarySelect = document.getElementById('sort-library');
-const applyWanderBtn = document.getElementById('apply-wander-btn');
-const clearWanderBtn = document.getElementById('clear-wander-btn');
-const localSearchInput = document.getElementById('local-search');
-const clearSearchBtn = document.getElementById('clear-search-btn');
-
-if (wanderTriggerBtn && wanderSheet) {
-  wanderTriggerBtn.addEventListener('click', () => wanderSheet.classList.add('open'));
-  const wanderHandle = wanderSheet.querySelector('.sheet-handle');
-  if (wanderHandle) wanderHandle.addEventListener('click', () => wanderSheet.classList.remove('open'));
-  
-  // ==========================================
-  // WANDER DRAWER INTERACTION LOGIC
-  // ==========================================
-  const quickBtns = document.querySelectorAll('.quick-btn, .filter-btn');
-  
-  // 1. Quick Filter Button Clicks
-  quickBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      libraryYearFilter = 'all'; 
-      
-      quickBtns.forEach(b => {
-        b.classList.remove('active');
-        b.style.background = '';
-        b.style.color = '';
-      });
-
-      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-      
-      // Highlight the clicked button
-      btn.classList.add('active');
-
-      // Instantly apply the filter and elegantly close the drawer
-      applyLibraryFilters(); 
-      wanderSheet.classList.remove('open');
-      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  });
-  
-  // 2. "Wander" (Apply) Logic
-  if (applyWanderBtn) {
-    applyWanderBtn.addEventListener('click', () => {
-      applyLibraryFilters(); 
-      wanderSheet.classList.remove('open');
-      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  }
-  
-  // 3. "Clear" Defaults Logic
-  if (clearWanderBtn) {
-    clearWanderBtn.addEventListener('click', () => {
-      if (localSearchInput) localSearchInput.value = '';
-      
-      libraryYearFilter = 'all';
-      
-      quickBtns.forEach(b => {
-        b.classList.remove('active');
-        b.style.background = '';
-        b.style.color = '';
-      });
-
-      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-  
-      applyLibraryFilters();
-      wanderSheet.classList.remove('open');
-      if (typeof bookshelfContainer !== 'undefined' && bookshelfContainer) bookshelfContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  }
-}
-
-// ==========================================
-// 10. PHASE 2: JOURNEY VIEW TOGGLES
-// ==========================================
-
-const layoutBtns = document.querySelectorAll('.layout-btn');
-const mainGrid = document.getElementById('book-grid');
-let currentLayout = localStorage.getItem('stacksLayout') || 'layout-grid';
-
-if (layoutBtns.length > 0 && mainGrid) {
-  layoutBtns.forEach(b => {
-    b.classList.remove('active');
-    if (b.getAttribute('data-layout') === currentLayout) {
-      b.classList.add('active');
-    }
-  });
-
-  layoutBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      layoutBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      
-      currentLayout = btn.getAttribute('data-layout');
-      localStorage.setItem('stacksLayout', currentLayout);
-      
-      mainGrid.className = 'book-grid ' + currentLayout;
-      mainGrid.style.opacity = 0;
-      setTimeout(() => { mainGrid.style.opacity = 1; }, 50);
-    });
-  });
-}
-
-// ==========================================
-// NAVIGATION AND GESTURE FIXES
-// ==========================================
-
-// 1. Initial Setup: The "Double-Lock"
-// Replace current state with a trap, then push the main state.
+// History API popstate event routing
 window.history.replaceState({ level: 'trap' }, '');
 window.history.pushState({ level: 'main' }, '');
 
 window.addEventListener('popstate', (event) => {
-  // Delay the re-trap so native animations finish smoothly
   setTimeout(() => {
     window.history.pushState({ level: 'main' }, '');
   }, 300);
 
-  // A. Close Custom System Modal (if open)
   const modalOverlay = document.getElementById('stacks-modal-overlay');
   if (modalOverlay && !modalOverlay.classList.contains('hidden')) {
     const cancelBtn = document.getElementById('stacks-modal-cancel');
@@ -1763,30 +2076,22 @@ window.addEventListener('popstate', (event) => {
     return; 
   }
 
-  // B. Close Feedback Modal (if open)
-  const feedbackModal = document.querySelector('.feedback-modal');
   if (feedbackModal && !feedbackModal.classList.contains('hidden')) {
     feedbackModal.classList.add('hidden');
     return;
   }
 
-  // C. Close Wander Drawer (if open)
-  const wanderSheet = document.getElementById('wander-sheet');
   if (wanderSheet && wanderSheet.classList.contains('open')) {
     wanderSheet.classList.remove('open');
     return;
   }
 
-  // D. Close Details View (The Reading Journal)
-  const viewDetails = document.getElementById('view-details');
   if (viewDetails && viewDetails.classList.contains('active')) {
     const closeDetailsBtn = document.getElementById('close-details-btn');
     if (closeDetailsBtn) closeDetailsBtn.click(); 
     return;
   }
 
-  // E. Return to Library View from other main tabs
-  // (Optional: You can remove this block entirely if you want swiping back on Stats/Focus to just do nothing instead of jumping back to the Library)
   const libraryView = document.getElementById('view-library');
   if (libraryView && !libraryView.classList.contains('active')) {
     const libraryNav = document.querySelector('.nav-item[data-target="view-library"]');
@@ -1794,39 +2099,439 @@ window.addEventListener('popstate', (event) => {
   }
 });
 
-// 2. Restore Wander Drawer Swipe-to-Close
-let touchStartY = 0;
-let touchCurrentY = 0;
-let isSwiping = false;
 
-const wanderSheetEl = document.getElementById('wander-sheet');
+// Phase 4 Stats Render & Drilling Engine
+let statsChartInstance = null; 
+let currentStatsYear = 'all';
+let currentStatsMonth = null;
 
-if (wanderSheetEl) { 
-  wanderSheetEl.addEventListener('touchstart', (e) => {
-    touchStartY = e.touches[0].clientY;
-    isSwiping = true;
-    wanderSheetEl.style.transition = 'none'; 
-  }, { passive: true });
+const renderStatsList = (booksArray, listTitle) => {
+  document.getElementById('stats-list-title').textContent = listTitle;
+  const listContainer = document.getElementById('stats-book-list');
+  listContainer.innerHTML = '';
 
-  wanderSheetEl.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-    touchCurrentY = e.touches[0].clientY;
-    const deltaY = touchCurrentY - touchStartY;
-    if (deltaY > 0) { 
-      wanderSheetEl.style.transform = `translateY(${deltaY}px)`;
-    }
-  }, { passive: true });
+  if (booksArray.length === 0) {
+    listContainer.innerHTML = `<p style="text-align: center; color: var(--sage-green); font-family: 'Courier New'; margin-top: 20px;">No books finished in this timeframe.</p>`;
+    return;
+  }
 
-  wanderSheetEl.addEventListener('touchend', () => {
-    if (!isSwiping) return;
-    isSwiping = false;
-    const deltaY = touchCurrentY - touchStartY;
+  booksArray.forEach(book => {
+    const title = getField(book, 'title') || 'Unknown';
+    const author = getField(book, 'author') || 'Unknown';
+    const coverUrl = getField(book, 'cover_url') || getPlaceholderCoverUrl(book);
+    const ratingNum = Number(getField(book, 'rating')) || 0;
     
-    wanderSheetEl.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    wanderSheetEl.style.transform = ''; 
+    let ratingDisplay = '<span style="color: #b3bfae; font-size: 11px; font-family: \'Courier New\';">No Rating</span>';
+    if (ratingNum > 0) ratingDisplay = '★'.repeat(ratingNum) + '<span style="color: #e0dcd3;">' + '★'.repeat(5 - ratingNum) + '</span>';
 
-    if (deltaY > 80) {
-      wanderSheetEl.classList.remove('open');
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.innerHTML = `
+      <img src="${coverUrl}" alt="${title}" class="book-cover" onerror="this.src=getPlaceholderCoverUrl(globalLibraryData.find(b => b.uuid === '${book.uuid}'))">
+      <div class="book-info">
+        <p class="book-title">${title}</p>
+        <p class="book-author">${author}</p>
+        <div class="book-rating" style="display: block; margin-top: auto; color: #DDA750; font-size: 12px; letter-spacing: 2px;">${ratingDisplay}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => openDetails(book));
+    listContainer.appendChild(card);
+  });
+};
+
+function renderAnnualStats(targetYear) {
+  currentStatsYear = targetYear;
+  currentStatsMonth = null;
+  const finishedBooks = globalLibraryData.filter(b => Number(getField(b, 'status')) === 2 && (getField(b, 'read_date') || getField(b, 'date_finished')));
+  const container = document.getElementById('stats-chart-container');
+  
+  if (targetYear === 'all') {
+    const yearsMap = {};
+    finishedBooks.forEach(b => {
+      const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+      const y = String(readDate).split('-')[0]; 
+      yearsMap[y] = (yearsMap[y] || 0) + 1;
+    });
+    
+    const labels = Object.keys(yearsMap).sort();
+    const data = labels.map(y => yearsMap[y]);
+    
+    container.style.height = '280px';
+    drawChart('bar', labels, data, '#A65239', 10, (clickedIndex) => {
+      const selectedYear = labels[clickedIndex];
+      document.getElementById('stats-year-select').value = selectedYear;
+      renderAnnualStats(selectedYear);
+    });
+    
+    renderStatsList(finishedBooks.sort((a, b) => {
+      const db = parseSafeDate(getField(b, 'read_date') || getField(b, 'date_finished'));
+      const da = parseSafeDate(getField(a, 'read_date') || getField(a, 'date_finished'));
+      return db - da;
+    }), `All Time Books (${finishedBooks.length})`);
+    document.getElementById('stats-drilldown-nav').classList.add('hidden');
+    document.getElementById('btn-view-in-stacks').style.display = 'flex';
+  } else {
+    const filtered = finishedBooks.filter(b => {
+      const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+      return readDate && String(readDate).startsWith(targetYear);
+    });
+    const monthlyCounts = Array(12).fill(0);
+    
+    filtered.forEach(b => {
+      const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+      const m = parseInt(String(readDate).split('-')[1]) - 1; 
+      monthlyCounts[m]++;
+    });
+
+    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const maxValue = Math.max(5, ...monthlyCounts); 
+    container.style.height = `${Math.max(250, (maxValue * 25) + 50)}px`; 
+
+    let barColors = Array(12).fill('#597755'); 
+
+    drawChart('bar', monthLabels, monthlyCounts, barColors, 1, (clickedIndex) => {
+      barColors = Array(12).fill('#597755');
+      barColors[clickedIndex] = '#A65239';
+      statsChartInstance.data.datasets[0].backgroundColor = barColors;
+      statsChartInstance.update();
+      renderMonthlyStatsList(clickedIndex, targetYear); 
+    });
+
+    renderStatsList(filtered.sort((a, b) => {
+      const db = parseSafeDate(getField(b, 'read_date') || getField(b, 'date_finished'));
+      const da = parseSafeDate(getField(a, 'read_date') || getField(a, 'date_finished'));
+      return db - da;
+    }), `Books Finished in ${targetYear} (${filtered.length})`);
+    document.getElementById('stats-drilldown-nav').classList.add('hidden');
+    document.getElementById('btn-view-in-stacks').style.display = 'flex';
+  }
+}
+
+function renderMonthlyStatsList(monthIndex, yearStr) {
+  currentStatsMonth = monthIndex;
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  const targetPrefix = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`;
+  const monthlyBooks = globalLibraryData.filter(b => {
+    const status = Number(getField(b, 'status'));
+    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+    return status === 2 && readDate && String(readDate).startsWith(targetPrefix);
+  });
+
+  renderStatsList(monthlyBooks.sort((a, b) => {
+    const db = parseSafeDate(getField(b, 'read_date') || getField(b, 'date_finished'));
+    const da = parseSafeDate(getField(a, 'read_date') || getField(a, 'date_finished'));
+    return db - da;
+  }), `${fullMonthNames[monthIndex]} ${yearStr} Reads (${monthlyBooks.length})`);
+  document.getElementById('btn-view-in-stacks').style.display = 'none'; 
+
+  const navDiv = document.getElementById('stats-drilldown-nav');
+  const backBtn = document.getElementById('btn-stats-back');
+  backBtn.innerHTML = `<span style="font-size:12px;">✕</span> Clear ${monthNames[monthIndex]}`;
+  
+  backBtn.onclick = () => {
+    statsChartInstance.data.datasets[0].backgroundColor = Array(12).fill('#597755');
+    statsChartInstance.update();
+    
+    const filtered = globalLibraryData.filter(b => {
+      const status = Number(getField(b, 'status'));
+      const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+      return status === 2 && readDate && String(readDate).startsWith(yearStr);
+    });
+    renderStatsList(filtered.sort((a, b) => {
+      const db = parseSafeDate(getField(b, 'read_date') || getField(b, 'date_finished'));
+      const da = parseSafeDate(getField(a, 'read_date') || getField(a, 'date_finished'));
+      return db - da;
+    }), `Books Finished in ${yearStr} (${filtered.length})`);
+    document.getElementById('btn-view-in-stacks').style.display = 'flex';
+    navDiv.classList.add('hidden');
+    currentStatsMonth = null;
+  };
+  
+  navDiv.classList.remove('hidden');
+}
+
+function drawChart(type, labels, data, color, stepSize, onClickCallback) {
+  if (statsChartInstance) statsChartInstance.destroy();
+  const ctx = document.getElementById('stats-chart').getContext('2d');
+  statsChartInstance = new Chart(ctx, {
+    type: type,
+    data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, elements) => { if (elements.length > 0) onClickCallback(elements[0].index); },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#FAF8F2', titleColor: '#2C3E2D', bodyColor: color, borderColor: '#8B5E34', borderWidth: 1 } },
+      scales: {
+        y: { suggestedMax: stepSize === 10 ? undefined : 5, ticks: { stepSize: stepSize, font: { family: 'Courier New' } }, grid: { color: 'rgba(139, 94, 52, 0.1)' } },
+        x: { ticks: { font: { family: 'Georgia' } }, grid: { display: false } }
+      }
     }
   });
+}
+
+// Reusable utilities
+const getField = (obj, fieldName) => {
+  if (!obj) return undefined;
+  const key = Object.keys(obj).find(k => k.toLowerCase() === fieldName.toLowerCase());
+  return key ? obj[key] : undefined;
+};
+
+function parseSafeDate(val) {
+  if (!val) return 0;
+  const parsed = Date.parse(val);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+function formatVintageDate(iso, mode = 'stamp') {
+  if (!iso) {
+    if (mode === 'input') return '';
+    return mode === 'meta' ? '--' : 'mm-dd-yy';
+  }
+  let dateStr = String(iso);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    dateStr += 'T00:00:00Z';
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d)) {
+    if (mode === 'input') return '';
+    return mode === 'meta' ? '--' : 'mm-dd-yy';
+  }
+  
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const yearFull = d.getUTCFullYear();
+  const yearTwoDigit = String(yearFull).slice(-2);
+  
+  if (mode === 'input') {
+    return `${yearFull}-${month}-${day}`;
+  } else {
+    // Both stamp and meta display as mm-dd-yy
+    return `${month}-${day}-${yearTwoDigit}`;
+  }
+}
+
+function normalizeCategory(cat) {
+  if (!cat) return 'Uncategorized';
+  let clean = String(cat).trim();
+  if (!clean || clean.toLowerCase() === 'null' || clean.toLowerCase() === 'undefined' || clean === '--') {
+    return 'Uncategorized';
+  }
+  return clean
+    .split(/[\s/]+/)
+    .map(word => {
+      if (!word) return '';
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .filter(Boolean)
+    .join(' ');
+}
+
+function getLocalDateString() {
+  const d = new Date();
+  const offset = d.getTimezoneOffset();
+  const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split('T')[0];
+}
+
+function trimCategory(cat, limit = 20) {
+  if (!cat) return 'Uncategorized';
+  const str = String(cat).trim();
+  if (str.length <= limit) return str;
+  return str.substring(0, limit) + '...';
+}
+
+// Single delegated scroll listener for view-details header shadows
+const detailsContainer = document.getElementById('view-details');
+const detailsHeader = document.querySelector('.details-header');
+if (detailsContainer && detailsHeader) {
+  detailsContainer.addEventListener('scroll', () => {
+    if (detailsContainer.scrollTop > 50) {
+      detailsHeader.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+      detailsHeader.style.borderBottom = '1px solid var(--detail-line)';
+    } else {
+      detailsHeader.style.boxShadow = 'none';
+      detailsHeader.style.borderBottom = 'none';
+    }
+  }, { passive: true });
+}
+
+function getGenericPlaceholderCoverUrl(title, author) {
+  const cleanTitle = title.length > 25 ? title.substring(0, 22) + '...' : title;
+  const cleanAuthor = author.length > 20 ? author.substring(0, 17) + '...' : author;
+  const text = encodeURIComponent(`${cleanTitle}\nby\n${cleanAuthor}`);
+  return `https://placehold.co/150x225?text=${text}`;
+}
+
+function getPlaceholderCoverUrl(book) {
+  const title = getField(book, 'title') || 'No Title';
+  const author = getField(book, 'author') || 'No Author';
+  return getGenericPlaceholderCoverUrl(title, author);
+}
+
+function getCoverUrl(isbn, book = null) {
+  if (!isbn || isbn === 'N/A') {
+    return book ? getPlaceholderCoverUrl(book) : 'https://placehold.co/150x225?text=No+Cover';
+  }
+  const cleanIsbn = String(isbn).replace(/[-\s]/g, '');
+  return `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg?default=false`;
+}
+
+async function fetchBooksFromAPIs(query) {
+  let data;
+  let finalQuery = query.trim();
+  const numbersOnly = finalQuery.replace(/[-\s]/g, '');
+
+  if (finalQuery.toLowerCase().startsWith('isbn:')) {
+    // Keep as is
+  } else if (/^\d{10}(\d{3})?$/.test(numbersOnly)) {
+    finalQuery = `isbn:${numbersOnly}`;
+  }
+
+  // Try Open Library first to avoid Google Books 429 rate limit errors
+  try {
+    const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(finalQuery)}&limit=10`);
+    if (!response.ok) throw new Error("Open Library API failed");
+    const olData = await response.json();
+    if (olData.docs && olData.docs.length > 0) {
+      data = {
+        items: olData.docs.map(doc => {
+          const author = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
+          const isbn = doc.isbn ? doc.isbn[0] : '';
+          let thumbnail = getGenericPlaceholderCoverUrl(doc.title, author);
+          if (doc.cover_i) {
+            thumbnail = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+          } else if (isbn) {
+            thumbnail = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+          }
+          return {
+            volumeInfo: {
+              title: doc.title,
+              authors: doc.author_name || [],
+              categories: doc.subject || [],
+              pageCount: doc.number_of_pages_median || doc.number_of_pages || 0,
+              imageLinks: { thumbnail },
+              infoLink: `https://openlibrary.org${doc.key}`,
+              industryIdentifiers: doc.isbn ? [{ type: 'ISBN_13', identifier: doc.isbn[0] }] : []
+            }
+          };
+        })
+      };
+    } else {
+      throw new Error("Open Library docs empty");
+    }
+  } catch (e) {
+    console.warn("Open Library API failed, trying Google Books:", e);
+    try {
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(finalQuery)}&maxResults=10`);
+      if (!response.ok) throw new Error(`Google Books returned status ${response.status}`);
+      data = await response.json();
+      if (!data.items || data.items.length === 0) {
+        throw new Error('Google Books returned empty items');
+      }
+    } catch (googleErr) {
+      console.error("All book APIs failed:", googleErr);
+      data = { items: [] };
+    }
+  }
+  return data;
+}
+
+// touch event listeners for pull-to-refresh on Library page
+(function() {
+  let touchStart = 0;
+  const touchLimit = 150; // pull distance
+  const viewLib = document.getElementById('view-library');
+
+  if (viewLib) {
+    viewLib.addEventListener('touchstart', (e) => {
+      if (viewLib.scrollTop === 0) {
+        touchStart = e.touches[0].clientY;
+      } else {
+        touchStart = 0;
+      }
+    }, { passive: true });
+
+    viewLib.addEventListener('touchmove', (e) => {
+      if (touchStart > 0) {
+        const currentY = e.touches[0].clientY;
+        const pullDist = currentY - touchStart;
+        if (pullDist > touchLimit) {
+          touchStart = 0; // prevent multiple triggers
+          showToast("Refreshing library...");
+          loadBooks();
+        }
+      }
+    }, { passive: true });
+  }
+})();
+
+function initStatsPage() {
+  const yearSelect = document.getElementById('stats-year-select');
+  if (!yearSelect) return;
+
+  const finishedBooks = globalLibraryData.filter(b => {
+    const status = Number(getField(b, 'status'));
+    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+    return status === 2 && readDate;
+  });
+  const years = [...new Set(finishedBooks.map(b => {
+    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+    return String(readDate).split('-')[0];
+  }))].sort((a, b) => b - a);
+  
+  const currentVal = yearSelect.value;
+  yearSelect.innerHTML = '<option value="all">All Time</option>';
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSelect.appendChild(opt);
+  });
+  if (years.includes(currentVal)) {
+    yearSelect.value = currentVal;
+  }
+
+  if (statsInitialized) return;
+  statsInitialized = true;
+
+  yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
+
+  const viewInStacksBtn = document.getElementById('btn-view-in-stacks');
+  if (viewInStacksBtn) {
+    viewInStacksBtn.addEventListener('click', () => {
+      document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-library').classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
+      lastActiveTab = 'view-library';
+
+      libraryYearFilter = currentStatsYear; 
+
+      document.querySelectorAll('.quick-btn, .filter-btn').forEach(btn => {
+        const statusVal = btn.getAttribute('data-status');
+        if (statusVal === '2') {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const filterYearSelect = document.getElementById('filter-year');
+      if (filterYearSelect) {
+        filterYearSelect.value = currentStatsYear === 'all' ? 'all' : currentStatsYear;
+      }
+
+      const filterRatingSelect = document.getElementById('filter-rating');
+      if (filterRatingSelect) filterRatingSelect.value = 'all';
+      const filterCategorySelect = document.getElementById('filter-category');
+      if (filterCategorySelect) filterCategorySelect.value = 'all';
+      const filterHasNotesEl = document.getElementById('filter-has-notes');
+      if (filterHasNotesEl) filterHasNotesEl.checked = false;
+      const filterMissingCoverEl = document.getElementById('filter-missing-cover');
+      if (filterMissingCoverEl) filterMissingCoverEl.checked = false;
+
+      applyLibraryFilters(); 
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+    });
+  }
 }

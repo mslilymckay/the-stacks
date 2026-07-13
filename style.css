@@ -8,6 +8,17 @@
   --terracotta: #A65239;     /* Deep burnt orange/brick for contrast */
   --oak-brown: #8B5E34;      /* Darkened vintage detail line */
   --detail-line: #8B5E34;
+  --sheet-bg: #ffffff;
+
+  /* Typography Design Tokens */
+  --font-serif: 'Georgia', serif;
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+
+  /* Elevation Shadows */
+  --shadow-flat: none;
+  --shadow-raised: 0 4px 12px rgba(44, 62, 45, 0.05);
+  --shadow-overlay: 0 8px 24px rgba(44, 62, 45, 0.12);
 }
 
 * {
@@ -28,7 +39,7 @@
   justify-content: center;
   align-items: center;
   z-index: 9999; /* Keeps it on top of the header and grid */
-  transition: opacity 1.5s ease-out, visibility 2.2s ease-out;
+  transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
 }
 
 /* We use this class to smoothly fade out the screen */
@@ -41,6 +52,38 @@
   height: 125%; /* Adjust this based on how large you want the animation */
   pointer-events: none; /* Prevents users from accidentally pausing it */
   transition: opacity 1s ease-in-out;
+}
+
+/* Cinematic Skip Loading Screen Button - Circular Arrow */
+.skip-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  background: rgba(253, 251, 247, 0.8);
+  border: 1px solid var(--detail-line);
+  color: var(--terracotta);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  display: none; /* Initially hidden until library is fully loaded */
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s, transform 0.1s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.skip-btn:hover {
+  background-color: var(--text-dark);
+  color: var(--bg-color);
+}
+
+.skip-btn:active {
+  transform: scale(0.95);
 }
 
 body {
@@ -88,11 +131,6 @@ body {
 * {
   -ms-overflow-style: none; 
   scrollbar-width: none; 
-}
-
-/* Adjust main body to account for fixed header */
-body {
-  padding-top: 60px; 
 }
 
 /* The Global Header */
@@ -229,24 +267,12 @@ body {
 
 /* Main Bookshelf Area */
 .bookshelf {
+  display: flex;
+  flex-direction: column;
   flex-grow: 1;
-  padding: 10px 0 0 0; /* Reduced top padding from 20px to 10px */
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding: 10px 0 0 0;
+  overflow: hidden;
   width: 100%;
-}
-
-/* Bookshelf Grid Layout */
-.book-grid {
-  display: grid;
-  grid-template-columns: calc(50% - 10px) calc(50% - 10px);
-  gap: 20px;
-  width: 100%;
-  
-  /* PHASE 1: Removed the bookshelf-bg.png to let the covers pop against the cream */
-  background-color: var(--bg-color); 
-  
-  padding: 20px 15px 110px 15px; 
 }
 
 .hero-wrapper {
@@ -372,7 +398,7 @@ body {
   background-color: var(--bg-color);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: space-between; /* Spreads items to the edges */
+  justify-content: space-around; /* Spreads icons evenly */
   padding: 0 30px; /* Adds safe breathing room on the far left and right */
   align-items: center;
   z-index: 10;
@@ -383,7 +409,8 @@ body {
   border: none;
   font-family: 'Courier New', Courier, monospace;
   font-size: 14px;
-  color: var(--sage-green);
+  color: #c4c0b6; /* Inactive color */
+  padding: 10px;
   cursor: pointer;
 }
 
@@ -509,189 +536,14 @@ body {
   bottom: 0; 
 }
 
-/* Card Split Layout */
-.card-split {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-/* Override previous centering to fit the new layout */
-.card-right .book-title,
-.card-right .book-author {
-  text-align: left;
-}
-
-.sheet-handle {
-  width: 40px;
-  height: 4px;
-  background-color: #ccc;
-  border-radius: 2px;
-  margin: 0 auto 20px auto;
-}
-
-.card-hole {
-  width: 12px;
-  height: 12px;
-  background-color: var(--bg-color);
-  border-radius: 50%;
-  margin: 0 auto 15px auto;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.book-title {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 22px;
-  text-align: center;
-  margin-bottom: 5px;
-}
-
-.book-author {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 16px;
-  text-align: center;
-  color: var(--sage-green);
-  margin-bottom: 20px;
-}
-
-/* Vintage ruled lines */
-.red-line {
-  height: 2px;
-  background-color: var(--terracotta);
-  margin-bottom: 30px;
-  margin-top: 30px;
-}
-
-.detail-lines {
-  width: 100%;
-  background-image: repeating-linear-gradient(
-    transparent,
-    transparent 39px,
-    var(--detail-line) 39px,
-    var(--detail-line) 40px
-  );
-  line-height: 40px;
-  padding: 0 20px;
-  margin-top: 10px;
-}
-
-.metadata {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  margin: 0; /* Removes default paragraph spacing */
-  text-align: left;
-  flex-grow: 1; /* Takes up remaining space */
-  
-  /* Prevents text from wrapping to a new line and breaking the blue background lines */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; 
-}
-
-.metadata-row {
-  display: flex;
-  align-items: center;
-  height: 40px; /* Matches the blue line spacing */
-}
-
-.meta-label {
-  font-family: 'Courier New', Courier, monospace;
-  color: var(--sage-green);
-  width: 100px;
-  font-weight: bold;
-}
-
-/* Dropdown Styling */
-.card-select {
-  /* Strips away the default OS styling */
-  appearance: none;
-  -webkit-appearance: none;
-  
-  /* Custom The Stacks styling */
-  background-color: transparent;
-  border: 1px solid var(--terracotta);
-  border-radius: 4px;
-  color: var(--terracotta);
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  font-weight: bold;
-  padding: 2px 24px 2px 8px; /* Extra right padding makes room for the new arrow */
-  cursor: pointer;
-  outline: none;
-  height: 28px; /* Keeps it neatly within the 40px line row */
-  
-  /* Custom Terracotta SVG arrow */
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23d35400%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 10px auto;
-}
-
-/* Star Rating Styling */
-.star-rating {
-  display: flex;
-  gap: 5px;
-  cursor: pointer;
-}
-
-.star {
-  color: #e0dcd3; /* Empty star color */
-  font-size: 24px;
-  transition: color 0.2s ease;
-}
-
-.star.active {
-  color: var(--terracotta); /* Filled star color */
-}
-
-.card-footer {
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-/* --- NEW: Focus Mode Fullscreen Toggle --- */
-#reader-toggle.fullscreen-focus {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: var(--card-bg);
-  z-index: 9999;
-  justify-content: center;
-  border-radius: 0;
-}
-
-/* Allows the GIF to scale up nicely when fullscreen */
-#reader-toggle.fullscreen-focus .cover-image {
-  width: 90%;
-  max-width: 350px;
-  height: auto;
-  aspect-ratio: auto; 
-}
-
-/* Hides the title in fullscreen */
-#reader-toggle.fullscreen-focus .cover-title {
-  display: none;
-}
-
-/* Swaps the sub-title text in fullscreen */
-#reader-toggle.fullscreen-focus .cover-author {
-  visibility: hidden; 
-}
-#reader-toggle.fullscreen-focus .cover-author::after {
-  content: 'Tap to exit';
-  visibility: visible;
-  display: block;
-  font-size: 18px;
-  margin-top: 15px;
-}
-
 /* --- PAGE VIEW ARCHITECTURE --- */
 .page-view {
-  display: none; /* Hide everything by default */
+  display: none; 
+  flex-grow: 1;
+  width: 100%;
+  overflow-y: auto; /* Makes each view its own scroll container */
+  -webkit-overflow-scrolling: touch; /* CRITICAL for smooth iOS scrolling */
+  padding-bottom: 80px; /* Accounts for your bottom nav bar */
   animation: fadeIn 0.25s ease-out forwards;
 }
 
@@ -743,7 +595,7 @@ body {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--detail-line);
-  border-radius: 4px;
+  border-radius: 8px;
   font-family: 'Courier New', Courier, monospace;
   font-size: 16px;
   background-color: var(--card-bg);
@@ -761,7 +613,7 @@ body {
   background-color: var(--terracotta);
   color: var(--header-text);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-family: 'Georgia', serif;
   font-size: 16px;
   cursor: pointer;
@@ -846,8 +698,19 @@ body {
   grid-column: span 2;
 }
 
+#stats-book-list {
+  display: flex !important;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  /* Remove any max-height or height constraints */
+}
+
 #stats-book-list.book-grid {
-  padding: 0 !important; 
+  padding: 0 !important;
+  grid-template-columns: unset; /* Override grid layout */
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-card h3 {
@@ -924,16 +787,6 @@ body {
 /* --- BATCH 7: NAV ICONS & FOCUS PAGE --- */
 
 /* Nav Overrides */
-.bottom-nav {
-  justify-content: space-around; /* Spreads icons evenly */
-}
-.nav-item {
-  padding: 10px;
-  color: #c4c0b6; /* Inactive color */
-}
-.nav-item.active {
-  color: var(--terracotta); /* Active color */
-}
 .nav-item svg {
   width: 26px;
   height: 26px;
@@ -1169,19 +1022,7 @@ body {
   margin-bottom: 0; /* Overrides previous spacing */
 }
 
-.scan-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 12px;
-  color: var(--sage-green);
-  border-color: var(--detail-line);
-}
-
-.scan-btn:hover {
-  background: var(--sage-green);
-  color: white;
-}
+/* Scanner Container */
 
 .scanner-container {
   margin-top: 15px;
@@ -1238,27 +1079,6 @@ body {
   border-bottom-color: var(--terracotta);
 }
 
-/* --- BATCH 8: CLICKABLE STATS --- */
-.stat-box {
-  /* Your existing styles are likely fine, just ensure it has: */
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s;
-  border: 1px solid var(--detail-line); /* Assuming they have borders */
-}
-
-.stat-box:active {
-  transform: scale(0.95);
-  border-color: var(--terracotta);
-}
-
-.stat-box h3 {
-  pointer-events: none; /* Prevents text highlighting when tapping */
-}
-
-.stat-box p {
-  pointer-events: none;
-}
-
 /* --- PHASE 1: THE WANDER DRAWER --- */
 .wander {
   /* Unified wander button */
@@ -1277,34 +1097,35 @@ body {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.wander-drawer {
-  position: fixed;
-  top: 60px; /* Sits perfectly below the header */
-  left: 0;
-  width: 100%;
-  background: var(--card-bg);
-  border-bottom: 3px solid #e0dcd3;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-  z-index: 90;
-  transform: translateY(0);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background-color: #ccc;
+  border-radius: 2px;
+  margin: 0 auto 20px auto;
 }
 
-.wander-drawer.hidden {
-  transform: translateY(-150%);
-  box-shadow: none;
+.punch-hole {
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-color);
+  border-radius: 50%;
+  margin: 0 auto 15px auto;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.drawer-content {
-  padding: 20px;
-  /* Brings in the vintage paper aesthetic from the card details view */
-  background-image: repeating-linear-gradient(
-    transparent,
-    transparent 39px,
-    rgba(187, 134, 84, 0.1) 39px, /* Faint detail line */
-    rgba(187, 134, 84, 0.1) 40px
-  );
+.card-header-line {
+  border-top: 1px solid var(--detail-line);
+  margin-bottom: 15px;
 }
+
+.red-line {
+  height: 2px;
+  background-color: var(--terracotta);
+  margin-bottom: 30px;
+  margin-top: 30px;
+}
+/* Quick Filters grid and buttons */
 
 .quick-filters {
   display: grid;
@@ -1329,29 +1150,6 @@ body {
   color: var(--header-text);
 }
 
-/* --- PHASE 1: NATIVE APP STYLE DROPDOWNS --- */
-.custom-select-btn {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background: var(--bg-color);
-  border: 1px solid var(--sage-green);
-  color: var(--sage-green);
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 13px;
-  padding: 8px;
-  border-radius: 6px;
-  text-align: center;
-  cursor: pointer;
-  width: 100%;
-}
-
-.custom-select-btn:focus {
-  outline: none;
-  border-color: var(--terracotta);
-  color: var(--terracotta);
-}
-
 /* --- PHASE 2: JOURNEY LAYOUTS --- */
 .layout-toggles .layout-btn {
   background: transparent;
@@ -1373,10 +1171,12 @@ body {
 
 /* Base Grid Transition */
 .book-grid {
-  transition: opacity 0.2s ease;
+  display: grid;
+  grid-template-columns: calc(50% - 10px) calc(50% - 10px);
+  gap: 20px;
   width: 100%;
-  box-sizing: border-box !important;
-  margin: 0 !important;
+  background-color: var(--bg-color); 
+  padding: 20px 15px 30px 15px; /* Removed the 110px bottom padding */
 }
 
 /* 1. Default Grid (3-Column Cover Only) */
@@ -1497,6 +1297,9 @@ body {
   flex-direction: column;
   flex-grow: 1;
   padding-top: 2px;
+  text-align: left; /* Force left-alignment */
+  align-items: flex-start;
+  height: 90px; /* Match the cover height exactly to push the stars to the bottom */
 }
 .book-grid.layout-list .book-title {
   font-family: 'Courier New', Courier, monospace; /* Synced with search result title */
@@ -1527,14 +1330,6 @@ body {
 }
 
 /* List View Explicit Overrides */
-.book-grid.layout-list .book-info {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  text-align: left; /* Force left-alignment */
-  align-items: flex-start;
-  height: 90px; /* Match the cover height exactly to push the stars to the bottom */
-}
 
 .book-grid.layout-list .book-rating {
   display: block;
@@ -1547,33 +1342,8 @@ body {
 /* --- PHASE 3: READING JOURNAL VIEWS --- */
 #view-details {
   background-color: var(--bg-color);
-  overflow-y: auto;
   padding-bottom: 80px; /* Space for the bottom nav */
 }
-
-.journal-cover {
-  width: 140px;
-  border-radius: 6px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-}
-
-.journal-title {
-  font-family: 'Georgia', serif;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: var(--text-dark);
-  margin: 0 0 8px 0;
-  line-height: 1.2;
-}
-
-.journal-author {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 1rem;
-  color: var(--sage-green);
-  margin: 0 0 20px 0;
-}
-
 .journal-meta-card {
   width: 100%;
   background-color: var(--card-bg);
@@ -1629,10 +1399,29 @@ body {
   font-weight: bold;
   text-align: right;
   outline: none;
-  cursor: pointer;
+  cursor: default;
+  pointer-events: none;
   padding: 0;
   width: auto;
   direction: ltr; 
+}
+
+.pencil-trigger {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  pointer-events: auto;
+}
+
+.pencil-trigger:hover {
+  transform: scale(1.15);
+}
+
+.pencil-trigger:hover svg {
+  color: var(--terracotta) !important;
+  opacity: 1 !important;
 }
 
 /* 1. Force iOS/Safari/Chrome text to align right inside the Shadow DOM */
@@ -1826,4 +1615,197 @@ body {
   gap: 10px;
   margin-top: 25px;
   justify-content: center;
+}
+
+#close-details-btn:hover {
+  opacity: 0.7;
+}
+
+#close-details-btn:active {
+  transform: scale(0.95);
+}
+
+/* =========================================================================
+   DESIGN SYSTEM - STANDARDIZED CLASSES & ENHANCEMENTS
+   ========================================================================= */
+
+/* --- SYSTEM FONTS OVERRIDES --- */
+body {
+  font-family: var(--font-serif) !important;
+}
+.stacks-section-heading, .stacks-subheading {
+  font-family: var(--font-mono) !important;
+}
+.stacks-subheading {
+  border-bottom: 2px solid var(--detail-line);
+  padding-bottom: 5px;
+}
+
+/* --- BUTTONS --- */
+.btn {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s ease, opacity 0.2s ease, background-color 0.2s ease;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background-color: var(--terracotta);
+  color: var(--header-text);
+}
+.btn-primary:active {
+  opacity: 0.85;
+}
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--sage-green);
+  color: var(--sage-green);
+}
+.btn-secondary:active {
+  background-color: rgba(89, 119, 85, 0.1);
+}
+.btn-danger {
+  background-color: transparent;
+  border: 1px solid var(--terracotta);
+  color: var(--terracotta);
+}
+.btn-danger:active {
+  background-color: rgba(166, 82, 57, 0.1);
+}
+
+/* --- FORM CONTROLS --- */
+.form-input, .form-select, .form-textarea {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  padding: 12px 15px;
+  border: 1px solid var(--detail-line);
+  border-radius: 8px;
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px rgba(166, 82, 57, 0.15);
+}
+
+/* --- COVER ART ASPECT RATIO LOCK --- */
+.book-cover-container {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: rgba(139, 94, 52, 0.05); /* Placeholder tint */
+  display: block;
+}
+.book-cover-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- NOTES AUTO-SAVE STATUS --- */
+.autosave-status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--sage-green);
+  margin-left: 10px;
+  font-style: italic;
+  display: none;
+}
+
+/* --- NOTECARD STYLING (CORNER FOLD) --- */
+.notecard {
+  position: relative;
+  background-color: var(--card-bg); /* Cream bg */
+  padding: 16px;
+  background: linear-gradient(315deg, transparent 14px, var(--card-bg) 0);
+  box-shadow: 0 4px 10px rgba(44, 62, 45, 0.1);
+  margin-bottom: 20px;
+  width: 100%;
+}
+.notecard::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  background-color: #dfd5be; /* Darker fold shade */
+  border-top-left-radius: 2px;
+}
+
+/* --- DETAILS PAGE OVERLAY TRANSITIONS --- */
+#view-details {
+  transition: transform 0.35s ease-out, opacity 0.35s ease-out;
+  transform: translateX(100%);
+  opacity: 0;
+}
+#view-details.active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* --- LIBRARY SEARCH BAR WHITE BG --- */
+#local-search {
+  background: #ffffff !important;
+  border: 1px solid var(--detail-line) !important;
+}
+
+/* --- FILTERED/ACTIVE WANDER BUTTON STYLING --- */
+.header-wander-btn.active p,
+.header-wander-btn.filtered p {
+  color: var(--sage-green) !important;
+}
+.header-wander-btn.active svg,
+.header-wander-btn.filtered svg {
+  stroke: var(--sage-green) !important;
+  fill: rgba(186, 203, 179, 0.2) !important;
+}
+
+/* --- SPIN ANIMATION --- */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-spin {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+/* --- TOAST NOTIFICATION STYLING --- */
+.stacks-toast {
+  position: fixed;
+  bottom: 85px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text-dark);
+  color: var(--bg-color);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  z-index: 99999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.stacks-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
