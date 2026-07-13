@@ -94,49 +94,64 @@ window.addEventListener('load', async () => {
   }
 
   // 2. Cinematic Loading Screen State Machine
-  let libraryLoaded = false;
+  let libraryReady = false;
   let videoEnded = false;
   let hasFadedOut = false;
 
-  const fadeOutLoading = () => {
-    if (hasFadedOut) return;
-    hasFadedOut = true;
-    if (loadingVideo) loadingVideo.style.opacity = '0';
-    if (loadingScreen) {
-      loadingScreen.style.opacity = '0';
-      loadingScreen.style.transition = 'opacity 0.8s ease-in-out, visibility 0.8s ease-in-out';
-      setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-      }, 800);
+  const tryFadeOut = () => {
+    if (libraryReady && videoEnded && !hasFadedOut) {
+      hasFadedOut = true;
+      if (loadingVideo) loadingVideo.style.opacity = '0';
+      if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        loadingScreen.style.transition = 'opacity 0.8s ease-in-out, visibility 0.8s ease-in-out';
+        setTimeout(() => {
+          loadingScreen.classList.add('hidden');
+        }, 800);
+      }
     }
   };
 
+  // Skip button click: force fade out immediately
   if (skipBtn) {
-    skipBtn.addEventListener('click', fadeOutLoading);
+    skipBtn.addEventListener('click', () => {
+      videoEnded = true;
+      libraryReady = true;
+      tryFadeOut();
+    });
   }
 
+  // When video ends natively
   if (loadingVideo) {
-    loadingVideo.addEventListener('ended', fadeOutLoading);
+    loadingVideo.addEventListener('ended', () => {
+      videoEnded = true;
+      tryFadeOut();
+    });
+
+    // Explicitly play the video to be safe on mobile
+    loadingVideo.play().catch(err => {
+      console.warn("Video play failed or was blocked:", err);
+      // If blocked, set videoEnded to true so it doesn't hang forever
+      videoEnded = true;
+      tryFadeOut();
+    });
   }
 
+  // When library (or login screen) is ready
   document.addEventListener('library-loaded', () => {
-    libraryLoaded = true;
+    libraryReady = true;
     if (skipBtn && !hasFadedOut) {
-      skipBtn.style.display = 'flex'; // Skip button matches circular close style in CSS
+      skipBtn.style.display = 'flex'; // Show skip button so they can skip the rest of the video
     }
-    if (videoEnded) {
-      fadeOutLoading();
-    }
+    tryFadeOut();
   });
 
-  // Fallback timeout in case loading takes too long
+  // Fallback safety timeout (5 seconds)
   setTimeout(() => {
-    if (libraryLoaded) {
-      fadeOutLoading();
-    } else if (skipBtn) {
-      skipBtn.style.display = 'flex';
-    }
-  }, 6000);
+    videoEnded = true;
+    libraryReady = true;
+    tryFadeOut();
+  }, 5000);
 });
 
 // Authenticate user via Supabase and route to library dashboard

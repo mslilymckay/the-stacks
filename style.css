@@ -625,7 +625,7 @@ body {
 }
 
 .search-results-list {
-  padding: 0 15px 30px 15px;
+  padding: 0 15px 120px 15px;
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -1176,7 +1176,7 @@ body {
   gap: 20px;
   width: 100%;
   background-color: var(--bg-color); 
-  padding: 20px 15px 30px 15px; /* Removed the 110px bottom padding */
+  padding: 20px 15px 120px 15px; /* Increased bottom padding to clear bottom nav on mobile */
 }
 
 /* 1. Default Grid (3-Column Cover Only) */
