@@ -543,7 +543,7 @@ body {
   width: 100%;
   overflow-y: auto; /* Makes each view its own scroll container */
   -webkit-overflow-scrolling: touch; /* CRITICAL for smooth iOS scrolling */
-  padding-bottom: 80px; /* Accounts for your bottom nav bar */
+  padding-bottom: 120px; /* Accounts for bottom nav bar and safe area space on mobile */
   animation: fadeIn 0.25s ease-out forwards;
 }
 
@@ -1342,7 +1342,7 @@ body {
 /* --- PHASE 3: READING JOURNAL VIEWS --- */
 #view-details {
   background-color: var(--bg-color);
-  padding-bottom: 80px; /* Space for the bottom nav */
+  padding-bottom: 120px; /* Space for the bottom nav and mobile indicators */
 }
 .journal-meta-card {
   width: 100%;
@@ -1809,3 +1809,4 @@ body {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
