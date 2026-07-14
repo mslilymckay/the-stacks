@@ -161,6 +161,13 @@ body {
   border-radius: 50%; /* This perfectly rounds the image! */
   object-fit: cover;
   cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.header-logo:hover {
+  opacity: 0.9;
+}
+.header-logo:active {
+  transform: scale(0.9);
 }
 
 .header-title {
