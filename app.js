@@ -593,7 +593,7 @@ function applyLibraryFilters() {
     const bookStatus = Number(getField(book, 'status'));
     const bookReadDate = getField(book, 'read_date') || getField(book, 'date_finished');
     if (libraryYearFilter !== 'all') {
-      matchesYear = (bookStatus === 2 && bookReadDate && String(readDate).startsWith(libraryYearFilter));
+      matchesYear = (bookStatus === 2 && bookReadDate && String(bookReadDate).startsWith(libraryYearFilter));
     } else if (filterYear !== 'all') {
       matchesYear = (bookStatus === 2 && bookReadDate && String(bookReadDate).startsWith(filterYear));
     }
@@ -1725,6 +1725,7 @@ async function searchGoogleBooks(query) {
         
         const schema = globalLibraryData.length > 0 ? Object.keys(globalLibraryData[0]) : [];
         const getKey = (name) => schema.find(k => k.toLowerCase() === name.toLowerCase()) || name;
+        const hasKey = (name) => schema.some(k => k.toLowerCase() === name.toLowerCase());
 
         const payload = {};
         payload[getKey('uuid')] = crypto.randomUUID();
@@ -1737,10 +1738,17 @@ async function searchGoogleBooks(query) {
         payload[getKey('pages')] = 0;
         payload[getKey('rating')] = 0;
         payload[getKey('notes')] = '';
-        payload[getKey('created_at')] = new Date().toISOString();
-        payload[getKey('date_added')] = new Date().toISOString();
-        payload[getKey('date_started')] = null;
-        payload[getKey('read_date')] = null;
+        
+        const nowIso = new Date().toISOString();
+        if (schema.length > 0) {
+          if (hasKey('created_at')) payload[getKey('created_at')] = nowIso;
+          if (hasKey('date_added')) payload[getKey('date_added')] = nowIso;
+          if (hasKey('date_started')) payload[getKey('date_started')] = null;
+          if (hasKey('read_date')) payload[getKey('read_date')] = null;
+          if (hasKey('date_finished')) payload[getKey('date_finished')] = null;
+        } else {
+          payload['date_added'] = nowIso;
+        }
 
         // Database Insert
         const { data, error } = await supabase.from(TABLE_NAME).insert([payload]).select();
@@ -2114,7 +2122,6 @@ window.addEventListener('popstate', (event) => {
   }
 });
 
-
 // Phase 4 Stats Render & Drilling Engine
 let statsChartInstance = null; 
 let currentStatsYear = 'all';
@@ -2283,6 +2290,76 @@ function drawChart(type, labels, data, color, stepSize, onClickCallback) {
       }
     }
   });
+}
+
+function initStatsPage() {
+  const yearSelect = document.getElementById('stats-year-select');
+  if (!yearSelect) return;
+
+  const finishedBooks = globalLibraryData.filter(b => {
+    const status = Number(getField(b, 'status'));
+    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+    return status === 2 && readDate;
+  });
+  const years = [...new Set(finishedBooks.map(b => {
+    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
+    return String(readDate).split('-')[0];
+  }))].sort((a, b) => b - a);
+  
+  const currentVal = yearSelect.value;
+  yearSelect.innerHTML = '<option value="all">All Time</option>';
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    yearSelect.appendChild(opt);
+  });
+  if (years.includes(currentVal)) {
+    yearSelect.value = currentVal;
+  }
+
+  if (statsInitialized) return;
+  statsInitialized = true;
+
+  yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
+
+  const viewInStacksBtn = document.getElementById('btn-view-in-stacks');
+  if (viewInStacksBtn) {
+    viewInStacksBtn.addEventListener('click', () => {
+      document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-library').classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
+      lastActiveTab = 'view-library';
+
+      libraryYearFilter = currentStatsYear; 
+
+      document.querySelectorAll('.quick-btn, .filter-btn').forEach(btn => {
+        const statusVal = btn.getAttribute('data-status');
+        if (statusVal === '2') {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const filterYearSelect = document.getElementById('filter-year');
+      if (filterYearSelect) {
+        filterYearSelect.value = currentStatsYear === 'all' ? 'all' : currentStatsYear;
+      }
+
+      const filterRatingSelect = document.getElementById('filter-rating');
+      if (filterRatingSelect) filterRatingSelect.value = 'all';
+      const filterCategorySelect = document.getElementById('filter-category');
+      if (filterCategorySelect) filterCategorySelect.value = 'all';
+      const filterHasNotesEl = document.getElementById('filter-has-notes');
+      if (filterHasNotesEl) filterHasNotesEl.checked = false;
+      const filterMissingCoverEl = document.getElementById('filter-missing-cover');
+      if (filterMissingCoverEl) filterMissingCoverEl.checked = false;
+
+      applyLibraryFilters(); 
+      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
+    });
+  }
 }
 
 // Reusable utilities
@@ -2480,73 +2557,3 @@ async function fetchBooksFromAPIs(query) {
     }, { passive: true });
   }
 })();
-
-function initStatsPage() {
-  const yearSelect = document.getElementById('stats-year-select');
-  if (!yearSelect) return;
-
-  const finishedBooks = globalLibraryData.filter(b => {
-    const status = Number(getField(b, 'status'));
-    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
-    return status === 2 && readDate;
-  });
-  const years = [...new Set(finishedBooks.map(b => {
-    const readDate = getField(b, 'read_date') || getField(b, 'date_finished');
-    return String(readDate).split('-')[0];
-  }))].sort((a, b) => b - a);
-  
-  const currentVal = yearSelect.value;
-  yearSelect.innerHTML = '<option value="all">All Time</option>';
-  years.forEach(y => {
-    const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y;
-    yearSelect.appendChild(opt);
-  });
-  if (years.includes(currentVal)) {
-    yearSelect.value = currentVal;
-  }
-
-  if (statsInitialized) return;
-  statsInitialized = true;
-
-  yearSelect.addEventListener('change', (e) => renderAnnualStats(e.target.value));
-
-  const viewInStacksBtn = document.getElementById('btn-view-in-stacks');
-  if (viewInStacksBtn) {
-    viewInStacksBtn.addEventListener('click', () => {
-      document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
-      document.getElementById('view-library').classList.add('active');
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.querySelector('.nav-item[data-target="view-library"]').classList.add('active');
-      lastActiveTab = 'view-library';
-
-      libraryYearFilter = currentStatsYear; 
-
-      document.querySelectorAll('.quick-btn, .filter-btn').forEach(btn => {
-        const statusVal = btn.getAttribute('data-status');
-        if (statusVal === '2') {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
-
-      const filterYearSelect = document.getElementById('filter-year');
-      if (filterYearSelect) {
-        filterYearSelect.value = currentStatsYear === 'all' ? 'all' : currentStatsYear;
-      }
-
-      const filterRatingSelect = document.getElementById('filter-rating');
-      if (filterRatingSelect) filterRatingSelect.value = 'all';
-      const filterCategorySelect = document.getElementById('filter-category');
-      if (filterCategorySelect) filterCategorySelect.value = 'all';
-      const filterHasNotesEl = document.getElementById('filter-has-notes');
-      if (filterHasNotesEl) filterHasNotesEl.checked = false;
-      const filterMissingCoverEl = document.getElementById('filter-missing-cover');
-      if (filterMissingCoverEl) filterMissingCoverEl.checked = false;
-
-      applyLibraryFilters(); 
-      document.querySelectorAll('.hero-pill-btn').forEach(b => b.classList.remove('active'));
-    });
-  }
-}
