@@ -14,8 +14,8 @@ const TABLE_NAME = 'books';
 
 // HTML Escaping Helper to prevent XSS injection
 function escapeHtml(unsafe) {
-  if (unsafe === null || unsafe === undefined) return '';
-  return String(unsafe)
+  if (!unsafe) return '';
+  return unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -70,7 +70,6 @@ window.addEventListener('load', async () => {
   const loadingVideo = document.getElementById('loading-video');
   const loadingScreen = document.getElementById('loading-screen');
   const authScreen = document.getElementById('auth-screen');
-  const skipBtn = document.getElementById('skip-loading-btn');
   
   // Register Service Worker
   if ('serviceWorker' in navigator) {
@@ -87,19 +86,15 @@ window.addEventListener('load', async () => {
   if (session) {
     loadBooks(); 
   } else {
-    // Clear sandbox local books cache on logout/no session
-    localStorage.removeItem('the_stacks_local_books');
-    document.dispatchEvent(new CustomEvent('library-loaded'));
-    if (authScreen) authScreen.classList.remove('hidden');
+    // No active session. Show the login veil.
+    document.getElementById('auth-screen').classList.remove('hidden');
   }
 
   // 2. Cinematic Loading Screen State Machine
-  let libraryReady = false;
-  let videoEnded = false;
   let hasFadedOut = false;
 
-  const tryFadeOut = () => {
-    if (libraryReady && videoEnded && !hasFadedOut) {
+  const fadeOutLoadingScreen = () => {
+    if (!hasFadedOut) {
       hasFadedOut = true;
       if (loadingVideo) loadingVideo.style.opacity = '0';
       if (loadingScreen) {
@@ -112,125 +107,64 @@ window.addEventListener('load', async () => {
     }
   };
 
-  // Skip button click: force fade out immediately
-  if (skipBtn) {
-    skipBtn.addEventListener('click', () => {
-      videoEnded = true;
-      libraryReady = true;
-      tryFadeOut();
-    });
-  }
-
-  // When video ends natively
   if (loadingVideo) {
-    loadingVideo.addEventListener('ended', () => {
-      videoEnded = true;
-      tryFadeOut();
-    });
+    // 1. Standard event for when a video finishes naturally
+    loadingVideo.addEventListener('ended', fadeOutLoadingScreen);
+    
+    // 2. Failsafe for media fragments (t=3.5,7) which often pause at the end mark
+    loadingVideo.addEventListener('pause', fadeOutLoadingScreen);
 
-    // Explicitly play the video to be safe on mobile
+    // Explicitly play the video 
     loadingVideo.play().catch(err => {
-      console.warn("Video play failed or was blocked:", err);
-      // If blocked, set videoEnded to true so it doesn't hang forever
-      videoEnded = true;
-      tryFadeOut();
+      console.warn("Video play blocked by browser:", err);
+      fadeOutLoadingScreen(); // Failsafe 3: If the browser blocks autoplay
     });
-  }
-
-  // When library (or login screen) is ready
-  document.addEventListener('library-loaded', () => {
-    libraryReady = true;
-    if (skipBtn && !hasFadedOut) {
-      skipBtn.style.display = 'flex'; // Show skip button so they can skip the rest of the video
-    }
-    tryFadeOut();
-  });
-
-  // Fallback safety timeout (5 seconds)
-  setTimeout(() => {
-    videoEnded = true;
-    libraryReady = true;
-    tryFadeOut();
-  }, 5000);
-});
-
-// Authenticate user via Supabase and route to library dashboard
-document.getElementById('auth-login-btn').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value;
-  const password = document.getElementById('auth-password').value;
-  const errorText = document.getElementById('auth-error');
-  const loginBtn = document.getElementById('auth-login-btn');
-  
-  errorText.style.display = 'none';
-  loginBtn.textContent = 'Verifying...';
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
-
-  if (error) {
-    errorText.textContent = "Oops! " + error.message;
-    errorText.style.display = 'block';
-    loginBtn.textContent = "Let's go!";
+    
+    // Failsafe 4: An absolute timer. 
+    // A 3.5-second clip at 1.5x speed takes ~2.33 seconds.
+    setTimeout(fadeOutLoadingScreen, 2500); 
   } else {
-    document.getElementById('auth-screen').classList.add('hidden');
-    loadBooks(); 
+    fadeOutLoadingScreen(); // Failsafe 5: If the video element doesn't exist
   }
 });
 
-// Log out user via Supabase, clear caches, and return to auth screen
-const headerLogo = document.getElementById('header-logo');
-if (headerLogo) {
-  headerLogo.addEventListener('click', async (e) => {
-    e.stopPropagation(); // Prevents triggering header-scroll-trigger top scroll
-    const confirmLogout = await showStacksModal("Log Out", "Are you sure you want to log out of The Stacks?", true);
-    if (confirmLogout) {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Logout failed:", error);
-        showToast("Logout failed");
-      } else {
-        // Clear local storage books cache & global state
-        localStorage.removeItem('the_stacks_local_books');
-        globalLibraryData = [];
-        
-        // Reset auth inputs & error display
-        const emailInput = document.getElementById('auth-email');
-        const passwordInput = document.getElementById('auth-password');
-        const errorText = document.getElementById('auth-error');
-        const loginBtn = document.getElementById('auth-login-btn');
-        if (emailInput) emailInput.value = '';
-        if (passwordInput) passwordInput.value = '';
-        if (errorText) errorText.style.display = 'none';
-        if (loginBtn) loginBtn.textContent = "Let's go!";
-        
-        // Hide details container & all other views
-        const detailsContainer = document.getElementById('view-details');
-        if (detailsContainer) detailsContainer.classList.remove('active');
-        
-        const pageViews = document.querySelectorAll('.page-view');
-        pageViews.forEach(v => v.classList.remove('active'));
-        
-        // Show default library page & update active class on menu tabs
-        const libraryView = document.getElementById('view-library');
-        if (libraryView) libraryView.classList.add('active');
-        
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-          item.classList.remove('active');
-          if (item.getAttribute('data-target') === 'view-library') {
-            item.classList.add('active');
-          }
-        });
-        lastActiveTab = 'view-library';
-        
-        // Show the login authentication overlay
-        const authScreen = document.getElementById('auth-screen');
-        if (authScreen) authScreen.classList.remove('hidden');
-        
-        showToast("Logged out successfully");
+// ==========================================
+// DYNAMIC AUTHENTICATION LOGIC
+// ==========================================
+const authSubmitBtn = document.getElementById('auth-submit-btn');
+const authErrorText = document.getElementById('auth-error');
+
+// Handle the single submit button
+if (authSubmitBtn) {
+  authSubmitBtn.addEventListener('click', async () => {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    
+    if (authErrorText) authErrorText.style.display = 'none';
+    authSubmitBtn.textContent = 'Verifying...';
+
+    // Strictly login for Sarah
+    const authResponse = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+    // Handle the response
+    if (authResponse.error) {
+      if (authErrorText) {
+        authErrorText.textContent = "Oops! " + authResponse.error.message;
+        authErrorText.style.display = 'block';
       }
+      authSubmitBtn.textContent = "Let's go!";
+    } else {
+      // Success! Hide the screen and load the library
+      document.getElementById('auth-screen').classList.add('hidden');
+      
+      // Reset the fields so they are empty if the user signs out later
+      document.getElementById('auth-email').value = '';
+      document.getElementById('auth-password').value = '';
+      
+      loadBooks(); 
     }
   });
 }
@@ -1494,6 +1428,15 @@ function openDetails(book, clickedElement) {
         if (volumeInfo.pageCount) updates.pages = volumeInfo.pageCount;
         if (volumeInfo.categories?.length > 0) updates.category = normalizeCategory(volumeInfo.categories[0]);
         
+        // Sync ISBN if missing/default
+        const currentIsbn = getField(book, 'isbn');
+        if (!currentIsbn || currentIsbn === 'N/A' || currentIsbn === '--') {
+          if (volumeInfo.industryIdentifiers) {
+            const isbnObj = volumeInfo.industryIdentifiers.find(id => id.type === 'ISBN_13') || volumeInfo.industryIdentifiers.find(id => id.type === 'ISBN_10');
+            if (isbnObj) updates.isbn = isbnObj.identifier;
+          }
+        }
+        
         await updateMultipleBookFields(updates);
         const updatedBook = globalLibraryData.find(b => b.uuid === currentOpenBookId);
         openDetails(updatedBook);
@@ -1723,7 +1666,7 @@ async function searchGoogleBooks(query) {
     // Setup Add Book listeners inside search results
     document.querySelectorAll('.add-book-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        const button = e.target;
+        const button = btn; // Use direct reference instead of e.target to prevent nested click bugs
         
         const title = decodeURIComponent(button.dataset.title);
         const author = decodeURIComponent(button.dataset.author);
@@ -1783,17 +1726,23 @@ async function searchGoogleBooks(query) {
         const getKey = (name) => schema.find(k => k.toLowerCase() === name.toLowerCase()) || name;
         const hasKey = (name) => schema.some(k => k.toLowerCase() === name.toLowerCase());
 
-        const payload = {};
-        payload[getKey('uuid')] = crypto.randomUUID();
-        payload[getKey('title')] = title;
-        payload[getKey('author')] = author;
-        payload[getKey('status')] = 0; 
-        payload[getKey('isbn')] = isbn;
-        payload[getKey('category')] = category;
-        payload[getKey('cover_url')] = coverUrl;
-        payload[getKey('pages')] = 0;
-        payload[getKey('rating')] = 0;
-        payload[getKey('notes')] = '';
+        // Sanitizing null or undefined strings resulting from dataset parsing
+        const cleanIsbnVal = (isbn === 'null' || isbn === 'undefined') ? '' : isbn;
+        const cleanCategoryVal = (category === 'null' || category === 'undefined') ? 'Uncategorized' : category;
+
+        // Strictly use lowercase keys as defined in the Supabase schema to ensure proper Postgres mapping
+        const payload = {
+          uuid: crypto.randomUUID(),
+          title: title,
+          author: author,
+          status: 0,
+          isbn: cleanIsbnVal,
+          category: cleanCategoryVal,
+          cover_url: coverUrl === 'null' || coverUrl === 'undefined' ? '' : coverUrl,
+          pages: 0,
+          rating: 0,
+          notes: ''
+        };
         
         const nowIso = new Date().toISOString();
         if (schema.length > 0) {
@@ -2536,49 +2485,52 @@ async function fetchBooksFromAPIs(query) {
     finalQuery = `isbn:${numbersOnly}`;
   }
 
-  // Try Open Library first to avoid Google Books 429 rate limit errors
+  const apiKey = 'AIzaSyD8cH6KE9JXatD9t0tyc6QETNMrtJP-Pt4';
+
+  // Try Google Books API first (prioritized using hardcoded API key)
   try {
-    const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(finalQuery)}&limit=10`);
-    if (!response.ok) throw new Error("Open Library API failed");
-    const olData = await response.json();
-    if (olData.docs && olData.docs.length > 0) {
-      data = {
-        items: olData.docs.map(doc => {
-          const author = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
-          const isbn = doc.isbn ? doc.isbn[0] : '';
-          let thumbnail = getGenericPlaceholderCoverUrl(doc.title, author);
-          if (doc.cover_i) {
-            thumbnail = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
-          } else if (isbn) {
-            thumbnail = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
-          }
-          return {
-            volumeInfo: {
-              title: doc.title,
-              authors: doc.author_name || [],
-              categories: doc.subject || [],
-              pageCount: doc.number_of_pages_median || doc.number_of_pages || 0,
-              imageLinks: { thumbnail },
-              infoLink: `https://openlibrary.org${doc.key}`,
-              industryIdentifiers: doc.isbn ? [{ type: 'ISBN_13', identifier: doc.isbn[0] }] : []
-            }
-          };
-        })
-      };
-    } else {
-      throw new Error("Open Library docs empty");
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(finalQuery)}&maxResults=10&key=${apiKey}`);
+    if (!response.ok) throw new Error(`Google Books API returned status ${response.status}`);
+    data = await response.json();
+    if (!data.items || data.items.length === 0) {
+      throw new Error('Google Books API returned empty items');
     }
-  } catch (e) {
-    console.warn("Open Library API failed, trying Google Books:", e);
+  } catch (googleErr) {
+    console.warn("Google Books API failed, falling back to Open Library:", googleErr);
+    // Fall back to Open Library (with explicit fields parameter)
     try {
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(finalQuery)}&maxResults=10`);
-      if (!response.ok) throw new Error(`Google Books returned status ${response.status}`);
-      data = await response.json();
-      if (!data.items || data.items.length === 0) {
-        throw new Error('Google Books returned empty items');
+      const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(finalQuery)}&limit=10&fields=key,title,author_name,cover_i,isbn,subject,number_of_pages_median,number_of_pages`);
+      if (!response.ok) throw new Error("Open Library API failed");
+      const olData = await response.json();
+      if (olData.docs && olData.docs.length > 0) {
+        data = {
+          items: olData.docs.map(doc => {
+            const author = doc.author_name ? doc.author_name.join(', ') : 'Unknown Author';
+            const isbn = doc.isbn ? doc.isbn[0] : '';
+            let thumbnail = getGenericPlaceholderCoverUrl(doc.title, author);
+            if (doc.cover_i) {
+              thumbnail = `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`;
+            } else if (isbn) {
+              thumbnail = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+            }
+            return {
+              volumeInfo: {
+                title: doc.title,
+                authors: doc.author_name || [],
+                categories: doc.subject || [],
+                pageCount: doc.number_of_pages_median || doc.number_of_pages || 0,
+                imageLinks: { thumbnail },
+                infoLink: `https://openlibrary.org${doc.key}`,
+                industryIdentifiers: doc.isbn ? [{ type: 'ISBN_13', identifier: doc.isbn[0] }] : []
+              }
+            };
+          })
+        };
+      } else {
+        throw new Error("Open Library docs empty");
       }
-    } catch (googleErr) {
-      console.error("All book APIs failed:", googleErr);
+    } catch (olErr) {
+      console.error("All book APIs failed:", olErr);
       data = { items: [] };
     }
   }
