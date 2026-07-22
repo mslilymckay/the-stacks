@@ -26,7 +26,6 @@
     <video autoplay muted playsinline id="loading-video">
       <source src="loading.mp4#t=3.5,7" type="video/mp4">
     </video>
-    <button id="skip-loading-btn" class="skip-btn">➔</button>
   </div>
 
   <div id="auth-screen" class="auth-screen hidden">
@@ -37,7 +36,7 @@
       <input type="email" id="auth-email" class="stacks-input" placeholder="Email Address">
       <input type="password" id="auth-password" class="stacks-input" placeholder="Password">
       
-      <button id="auth-login-btn" class="stacks-btn" style="width: 100%; margin-top: 10px;">Let's go!</button>
+      <button id="auth-submit-btn" class="stacks-btn" style="width: 100%; margin-top: 10px;">Let's go!</button>
       <p id="auth-error" style="color: var(--terracotta); font-size: 0.85rem; margin-top: 15px; display: none;"></p>
     </div>
   </div>
@@ -244,7 +243,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="clock-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               
               <select id="focus-duration" class="hidden-native-select">
-                <option value="5">5s (demo)</option>
+                <option value="300">5 Minutes</option>
                 <option value="900">15 Minutes</option>
                 <option value="1200" selected>20 Minutes</option>
                 <option value="1800">30 Minutes</option>
